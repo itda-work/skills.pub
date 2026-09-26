@@ -1,0 +1,115 @@
+{
+  "_preset": {
+    "theme": "동호회 운영 — 회칙·회비 명부·결산·행사 기록",
+    "how": "이 파일은 동작하는 씨앗 원장이다. 에이전트가 documents/traps/baits 를 늘려 완성한다.",
+    "entities_hint": "가상 동호회 + 가상 회원 가명. 실존 동호회·인명 금지.",
+    "recommended_traps": [
+      "contradiction — 회비 납부 명부 vs 결산 장부 잔액 불일치",
+      "stale-rule — 회칙 구버전(회비 5,000)과 개정본(회비 10,000) 공존",
+      "version-hell — 행사 계획서 v2/최종 예산 상이",
+      "decision-drift — 회비 인상 총회 의결이 명부에 미반영",
+      "broken-file — 손상된 회계 백업"
+    ],
+    "recommended_baits": [
+      "duplicate — 같은 회비의 계좌내역/명부 중복 기재는 모순 아님",
+      "scope — 분기 회비 vs 연회비 범위 차이"
+    ],
+    "expand": "documents 를 10~18개(회칙·명부·결산·회의록·행사)로, traps 4~6종으로 늘리고 consistency 로 회비 합계·결산 잔액을 묶어라."
+  },
+  "schema_version": "1",
+  "profile": {
+    "company": "가상 동호회 — 새벽러닝크루",
+    "description": "지역 러닝 동호회의 운영·회계 기록",
+    "headcount": 24
+  },
+  "entities": {
+    "customers": [{"name": "가상회원 24명"}]
+  },
+  "canon": {"monthly_fee": 10000},
+  "documents": [
+    {
+      "path": "회칙/회칙_2026_개정.docx",
+      "type": "docx",
+      "internal_date": "2026-01-15 20:00",
+      "title": "새벽러닝크루 회칙 (2026 개정)",
+      "blocks": [
+        {"kind": "p", "text": "시행일: 2026-01-15 / 개정: 2026 총회 의결"},
+        {"kind": "h", "text": "제5조 (회비)"},
+        {"kind": "p", "text": "월 회비는 10,000원으로 한다. 매월 5일까지 총무 계좌로 납부한다."}
+      ]
+    },
+    {
+      "path": "옛날자료/회칙_2024.docx",
+      "type": "docx",
+      "internal_date": "2024-03-02 19:00",
+      "title": "새벽러닝크루 회칙",
+      "blocks": [
+        {"kind": "p", "text": "시행일: 2024-03-02"},
+        {"kind": "h", "text": "제5조 (회비)"},
+        {"kind": "p", "text": "월 회비는 5,000원으로 한다. 매월 5일까지 총무 계좌로 납부한다."}
+      ]
+    },
+    {
+      "path": "회계/2026-1H_회비명부.xlsx",
+      "type": "xlsx",
+      "internal_date": "2026-06-30 22:00",
+      "sheets": {
+        "회비": [
+          ["월", "납부 인원", "월 회비(원)", "월 합계(원)"],
+          ["2026-01", 22, 10000, 220000],
+          ["2026-02", 24, 10000, 240000],
+          ["2026-03", 23, 10000, 230000],
+          ["상반기 누계", "", "", 690000]
+        ]
+      }
+    },
+    {
+      "path": "백업/2025_회계_백업.xlsx",
+      "type": "broken",
+      "internal_date": "2026-01-10 03:00",
+      "note": "CORRUPTED_LEDGER"
+    }
+  ],
+  "consistency": [
+    {
+      "id": "C1",
+      "desc": "1~3월 회비 합계",
+      "op": "sum",
+      "operands": [220000, 240000, 230000],
+      "expected": 690000,
+      "expected_in": "회계/2026-1H_회비명부.xlsx"
+    }
+  ],
+  "traps": [
+    {
+      "id": "T4",
+      "type": "stale-rule",
+      "title": "회칙 회비 이중화",
+      "targets": ["회칙/회칙_2026_개정.docx", "옛날자료/회칙_2024.docx"],
+      "canon": "2026 개정 10,000 vs 2024 구본 5,000",
+      "detection": "두 회칙이 공존하며 회비가 다름 — 최신본(2026) 확인 필요, 구본 폐기 권고",
+      "markers": [
+        {"path": "회칙/회칙_2026_개정.docx", "value": 10000},
+        {"path": "옛날자료/회칙_2024.docx", "value": 5000}
+      ]
+    },
+    {
+      "id": "T5",
+      "type": "broken-file",
+      "title": "손상된 회계 백업",
+      "targets": ["백업/2025_회계_백업.xlsx"],
+      "detection": "열기 실패 — 문제파일.md 기록 필수",
+      "markers": [{"path": "백업/2025_회계_백업.xlsx", "unreadable": true}]
+    }
+  ],
+  "baits": [
+    {
+      "id": "B1",
+      "type": "scope",
+      "title": "월 회비 vs 상반기 누계",
+      "targets": ["회계/2026-1H_회비명부.xlsx"],
+      "detection": "월 합계(220,000 등)와 상반기 누계(690,000)는 집계 범위가 달라 모순 아님",
+      "markers": [{"path": "회계/2026-1H_회비명부.xlsx", "value": 690000}]
+    }
+  ]
+}

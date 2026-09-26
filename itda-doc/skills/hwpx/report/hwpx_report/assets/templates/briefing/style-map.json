@@ -1,0 +1,118 @@
+{
+  "heading": {
+    "charPrIDRef": "36",
+    "paraPrIDRef": "32"
+  },
+  "heading_spacer": {
+    "charPrIDRef": "12",
+    "paraPrIDRef": "2"
+  },
+  "body_box": {
+    "charPrIDRef": "38",
+    "paraPrIDRef": "26"
+  },
+  "blank": {
+    "charPrIDRef": "13",
+    "paraPrIDRef": "2"
+  },
+  "cover_org": {
+    "charPrIDRef": "31",
+    "paraPrIDRef": "25"
+  },
+  "cover_title": {
+    "charPrIDRef": "32",
+    "paraPrIDRef": "25"
+  },
+  "cover_date": {
+    "charPrIDRef": "32",
+    "paraPrIDRef": "25"
+  },
+  "toc_title": {
+    "charPrIDRef": "33",
+    "paraPrIDRef": "25"
+  },
+  "toc_item": {
+    "charPrIDRef": "34",
+    "paraPrIDRef": "30"
+  },
+  "doc_title": {
+    "charPrIDRef": "37",
+    "paraPrIDRef": "25"
+  },
+  "bar_num": {
+    "charPrIDRef": "35",
+    "paraPrIDRef": "31",
+    "borderFillIDRef": "11"
+  },
+  "bar_gap": {
+    "charPrIDRef": "36",
+    "paraPrIDRef": "31",
+    "borderFillIDRef": "13"
+  },
+  "bar_title": {
+    "charPrIDRef": "36",
+    "paraPrIDRef": "32",
+    "borderFillIDRef": "12"
+  },
+  "bar_container": {
+    "borderFillIDRef": "1"
+  },
+  "level1": {
+    "charPrIDRef": "38",
+    "paraPrIDRef": "26"
+  },
+  "level2": {
+    "charPrIDRef": "39",
+    "paraPrIDRef": "27"
+  },
+  "level3": {
+    "charPrIDRef": "40",
+    "paraPrIDRef": "28"
+  },
+  "level4": {
+    "charPrIDRef": "41",
+    "paraPrIDRef": "29"
+  },
+  "table_header": {
+    "charPrIDRef": "26",
+    "paraPrIDRef": "18",
+    "borderFillIDRef": "9"
+  },
+  "table_body": {
+    "charPrIDRef": "27",
+    "paraPrIDRef": "18",
+    "borderFillIDRef": "10"
+  },
+  "table_body_justify": {
+    "charPrIDRef": "27",
+    "paraPrIDRef": "22",
+    "borderFillIDRef": "10"
+  },
+  "table_body_left": {
+    "charPrIDRef": "27",
+    "paraPrIDRef": "23",
+    "borderFillIDRef": "10"
+  },
+  "table_body_right": {
+    "charPrIDRef": "27",
+    "paraPrIDRef": "24",
+    "borderFillIDRef": "10"
+  },
+  "table_body_bold": {
+    "charPrIDRef": "28"
+  },
+  "table_body_italic": {
+    "charPrIDRef": "29"
+  },
+  "table_body_bold_italic": {
+    "charPrIDRef": "30"
+  },
+  "table_total": {
+    "charPrIDRef": "26",
+    "paraPrIDRef": "18",
+    "borderFillIDRef": "9"
+  },
+  "table_container": {
+    "borderFillIDRef": "4"
+  }
+}

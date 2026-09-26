@@ -1,0 +1,46 @@
+# ABSA 측면 분류체계 정본 (taxonomy 정본 v1.0 — 평면 단일계층)
+# 원천: itda-skills/ml-absa 기획서 §5.5. v1/ML 공통 SSOT.
+#
+# 규칙:
+# - aspect 는 아래 closed-set 라벨만 사용. 매핑 불가 시 `기타`.
+# - 라벨에 극성·상태 인코딩 금지. ("처리지연불만" → aspect=대기시간 + polarity=negative)
+# - type=sentiment 는 polarity(긍/중립/부정)로, 상태/이벤트는 state_signals 로 표현.
+# - domain 게이트: review 입력에 cs 전용 라벨을 출력하지 않는다(반대도 동일).
+# - 사용자가 커스텀 YAML을 제공하면 이 파일 대신 그것을 정본으로 쓴다.
+
+taxonomy_version: "absa-cs-1.0"
+domains: [cs, review]
+
+aspects:
+  # --- CS 프로세스 측면 (1급) ---
+  대기시간:     { type: sentiment, ko: "연결·응답까지의 대기",        domain: [cs] }
+  응대태도:     { type: sentiment, ko: "상담사 어조·성의·정서적 태도", domain: [cs] }
+  처리정확성:   { type: sentiment, ko: "처리 정확성/오처리",          domain: [cs] }
+  환불보상:     { type: sentiment, ko: "환불·교환·보상 만족",         domain: [cs] }
+  보안개인정보: { type: sentiment, ko: "본인확인·정보유출",           domain: [cs], critical: true }
+
+  # --- 양 도메인 공유 (의미분포 검증 후 cross-domain 학습 대상으로 승격) ---
+  배송: { type: sentiment, ko: "배송 속도·정확·포장",   domain: [cs, review] }
+  가격: { type: sentiment, ko: "가격·가성비·결제",      domain: [cs, review] }
+  품질: { type: sentiment, ko: "제품/처리 품질·성능",   domain: [cs, review] }
+  기타: { type: sentiment, ko: "위에 안 맞는 측면",     domain: [cs, review] }
+
+  # --- review 전용 ---
+  디자인: { type: sentiment, ko: "디자인·외관",      domain: [review] }
+  사용성: { type: sentiment, ko: "사용성·편의성",    domain: [review] }
+
+# 비파괴 진화 슬롯: v1 LLM 은 항상 null 출력, 평가 채점 제외.
+# v1.5 ML 이 entity#attribute 세분 라벨을 누적해 셀 밀도 확보 시 closed-set 졸업.
+# 용도 고정: **측면(aspect) 세분 한정**. 근본원인(왜 발생: 지연/오류/품절/정책)은 측면 하위가
+# 아니라 별도 직교축(향후 root_cause)으로 둔다 — 같은 측면도 원인이 달라 측면 트리에 가두면
+# 횡단 원인 집계가 영구 불가해진다. sub_aspect 에 근본원인 흡수 금지.
+sub_aspects:
+  scoring: excluded
+  closed: false
+
+# 상태/이벤트 축 (감정 극성으로 환원 금지). doc(티켓) 단위.
+state_signals:
+  resolution: [resolved, unresolved, partial, unknown]
+  escalated: bool        # 에스컬레이션·부서이관 요청
+  # reopen_count(재문의·반복접촉 횟수)는 cross-doc 집계량 → 무상태 단건 출력에서 제외.
+  # 집계 레이어(ml-absa)가 doc 묶음에서 산출. 단건 라벨러는 자신의 누적 재문의 횟수를 알 수 없음.

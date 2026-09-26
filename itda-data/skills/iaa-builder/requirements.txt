@@ -1,0 +1,2 @@
+# iaa-builder — 외부 의존 없음 (Python 3.10+ stdlib only)
+# csv, json, math, random, argparse 만 사용. 설치할 패키지 없음.

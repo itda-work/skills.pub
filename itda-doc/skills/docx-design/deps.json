@@ -1,0 +1,76 @@
+{
+ "schema": 1,
+ "skill": "itda-doc/docx-design",
+ "issue": 1630,
+ "generated_by": "skills/scripts/deps_manifest.py gen-specs — 손으로 고치지 마라(validate ⑧ 이 RED)",
+ "declares_no_deps": false,
+ "no_deps_rationale": "",
+ "pep723": null,
+ "rows": [
+  {
+   "dist": "python-docx",
+   "specifier": ">=1.1.0",
+   "marker": "",
+   "necessity": "startup_required",
+   "scope": "runtime",
+   "provisioning": "direct",
+   "owner": "self",
+   "import_names": [
+    "docx"
+   ]
+  },
+  {
+   "dist": "PyYAML",
+   "specifier": ">=6.0",
+   "marker": "",
+   "necessity": "feature_required",
+   "scope": "runtime",
+   "provisioning": "direct",
+   "owner": "self",
+   "import_names": [
+    "yaml"
+   ],
+   "feature": "design-core 토큰 로드(dockit.py:218 docx_styles — 문서 생성 경로 전부)"
+  },
+  {
+   "dist": "PyMuPDF",
+   "specifier": ">=1.23.0",
+   "marker": "",
+   "necessity": "optional_enhancement",
+   "scope": "runtime",
+   "provisioning": "direct",
+   "owner": "self",
+   "import_names": [
+    "fitz",
+    "pymupdf"
+   ]
+  },
+  {
+   "dist": "pywin32",
+   "specifier": ">=305",
+   "marker": "platform_system == \"Windows\"",
+   "necessity": "feature_required",
+   "scope": "runtime",
+   "provisioning": "direct",
+   "owner": "self",
+   "import_names": [
+    "win32com",
+    "pythoncom"
+   ],
+   "feature": "Windows Word COM 렌더(render.py:50 win32com)"
+  },
+  {
+   "dist": "Pillow",
+   "specifier": ">=10.0.0",
+   "marker": "",
+   "necessity": "optional_enhancement",
+   "scope": "runtime",
+   "provisioning": "direct",
+   "owner": "self",
+   "import_names": [
+    "PIL"
+   ]
+  }
+ ],
+ "non_pip": []
+}

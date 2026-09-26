@@ -1,0 +1,29 @@
+{
+  "id": "official-letter",
+  "name": "기안문(공문)",
+  "layout": "official-letter",
+  "source": "itda-skills 자체 설계 (#1651) — header.xml 은 gov-report(kist-aix/hwpx MIT) 파생",
+  "placeholders": [],
+  "bodyRegion": {
+    "after": "secPr"
+  },
+  "tables": [
+    "basic"
+  ],
+  "fields": {
+    "org": "상단 기관명",
+    "receiver": "수신",
+    "via": "경유",
+    "sender": "발신명의",
+    "drafter": "기안자(직위 성명 — 용어 없이 내용만 실린다)",
+    "reviewer": "검토자(직위 성명)",
+    "approver": "결재권자(직위 성명)",
+    "doc_no": "시행 문서번호",
+    "address": "주소",
+    "phone": "전화",
+    "email": "전자우편",
+    "cooperator": "협조자",
+    "disclosure": "공개 구분(공개·부분공개(N)·비공개(N))"
+  },
+  "max_level": 4
+}

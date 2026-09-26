@@ -1,0 +1,155 @@
+{
+ "schema_version": "1.0",
+ "domain": "longterm-care",
+ "document": "caregiver-roster",
+ "title": "요양보호사 근무표",
+ "format": "xlsx",
+ "fields": [
+  {
+   "name": "직원번호",
+   "type": "string",
+   "grade": "식별자",
+   "generator": {
+    "kind": "sequence",
+    "prefix": "W",
+    "start": 201,
+    "width": 4
+   },
+   "desc": ""
+  },
+  {
+   "name": "성명",
+   "type": "string",
+   "grade": "식별자",
+   "generator": {
+    "kind": "person_name",
+    "dup_ratio": 0.08
+   },
+   "desc": ""
+  },
+  {
+   "name": "자격구분",
+   "type": "string",
+   "grade": "준식별자",
+   "generator": {
+    "kind": "choice",
+    "values": [
+     "요양보호사",
+     "사회복지사",
+     "간호조무사"
+    ],
+    "weights": [
+     70,
+     15,
+     15
+    ]
+   },
+   "desc": ""
+  },
+  {
+   "name": "담당구역",
+   "type": "string",
+   "grade": "준식별자",
+   "generator": {
+    "kind": "choice",
+    "values": [
+     "1층",
+     "2층",
+     "3층",
+     "재가"
+    ]
+   },
+   "desc": ""
+  },
+  {
+   "name": "근무일",
+   "type": "date",
+   "grade": "비개인정보",
+   "generator": {
+    "kind": "date",
+    "start": "2025-11-01",
+    "end": "2025-11-30"
+   },
+   "desc": ""
+  },
+  {
+   "name": "근무조",
+   "type": "string",
+   "grade": "비개인정보",
+   "generator": {
+    "kind": "time_slot",
+    "values": [
+     "주간",
+     "야간",
+     "OFF"
+    ]
+   },
+   "desc": ""
+  },
+  {
+   "name": "연락처",
+   "type": "string",
+   "grade": "식별자",
+   "generator": {
+    "kind": "phone"
+   },
+   "desc": ""
+  },
+  {
+   "name": "비고",
+   "type": "text",
+   "grade": "민감정보",
+   "generator": {
+    "kind": "free_text"
+   },
+   "desc": "",
+   "free_text": true
+  }
+ ],
+ "rules": [
+  {
+   "id": "R1",
+   "kind": "in_set",
+   "field": "근무조",
+   "values": [
+    "주간",
+    "야간",
+    "OFF"
+   ],
+   "desc": "근무조 3종"
+  },
+  {
+   "id": "R2",
+   "kind": "not_empty",
+   "field": "직원번호",
+   "desc": "직원번호 필수"
+  }
+ ],
+ "reid_keys": [
+  "담당구역",
+  "자격구분",
+  "근무일"
+ ],
+ "legal": [
+  {
+   "law": "노인장기요양보험법",
+   "article": "(조문 확인 필요)",
+   "note": "장기요양기관 종사자 비밀 누설 금지·수급자 정보 보호 — legal-basis.md 미수록",
+   "status": "확인 필요"
+  },
+  {
+   "law": "개인정보 보호법",
+   "article": "제23조 제1항",
+   "note": "건강·등급 정보는 민감정보",
+   "status": "확인"
+  },
+  {
+   "law": "개인정보 보호법",
+   "article": "제24조",
+   "note": "주민번호 등 고유식별정보 처리 제한",
+   "status": "확인"
+  }
+ ],
+ "seed_examples": [],
+ "preset_notice": "이 프리셋의 항목·규칙은 해당 업무의 문서 구조를 예측해 만든 것일 뿐 정확하지 않습니다. 실제 업무의 데이터 구조(항목 이름·규칙·서식)를 알려주시면 그에 맞춰 생성할 수 있습니다."
+}

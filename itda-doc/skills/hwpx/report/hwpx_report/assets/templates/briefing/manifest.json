@@ -1,0 +1,17 @@
+{
+  "id": "briefing",
+  "name": "내부 보고서(표지·목차·섹션바)",
+  "layout": "briefing",
+  "source": "itda-skills 자체 설계 (#1651) — header.xml 은 gov-report(kist-aix/hwpx MIT) 파생",
+  "placeholders": [],
+  "bodyRegion": {
+    "after": "secPr"
+  },
+  "tables": [
+    "basic"
+  ],
+  "fields": {
+    "org": "표지 기관명"
+  },
+  "max_level": 4
+}

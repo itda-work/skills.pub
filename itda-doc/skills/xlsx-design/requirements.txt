@@ -1,0 +1,14 @@
+# xlsx-design 의존성
+#
+# 생성(관문3)은 openpyxl 만으로 충분 — 크로스플랫폼, Microsoft Office 불필요.
+openpyxl>=3.1.0
+PyYAML>=6.0            # design-core 토큰 로더(형제 스킬) 의존
+
+# 검증·미리보기(관문4) 렌더 PNG 산출(없어도 HARD GATE 동작, render 검사만 생략)
+PyMuPDF>=1.23.0       # PDF → PNG 래스터(LibreOffice/poppler 불요)
+
+# Windows 옵션 — Excel COM 렌더(설치 시 가장 정확). 비Windows 는 LibreOffice(soffice).
+pywin32>=305 ; platform_system == "Windows"
+
+# 선택 — 빈 페이지 검사 등 이미지 처리
+Pillow>=10.0.0

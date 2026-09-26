@@ -1,0 +1,117 @@
+{
+  "_preset": {
+    "theme": "프리랜서 정산 아카이브 — 1인 디자이너/개발자의 계약·청구·입금 기록",
+    "how": "이 파일은 동작하는 씨앗 원장이다. 에이전트가 documents/traps/baits 를 늘려 완성한다.",
+    "entities_hint": "가상 프리랜서 1인 + 가상 클라이언트 2~3곳(에이전시·스타트업 등). 실존 상호·인명 금지.",
+    "recommended_traps": [
+      "contradiction — 계약 금액 vs 실입금액 불일치(원천징수 누락처럼 보이나 실은 과소 입금)",
+      "version-hell — 제안서 v2/최종/진짜최종 단가 상이",
+      "stale-rule — 단가표 구버전(옛날자료/)과 신버전 공존",
+      "decision-drift — 범위 확대 합의(메일)가 청구서에 미반영",
+      "broken-file — 손상된 백업 xlsx"
+    ],
+    "recommended_baits": [
+      "direction — 견적가(부가세 별도) vs 입금액(부가세 포함)은 모순 아님",
+      "scope — 월 정산 vs 연 정산 합계 범위 차이"
+    ],
+    "expand": "documents 를 10~20개로, traps 를 4~6종으로 늘리고 consistency 로 청구 합계·과소입금 차액을 묶어라."
+  },
+  "schema_version": "1",
+  "profile": {
+    "company": "가상 프리랜서 — 서온 스튜디오",
+    "description": "1인 브랜드 디자인 프리랜서",
+    "ceo": "가상디자이너",
+    "founded": "2022",
+    "headcount": 1,
+    "annual_revenue": "8,400만"
+  },
+  "entities": {
+    "customers": [
+      {"name": "가상에이전시(주)"},
+      {"name": "가상스타트업(주)"}
+    ],
+    "products": [
+      {"code": "BRAND-BASIC", "name": "브랜드 기본 패키지", "unit_price": 3000000}
+    ]
+  },
+  "canon": {"brand_basic_price": 3000000},
+  "documents": [
+    {
+      "path": "계약/가상에이전시_브랜딩_계약.docx",
+      "type": "docx",
+      "internal_date": "2026-02-03 14:00",
+      "title": "브랜드 디자인 용역 계약서",
+      "blocks": [
+        {"kind": "p", "text": "발주: 가상에이전시(주) / 수행: 서온 스튜디오"},
+        {"kind": "h", "text": "제2조 (대금)"},
+        {"kind": "table", "rows": [["항목", "금액(원)"], ["브랜드 기본 패키지", "3,000,000"]]},
+        {"kind": "p", "text": "계약금 30% 착수 시, 잔금 70% 납품 시 지급."}
+      ]
+    },
+    {
+      "path": "청구/2026-04_가상에이전시_청구서.xlsx",
+      "type": "xlsx",
+      "internal_date": "2026-04-10 10:00",
+      "sheets": {
+        "청구": [
+          ["항목", "금액(원, VAT 별도)", "비고"],
+          ["브랜드 기본 패키지 잔금(70%)", 2100000, "납품 완료"],
+          ["합계", 2100000, ""]
+        ]
+      }
+    },
+    {
+      "path": "입금/2026-04_입금내역.csv",
+      "type": "csv",
+      "internal_date": "2026-04-30 18:00",
+      "rows": [["일자", "보낸곳", "입금액(원)"], ["2026-04-22", "가상에이전시(주)", 1890000]]
+    },
+    {
+      "path": "백업/2025_정산_백업.xlsx",
+      "type": "broken",
+      "internal_date": "2026-01-05 02:00",
+      "note": "CORRUPTED_SETTLEMENT"
+    }
+  ],
+  "consistency": [
+    {
+      "id": "C1",
+      "desc": "계약금 = 착수금(30%) + 잔금(70%)",
+      "op": "sum",
+      "operands": [900000, 2100000],
+      "expected": 3000000
+    }
+  ],
+  "traps": [
+    {
+      "id": "T1",
+      "type": "contradiction",
+      "title": "청구액 vs 실입금 불일치",
+      "targets": ["청구/2026-04_가상에이전시_청구서.xlsx", "입금/2026-04_입금내역.csv"],
+      "canon": "청구 2,100,000(VAT 별도) vs 입금 1,890,000",
+      "detection": "입금이 청구보다 210,000원 적음 — 원천징수(3.3%)로 설명되지 않는 과소 입금인지 확인 필요",
+      "markers": [
+        {"path": "청구/2026-04_가상에이전시_청구서.xlsx", "value": 2100000},
+        {"path": "입금/2026-04_입금내역.csv", "value": 1890000}
+      ]
+    },
+    {
+      "id": "T5",
+      "type": "broken-file",
+      "title": "손상된 정산 백업",
+      "targets": ["백업/2025_정산_백업.xlsx"],
+      "detection": "열기 실패 — 문제파일.md 기록 필수",
+      "markers": [{"path": "백업/2025_정산_백업.xlsx", "unreadable": true}]
+    }
+  ],
+  "baits": [
+    {
+      "id": "B1",
+      "type": "direction",
+      "title": "VAT 별도 청구 vs VAT 포함 입금",
+      "targets": ["청구/2026-04_가상에이전시_청구서.xlsx"],
+      "detection": "청구는 VAT 별도, 입금은 세후 기준일 수 있음 — 기준이 다르면 모순 아님(오탐 경계)",
+      "markers": [{"path": "청구/2026-04_가상에이전시_청구서.xlsx", "text": "VAT 별도"}]
+    }
+  ]
+}

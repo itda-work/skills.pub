@@ -1,0 +1,24 @@
+schema_version: 1
+host: insnews.co.kr
+domain: insurance
+label: 한국보험신문
+group: institution
+locations:
+- location_id: insnews-all-rss
+  item: 전체기사
+  item_kind: feed
+  url: https://www.insnews.co.kr/rss/allArticle.xml
+  discovery_path: feed
+  repeat_access: L1
+  auth_state: none
+  grade: A
+  expected:
+    content_type_prefix: application/xml
+    min_records: 10
+    freshness_days: 3
+  evidence:
+    observed_at: '2026-08-30'
+    samples: 1
+    browser: n/a
+    note: 200 XML item 50 (L1 preflight)
+  export_eligible: true

@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+# PoC 생성물(빌더가 재생성) — SSOT 는 토큰·빌더 코드
+examples/out/
+examples/preview/
+examples/**/assets/

@@ -1,0 +1,15 @@
+:root {
+  --bg: #FFFFFF;
+  --surface: #EEF2FB;
+  --surface-2: #EEF2FB;
+  --fg: #14181F;
+  --muted: #5C6470;
+  --primary: #1428A0;
+  --accent: #5B8DEF;
+  --border: #D5DBE8;
+  --success: #0E7C4A;
+  --danger: #C0392B;
+  --font-display: "Helvetica Neue", "Noto Sans KR", Pretendard, sans-serif;
+  --font-body: "Noto Sans KR", Pretendard, sans-serif;
+  --radius: 0.18rem;
+}

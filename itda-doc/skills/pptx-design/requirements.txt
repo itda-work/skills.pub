@@ -1,0 +1,9 @@
+# pptx-design 스킬 의존성 (SPEC-PPTX-DESIGN-001 NFR-1)
+# 필수 — 생성/차트/모티프
+python-pptx>=1.0
+matplotlib>=3.8
+Pillow>=10.0
+numpy>=1.26
+# 선택 — verify.py OCR 검증층(C). 미설치 시 OCR 층 자동 스킵(advisory).
+# tesseract 바이너리(+kor) 별도 설치 필요: macOS `brew install tesseract tesseract-lang`
+pytesseract>=0.3.10

@@ -1,0 +1,24 @@
+# flight-search 의존성 (SPEC-FLIGHT-SEARCH-001)
+#
+# 항공권 검색은 Google Flights 공개 검색 표면을 fast-flights 로 조회합니다
+# (로그인·API key·결제·CAPTCHA 우회 없음 — 공개 표면만). Google 측 HTML/프론트
+# 구조 변경 시 파싱이 깨질 수 있으며, 어댑터(flights_adapter.py)가 fail-loud 로
+# 안내합니다.
+#
+# 직접 조회(fetch_mode=common)는 primp(Rust TLS impersonation)로 수행되어 추가
+# 브라우저가 필요 없습니다. 차단 시에만 fallback(외부 fetch 서버) 로 폴백합니다.
+# local 모드(playwright)는 사용하지 않습니다.
+#
+# 설치 예: python3 -m pip install fast-flights==2.2
+#   (의존성: primp, protobuf, selectolax — 모두 휠 제공, 컴파일 불필요)
+#
+# ⚠️ 핀(==2.2)을 풀지 마라 — 최신 fast-flights(3.1.0 실측 2026-09-02)는
+#    `typing_extensions` 를 선언 없이 import 해 **설치해도 import 가 실패**한다:
+#      $ uv run --isolated --with fast-flights python -c "import fast_flights"
+#      ModuleNotFoundError: No module named 'typing_extensions'
+#    upstream 의 의존 선언 누락이며, `--with typing_extensions` 를 함께 주면 3.1.0 도
+#    import 는 된다(실측). 다만 2.2→3.x 는 API 변경 가능성이 있어 업그레이드는
+#    라이브 검증(Google Flights 실조회)을 동반해야 한다 — 그때까지 핀 유지.
+#    이 핀은 tests/test_dependency_pin.py 가 고정한다.
+
+fast-flights==2.2

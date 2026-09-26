@@ -1,0 +1,12 @@
+# train-ktx 의존성 (SPEC-KTX-BOOKING-001)
+#
+# KTX 예약은 코레일 비공식 모바일 API(letskorail.com)를 사용합니다.
+# 동작에는 안티봇(Dynapath) 대응이 된 korail2 계열 라이브러리가 필요하며,
+# 라이브 동작 검증(2026-06-22 check 통과)으로 korail2-ncard 로 확정합니다(OQ-1 종결).
+# 어댑터(korail_adapter.py)는 라이브러리 부재 시 설치 안내로 fail-loud 합니다.
+#
+# 설치 예: python3 -m pip install korail2-ncard
+# (requests·six 는 korail2-ncard 전이의존, pycryptodome 도 전이의존이나 명시 유지)
+
+korail2-ncard>=0.1.0
+pycryptodome>=3.20.0

@@ -1,0 +1,20 @@
+{
+  "id": "ai-report",
+  "name": "AI 친화적 보고서(행안부 2026-08 원칙)",
+  "layout": "ai-report",
+  "source": "itda-skills 자체 설계 (#1651) — header.xml 은 gov-report(kist-aix/hwpx MIT) 파생. 원칙 출처: 행정안전부 보도자료 2026-08-24 「복잡한 표·그림 대신 고품질 텍스트로 … AI 친화적 보고서 전면 도입」",
+  "placeholders": [],
+  "bodyRegion": {
+    "after": "secPr"
+  },
+  "tables": [
+    "basic"
+  ],
+  "fields": {
+    "report_type": "보고 유형(서면보고·대면보고…)",
+    "drafter": "담당자",
+    "item_markers": "항목 표시: symbol(○ - ·, 기본) | outline(가. 1) 가))",
+    "section_numbering": "절 번호: digit(1. 기본) | roman(Ⅰ.)"
+  },
+  "max_level": 3
+}

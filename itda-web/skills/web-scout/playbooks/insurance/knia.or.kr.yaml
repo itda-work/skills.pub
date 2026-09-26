@@ -1,0 +1,26 @@
+schema_version: 1
+host: knia.or.kr
+domain: insurance
+label: 손해보험협회
+group: institution
+locations:
+- location_id: knia-press
+  item: 보도자료
+  item_kind: press
+  url: https://www.knia.or.kr/data/news
+  discovery_path: static_list
+  repeat_access: L2
+  auth_state: none
+  grade: B
+  note: AC0 초안의 /consumer/press 는 목록 페이지가 아니었다(정적 HTML 에 목록 없음) — 메뉴 href 로 /data/news
+    교정. 항목 링크 /data/news/content?index=<n> GET
+  expected:
+    content_type_prefix: text/html
+    min_records: 5
+    freshness_days: 14
+  evidence:
+    observed_at: '2026-08-30'
+    samples: 1
+    browser: aside
+    note: L4 preflight 에서 메뉴 href 확인 후 정적 재판정
+  export_eligible: true

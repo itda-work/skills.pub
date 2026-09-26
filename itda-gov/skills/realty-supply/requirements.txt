@@ -1,0 +1,9 @@
+# realty-supply 스킬 의존성
+# Python 표준 라이브러리만 사용 (외부 패키지 없음)
+# spec.md R7: stdlib only, 외부 런타임 의존성 없음
+#
+# 사용 표준 라이브러리:
+#   - urllib (HTTP 요청)
+#   - xml.etree.ElementTree (청약홈 XML 파싱)
+#   - json (KOSIS JSON 파싱, 출력)
+#   - argparse (CLI)

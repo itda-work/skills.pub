@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "aspect-sentiment ABSA 출력 계약 (v1.0)",
+  "description": "doc 1건당 출력 1개. v1(Claude)·향후 ml-absa 백엔드 공통 고정 계약.",
+  "type": "object",
+  "required": ["doc_id", "language", "aspects", "mentioned_aspects", "flags"],
+  "additionalProperties": false,
+  "properties": {
+    "doc_id": { "type": "string" },
+    "language": { "type": "string", "default": "ko" },
+    "taxonomy_version": { "type": "string", "default": "absa-cs-1.0", "description": "라벨에 쓰인 taxonomy 버전. 시계열 연속성·v1→v1.5 단절 보정용. optional." },
+    "domain": { "enum": ["cs", "review"] },
+    "overall_sentiment": {
+      "enum": ["positive", "neutral", "negative", "mixed"],
+      "description": "aspects 극성의 결정론적 집계. 양·음 공존→mixed, 단일 극성 지배→그 극성, 비어있음→neutral."
+    },
+    "customer_final_sentiment": {
+      "enum": ["positive", "neutral", "negative", "mixed"],
+      "description": "CS 전용. 고객 종료 시점 감정."
+    },
+    "aspects": {
+      "type": "array",
+      "description": "미언급 측면은 제외(빈 배열 가능). 라벨에 극성·상태 인코딩 금지.",
+      "items": {
+        "type": "object",
+        "required": ["aspect", "polarity", "evidence"],
+        "additionalProperties": false,
+        "properties": {
+          "aspect": { "type": "string", "description": "taxonomy.ko.yaml 의 확정 라벨 ∪ {기타}" },
+          "polarity": { "enum": ["positive", "neutral", "negative"] },
+          "sub_aspect": { "type": ["string", "null"], "description": "v1 항상 null. v1.5 ML 세분 슬롯." },
+          "evidence": { "type": "string", "description": "원문 인용(추적성)." },
+          "turn_id": { "type": ["integer", "null"], "description": "CS 멀티턴에서 근거 turn." },
+          "speaker": { "enum": ["customer", "agent", "system", null], "description": "극성은 customer 발화에서만." },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "process_signals": {
+      "type": "object",
+      "description": "상태/이벤트 축(감정 환원 금지). CS 전용 권장. reopen_count(재문의 누적)는 cross-doc 집계량이라 단건 출력에서 제외 — 집계 레이어(ml-absa) 책임.",
+      "additionalProperties": false,
+      "properties": {
+        "resolution": { "enum": ["resolved", "unresolved", "partial", "unknown"] },
+        "escalated": { "type": "boolean" }
+      }
+    },
+    "mentioned_aspects": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "flags": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "sarcasm": { "type": "boolean" },
+        "euphemistic_negation": { "type": "boolean" },
+        "low_confidence": { "type": "boolean" },
+        "critical": { "type": "boolean" }
+      }
+    }
+  }
+}

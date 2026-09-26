@@ -1,0 +1,4 @@
+kist-aix/hwpx (MIT) Copyright (c) 2026 Minsoo Kim
+
+This template directory borrows header.xml, section0-derived skeleton XML, and
+table XML templates from kist-aix/hwpx for the kist-report HWPX report PoC.

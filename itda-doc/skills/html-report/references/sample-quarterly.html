@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>한울로보틱스 2026년 2분기 경영 현황 보고 · HW-BR-2026-Q2</title>
+<meta name="description" content="한울로보틱스 2026년 2분기(04-01~06-30) 경영 현황 — 매출 187.4억원, 영업이익 22.1억원, 신규 수주 214.0억원. 경영기획실 작성.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<style>
+:root{
+  /* ── 팔레트 축 = samsung-sds (references/styles/README.md 프리셋 표 값) ── */
+  --bg:#FFFFFF; --paper:#FFFFFF; --tint:#EEF2FB; --ink:#14181F;
+  --accent:#1428A0; --accent-2:#5B8DEF; --line:#D5DBE8;
+  --pos:#0E7C4A; --neg:#C0392B; --warn:#9A6206;
+  --g500:#5C6470;
+  /* 파생 규칙 */
+  --g100:var(--tint); --g300:var(--line);
+  --g700:color-mix(in srgb, var(--ink) 80%, var(--bg));
+  --accent-d:color-mix(in srgb, var(--accent) 85%, #000);
+  --gl:var(--line);
+  /* 차트 뉴트럴 — 2계열 대비의 비액센트 계열(팔레트 토큰에서만 파생) */
+  --chart-neu:var(--g300); --chart-neu2:var(--g500); --chart-txt:#FFFFFF;
+  --sans:"Pretendard",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --display:"Helvetica Neue",var(--sans);   /* 라틴·숫자 전용 — 한글은 Pretendard 로 떨어진다 */
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1218; --paper:#171B24; --tint:#1E2430; --ink:#E7EAF0;
+    --accent:color-mix(in srgb,#1428A0 65%,#FFFFFF);
+    --accent-2:color-mix(in srgb,#5B8DEF 65%,#FFFFFF);
+    --line:#2A3140; --g500:#98A2B3;
+    --pos:#4CC38A; --neg:#F0776A; --warn:#E0A030;
+    --chart-neu:var(--g500); --chart-neu2:var(--g700); --chart-txt:var(--bg);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1218; --paper:#171B24; --tint:#1E2430; --ink:#E7EAF0;
+  --accent:color-mix(in srgb,#1428A0 65%,#FFFFFF);
+  --accent-2:color-mix(in srgb,#5B8DEF 65%,#FFFFFF);
+  --line:#2A3140; --g500:#98A2B3;
+  --pos:#4CC38A; --neg:#F0776A; --warn:#E0A030;
+  --chart-neu:var(--g500); --chart-neu2:var(--g700); --chart-txt:var(--bg);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+  font-size:15px; line-height:1.7; word-break:keep-all; text-wrap:pretty;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{line-height:1.25; margin:0}          /* 한글 헤딩 음수 자간 금지 */
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:3px}
+.num-t{font-variant-numeric:tabular-nums}
+
+/* ── 토글 (그림자 허용 예외) ───────── */
+.theme-toggle{
+  position:fixed; top:16px; right:16px; z-index:60;
+  display:inline-flex; align-items:center; gap:6px;
+  background:var(--paper); color:var(--ink); border:1px solid var(--line);
+  border-radius:999px; padding:8px 14px; font:inherit; font-size:12px;
+  cursor:pointer; box-shadow:0 2px 10px rgba(20,24,31,.10);
+}
+.theme-toggle:hover{border-color:var(--accent)}
+.tt-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);display:block}
+
+/* ── 히어로 — 밝은 배경 + 상단 4px 액센트 룰 ── */
+.hero{
+  background:var(--bg); color:var(--ink);
+  padding:56px 24px 32px;
+  border-top:4px solid var(--accent);
+  border-bottom:1px solid var(--line);
+}
+.hero-in{max-width:1040px; margin:0 auto}
+.eyebrow{font-size:12px; font-weight:600; letter-spacing:.04em; color:var(--g500); margin:0 0 14px}
+.hero h1{font-family:var(--display); font-size:clamp(32px,5.5vw,52px); font-weight:700; max-width:20ch}
+.hero .sub{color:var(--g700); font-size:17px; margin:16px 0 0; max-width:58ch}
+.meta-row{
+  display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px 24px;
+  margin-top:28px; padding-top:20px; border-top:1px solid var(--line);
+}
+.meta-k{display:block; font-size:11px; font-weight:600; letter-spacing:.04em; color:var(--g500)}
+.meta-v{display:block; font-size:14px; color:var(--ink); font-variant-numeric:tabular-nums}
+@media (max-width:700px){ .meta-row{grid-template-columns:repeat(2,minmax(0,1fr))} }
+
+/* ── 골격 ─────────────────────────── */
+.shell{max-width:1320px; margin:0 auto; padding:0 20px}
+@media (min-width:1100px){
+  .shell{display:grid; grid-template-columns:232px minmax(0,1fr); gap:56px; padding:0 40px}
+}
+nav.toc{display:none}
+@media (min-width:1100px){
+  nav.toc{display:block; position:sticky; top:0; align-self:start; max-height:100vh; overflow-y:auto; padding:48px 0 40px}
+  .toc-t{font-size:11px; font-weight:600; letter-spacing:.04em; color:var(--g500); margin:0 0 12px}
+  .toc ol{list-style:none; margin:0; padding:0}
+  .toc li{margin:0}
+  .toc a{display:block; padding:6px 0 6px 12px; border-left:2px solid var(--line); color:var(--g500); text-decoration:none; font-size:13px; transition:color .15s,border-color .15s}
+  .toc a:hover{color:var(--ink)}
+  .toc a.on{color:var(--accent); border-left-color:var(--accent); font-weight:600}
+  .toc .num{font-size:11px; font-weight:600; margin-right:6px; opacity:.75}
+}
+main{padding:40px 0 24px; min-width:0}
+.prose{max-width:760px}
+section{margin-bottom:72px; padding-top:32px; border-top:1px solid var(--line); scroll-margin-top:24px}
+section:first-of-type{border-top:0; padding-top:8px}
+.sec-head{margin-bottom:24px}
+.sec-num{font-size:13px; font-weight:700; color:var(--accent); letter-spacing:.04em; display:block; margin-bottom:8px}
+h2{font-size:28px; max-width:22ch}
+h3{font-size:19px; margin:32px 0 12px}
+.lead{color:var(--g700); font-size:16px; max-width:760px; margin:8px 0 0}
+p{margin:0 0 16px; max-width:760px}
+
+/* ── 카드는 KPI·콜아웃·결정 카드에만 ── */
+.callout{
+  background:var(--tint); border-left:3px solid var(--accent);
+  border-radius:0 6px 6px 0; padding:16px 20px; margin:24px 0; max-width:860px;
+}
+.callout .cl-l{display:block; font-size:11px; font-weight:600; letter-spacing:.04em; color:var(--accent); margin-bottom:6px}
+.callout p{margin:0}
+.callout.warn{border-left-color:var(--neg)}
+.callout.warn .cl-l{color:var(--neg)}
+.callout.note{border-left-color:var(--warn)}
+.callout.note .cl-l{color:var(--warn)}
+.callout.pos{border-left-color:var(--pos)}
+.callout.pos .cl-l{color:var(--pos)}
+
+/* ── KPI — 6개 = 3열 2행(열 수를 명시한다) ── */
+.kpi-strip{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:24px 0}
+@media (max-width:820px){ .kpi-strip{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:460px){ .kpi-strip{grid-template-columns:minmax(0,1fr)} }
+.kpi{background:var(--paper); border:1px solid var(--line); border-radius:6px; padding:16px 18px}
+.kpi .k{font-size:12px; font-weight:600; letter-spacing:.04em; color:var(--g500); display:block; margin-bottom:8px}
+.kpi .v{
+  font-family:var(--display); font-size:32px; font-weight:700; color:var(--ink);
+  font-variant-numeric:tabular-nums; letter-spacing:-0.01em; display:block; line-height:1.15;
+}
+.kpi .u{font-family:var(--sans); font-size:14px; font-weight:500; color:var(--g700); margin-left:3px; letter-spacing:normal}
+.kpi .d{font-size:12px; font-weight:600; font-variant-numeric:tabular-nums; margin-top:8px; display:block}
+.up{color:var(--pos)} .down{color:var(--neg)} .flat{color:var(--g500)}
+.kpi .n{display:block; font-size:11px; color:var(--g500); margin-top:4px}
+.sub-note{color:var(--g500); font-weight:400}
+
+/* ── 표 — 헤어라인 패널(보더 박스 없음) ── */
+.tw{overflow-x:auto; margin:24px 0; border-top:1px solid var(--line); background:transparent}
+table{width:100%; border-collapse:collapse; font-size:14px; min-width:520px}
+caption{caption-side:top; text-align:left; font-size:12px; font-weight:600; letter-spacing:.04em; color:var(--g500); padding:12px 0 10px}
+th,td{padding:10px 12px; text-align:left; border-bottom:1px solid var(--line); vertical-align:middle}
+th:first-child,td:first-child{padding-left:0}
+thead th{
+  background:var(--bg); font-size:12px; font-weight:600; letter-spacing:.04em;
+  color:var(--g700); white-space:nowrap; border-bottom:2px solid var(--ink);
+  position:sticky; top:0; z-index:1;
+}
+td.n,th.n{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+tbody tr:last-child td,tbody tr:last-child th{border-bottom:0}
+tr.sub > *{border-top:2px solid var(--g300); font-weight:600}
+tr.tot > *{background:var(--tint); font-weight:700; border-top:2px solid var(--accent)}
+tr.tot > th:first-child,tr.tot > td:first-child{padding-left:12px}
+.zebra tbody tr:nth-child(odd) > *{background:color-mix(in srgb,var(--tint) 45%,transparent)}
+.zebra tbody tr.tot > *{background:var(--tint)}
+.mono{font-family:var(--mono); font-size:12.5px}
+/* 셀 내 미니 시각화 */
+.spark{display:inline-block; vertical-align:middle; height:8px; border-radius:2px; background:var(--accent); min-width:2px}
+.spark.mut{background:var(--chart-neu)}
+.pbar{position:relative; height:8px; width:88px; background:var(--tint); border-radius:2px; overflow:hidden; display:inline-block; vertical-align:middle; margin-right:8px}
+.pbar i{position:absolute; inset:0 auto 0 0; background:var(--accent); display:block}
+.dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align:baseline}
+.dot.hi{background:var(--neg)} .dot.mid{background:var(--warn)} .dot.lo{background:var(--g500)}
+.badge{display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; border:1px solid var(--line); background:var(--tint); color:var(--g700); white-space:nowrap}
+.badge.hi{background:color-mix(in srgb,var(--neg) 14%,transparent); border-color:color-mix(in srgb,var(--neg) 40%,transparent); color:var(--neg)}
+.badge.mid{background:color-mix(in srgb,var(--warn) 16%,transparent); border-color:color-mix(in srgb,var(--warn) 42%,transparent); color:var(--warn)}
+.badge.lo{color:var(--g500)}
+.badge.go{background:color-mix(in srgb,var(--accent) 12%,transparent); border-color:color-mix(in srgb,var(--accent) 38%,transparent); color:var(--accent)}
+.badge.pos{background:color-mix(in srgb,var(--pos) 14%,transparent); border-color:color-mix(in srgb,var(--pos) 40%,transparent); color:var(--pos)}
+
+/* ── 차트 — 헤어라인 패널 ─────────── */
+figure{margin:32px 0; padding-top:16px; border-top:1px solid var(--line); background:transparent}
+figure svg{width:100%; height:auto; display:block}
+figcaption{font-size:13px; color:var(--g700); margin-top:12px; padding-top:12px; border-top:1px solid var(--line); max-width:70ch}
+.fig-t{font-size:15px; font-weight:700; margin:0 0 4px}
+.fig-u{font-size:12px; font-weight:600; letter-spacing:.04em; color:var(--g500); margin:0 0 12px}
+svg .gl{stroke:var(--gl); stroke-width:1}
+svg .axl{fill:var(--g500)}
+svg .vl{fill:var(--g700)}
+svg .b1{fill:var(--accent)}
+svg .b2{fill:var(--chart-neu)}
+svg .bmut{fill:var(--chart-neu)}
+svg .track{fill:var(--tint)}
+svg .tick{stroke:var(--ink); stroke-width:2.5}
+svg .axis{stroke:var(--g300); stroke-width:1}
+svg .cellA{fill:color-mix(in srgb,var(--neg) 13%,transparent)}
+svg .cellB{fill:color-mix(in srgb,var(--warn) 12%,transparent)}
+svg .cellC{fill:var(--tint)}
+svg .cellline{stroke:var(--bg); stroke-width:2; fill:none}
+svg .rhi{fill:var(--neg)} svg .rmid{fill:var(--warn)} svg .rlo{fill:var(--g500)}
+svg .rtxt{fill:var(--chart-txt); font-weight:700}
+.legend{display:flex; flex-wrap:wrap; gap:8px 20px; margin:0 0 4px; padding:0; list-style:none; font-size:12px; color:var(--g700)}
+.legend li{display:flex; align-items:center; gap:7px}
+.sw{width:12px; height:12px; border-radius:2px; display:block}
+.sw.s-acc{background:var(--accent)}
+.sw.s-acc2{background:var(--accent-2)}
+.sw.s-neu{background:var(--chart-neu)}
+.sw.s-neu2{background:var(--chart-neu2)}
+.donut-wrap{display:flex; flex-wrap:wrap; gap:24px; align-items:center}
+.donut-wrap svg{max-width:230px}
+.dlist{list-style:none; margin:0; padding:0; min-width:250px; flex:1}
+.dlist li{display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); font-size:13.5px}
+.dlist li:last-child{border-bottom:0}
+.dlist .nm{flex:1}
+.dlist .pv{font-variant-numeric:tabular-nums; font-size:13px; color:var(--g700)}
+.dlist .pc{font-variant-numeric:tabular-nums; font-weight:700; min-width:52px; text-align:right}
+
+/* ── 타임라인 — 카드 없이 점+선 ──── */
+.tl{list-style:none; margin:24px 0; padding:0 0 0 26px; border-left:1px solid var(--line); max-width:860px}
+.tl li{position:relative; margin-bottom:24px}
+.tl li::before{content:""; position:absolute; left:-31px; top:7px; width:10px; height:10px; border-radius:50%; background:var(--paper); border:2px solid var(--line)}
+.tl li.act::before{border-color:var(--accent); background:var(--accent)}
+.tl li.neg::before{border-color:var(--warn)}
+.tl-card{background:transparent; border:0; padding:0}
+.tl-top{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:4px}
+.tl-d{font-family:var(--mono); font-size:12px; color:var(--accent); font-weight:700}
+.tl-h{font-size:15px; font-weight:700; flex:1; min-width:180px}
+.tl-n{font-size:13.5px; color:var(--g700); margin:0}
+
+/* ── 결정 카드 (카드 허용) ────────── */
+.dec{list-style:none; margin:24px 0; padding:0; display:grid; gap:12px}
+.dec li{display:flex; gap:16px; background:var(--paper); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 6px 6px 0; padding:16px 20px}
+.dec .no{font-family:var(--display); font-size:20px; font-weight:700; color:var(--accent); line-height:1.2}
+.dec h3{margin:0 0 4px; font-size:15.5px}
+.dec p{margin:0; font-size:13.5px; color:var(--g700)}
+
+/* ── 부록 — 헤어라인 ──────────────── */
+details{background:transparent; border:0; border-top:1px solid var(--line); border-radius:0; margin:0}
+summary{padding:14px 0; cursor:pointer; font-weight:700; font-size:15px; list-style:none; display:flex; align-items:center; gap:10px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+"; color:var(--accent); font-weight:700}
+details[open] summary::before{content:"\2212"}
+summary:hover{color:var(--accent)}
+.det-body{padding:0 0 16px}
+.det-body .tw{margin-top:0}
+
+/* ── 푸터 ─────────────────────────── */
+footer{border-top:1px solid var(--line); background:var(--bg); margin-top:32px}
+.foot-in{max-width:1320px; margin:0 auto; padding:32px 40px; font-size:12px; color:var(--g500)}
+.foot-in dl{display:flex; flex-wrap:wrap; gap:4px 40px; margin:0 0 16px}
+.foot-in dt{font-size:11px; font-weight:600; letter-spacing:.04em; color:var(--g500)}
+.foot-in dd{margin:0 0 8px; color:var(--g700); font-size:12.5px}
+.foot-in .disc{border-top:1px solid var(--line); padding-top:14px; margin:0; max-width:none}
+
+@media (max-width:600px){
+  .hero{padding:44px 20px 28px}
+  h2{font-size:24px}
+  .foot-in{padding:28px 20px}
+  main{padding:32px 0 16px}
+  section{margin-bottom:56px}
+}
+
+/* ── 인쇄 ─────────────────────────── */
+@page{ size:A4; margin:18mm 16mm; }
+@media print{
+  :root{
+    color-scheme:light;
+    --bg:#FFFFFF; --paper:#FFFFFF; --tint:#EEF2FB; --ink:#14181F;
+    --accent:#1428A0; --accent-2:#5B8DEF; --line:#D5DBE8;
+    --pos:#0E7C4A; --neg:#C0392B; --warn:#9A6206; --g500:#5C6470;
+    --chart-neu:#D5DBE8; --chart-neu2:#5C6470; --chart-txt:#FFFFFF;
+  }
+  body{background:#fff; font-size:10.5pt}
+  nav.toc,.theme-toggle,.no-print{display:none !important}
+  .shell{display:block; max-width:none; padding:0}
+  .hero{padding:0 0 16pt; border-top-width:3pt}
+  main{padding:16pt 0 0}
+  section,figure,table,.kpi-strip,.tl li,.dec li,.callout{break-inside:avoid}
+  h2,h3,.sec-head{break-after:avoid}
+  .tw{overflow:visible; break-inside:auto}
+  thead th{position:static}
+  details{display:block}
+  details > *{display:block}
+  .det-body{display:block !important}
+  a{color:inherit; text-decoration:none}
+  *{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<button class="theme-toggle no-print" type="button" aria-pressed="false" aria-label="색상 테마 전환">
+  <span class="tt-dot" aria-hidden="true"></span><span class="tt-label">다크</span>
+</button>
+
+<header class="hero">
+  <div class="hero-in">
+    <p class="eyebrow">Quarterly Business Review · <span class="mono">HW-BR-2026-Q2</span></p>
+    <h1>한울로보틱스 2026년 2분기 경영 현황 보고</h1>
+    <p class="sub">매출 187.4억원(전분기 대비 +12.3%) 성장에도 원가 압박으로 영업이익률은 11.8%로 하락. HL-40 양산 안정화와 북미 파트너십 체결이 3분기 최대 과제.</p>
+    <div class="meta-row">
+      <div><span class="meta-k">작성 주체</span><span class="meta-v">경영기획실</span></div>
+      <div><span class="meta-k">작성일</span><span class="meta-v">2026-07-15</span></div>
+      <div><span class="meta-k">대상 기간</span><span class="meta-v">2026-04-01 ~ 2026-06-30</span></div>
+      <div><span class="meta-k">문서번호</span><span class="meta-v">HW-BR-2026-Q2</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+
+<nav class="toc no-print" aria-label="문서 목차">
+  <p class="toc-t">Contents</p>
+  <ol>
+    <li><a href="#s01"><span class="num">01</span>핵심 요약</a></li>
+    <li><a href="#s02"><span class="num">02</span>핵심 지표</a></li>
+    <li><a href="#s03"><span class="num">03</span>월별 실적 추이</a></li>
+    <li><a href="#s04"><span class="num">04</span>사업부별 실적</a></li>
+    <li><a href="#s05"><span class="num">05</span>손익 요약</a></li>
+    <li><a href="#s06"><span class="num">06</span>2분기 완료 과제</a></li>
+    <li><a href="#s07"><span class="num">07</span>3분기 로드맵</a></li>
+    <li><a href="#s08"><span class="num">08</span>리스크</a></li>
+    <li><a href="#s09"><span class="num">09</span>조직·채용</a></li>
+    <li><a href="#s10"><span class="num">10</span>재무 상태</a></li>
+    <li><a href="#s11"><span class="num">11</span>의사결정 요청</a></li>
+    <li><a href="#s12"><span class="num">A</span>부록</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- 01 ─────────────────────────────── -->
+<section id="s01" aria-labelledby="h01">
+  <div class="sec-head">
+    <span class="sec-num">01</span>
+    <h2 id="h01">핵심 요약</h2>
+    <p class="lead">2분기 경영 성과를 30초에 파악하기 위한 요약이다. 성장은 유지됐으나 수익성은 후퇴했다.</p>
+  </div>
+
+  <div class="prose">
+    <p>2분기 매출은 <strong>187.4억원</strong>으로 전분기 대비 <strong>12.3% 성장</strong>했으나, 원자재 단가 상승으로 영업이익률은 14.2%에서 <strong>11.8%</strong>로 하락했다. 물류로봇 신제품 HL-40의 출시가 5월로 한 달 지연되며 2분기 신규 수주에 <strong>약 18억원의 기회손실</strong>이 발생한 것으로 추정된다. 3분기에는 HL-40 양산 안정화와 북미 파트너십 계약 체결이 최대 과제다. 현금흐름은 안정적이며(기말 현금 342억원), 하반기 증설 투자 60억원을 자체 자금으로 충당 가능하다.</p>
+  </div>
+
+  <div class="callout">
+    <span class="cl-l">핵심 결론</span>
+    <p>성장(매출 +12.3%, 수주 +12.9%)은 계획선에 있으나 수익성(영업이익률 −2.4%p)은 원가 요인으로 이탈했다. 3분기 과제는 <strong>듀얼소싱을 통한 원가 방어</strong>와 <strong>북미 본계약 체결</strong> 두 가지로 압축된다.</p>
+  </div>
+
+  <div class="callout note">
+    <span class="cl-l">기회손실</span>
+    <p>HL-40 출시 1개월 지연(4월 → 5월)에 따른 2분기 신규 수주 기회손실은 약 18억원으로 추정된다. 이는 2분기 신규 수주 214.0억원 대비 상당한 규모로, 3분기 양산 안정화의 우선순위를 결정하는 근거다.</p>
+  </div>
+</section>
+
+<!-- 02 ─────────────────────────────── -->
+<section id="s02" aria-labelledby="h02">
+  <div class="sec-head">
+    <span class="sec-num">02</span>
+    <h2 id="h02">핵심 지표</h2>
+    <p class="lead">6개 핵심 지표의 2분기 실적, 전분기 대비 증감, 연간 목표 대비 진척률이다. 델타 색은 증감 방향이 아닌 경영적 의미를 따른다.</p>
+  </div>
+
+  <div class="kpi-strip">
+    <div class="kpi">
+      <span class="k">매출액</span>
+      <span class="v">187.4<span class="u">억원</span></span>
+      <span class="d up">▲ +12.3% <span class="sub-note">전분기 대비</span></span>
+      <span class="n">1분기 166.9억원</span>
+    </div>
+    <div class="kpi">
+      <span class="k">영업이익</span>
+      <span class="v">22.1<span class="u">억원</span></span>
+      <span class="d down">▼ −6.8% <span class="sub-note">전분기 대비</span></span>
+      <span class="n">1분기 23.7억원</span>
+    </div>
+    <div class="kpi">
+      <span class="k">영업이익률</span>
+      <span class="v">11.8<span class="u">%</span></span>
+      <span class="d down">▼ −2.4%p <span class="sub-note">전분기 대비</span></span>
+      <span class="n">연간 목표 14.0%</span>
+    </div>
+    <div class="kpi">
+      <span class="k">신규 수주</span>
+      <span class="v">214.0<span class="u">억원</span></span>
+      <span class="d up">▲ +12.9% <span class="sub-note">전분기 대비</span></span>
+      <span class="n">1분기 189.5억원</span>
+    </div>
+    <div class="kpi">
+      <span class="k">수주 잔고</span>
+      <span class="v">468.2<span class="u">억원</span></span>
+      <span class="d up">▲ +6.0% <span class="sub-note">전분기 대비</span></span>
+      <span class="n">1분기 441.6억원</span>
+    </div>
+    <div class="kpi">
+      <span class="k">임직원 수</span>
+      <span class="v">342<span class="u">명</span></span>
+      <span class="d up">▲ +24명 <span class="sub-note">전분기 대비</span></span>
+      <span class="n">연말 목표 380명</span>
+    </div>
+  </div>
+
+  <div class="tw">
+    <table>
+      <caption>표 1. 핵심 지표 요약 (2026년 2분기 vs 1분기)</caption>
+      <thead>
+        <tr>
+          <th scope="col">지표</th>
+          <th scope="col" class="n">2분기 실적</th>
+          <th scope="col" class="n">1분기 실적</th>
+          <th scope="col" class="n">전분기 대비</th>
+          <th scope="col">연간 목표 대비 진척</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">매출액</th>
+          <td class="n">187.4억원</td><td class="n">166.9억원</td>
+          <td class="n up">▲ +12.3%</td>
+          <td><span class="pbar"><i style="width:46.8%"></i></span><span class="mono">46.8%</span> <span style="color:var(--g500);font-size:12px">(연 800억)</span></td>
+        </tr>
+        <tr>
+          <th scope="row">영업이익</th>
+          <td class="n">22.1억원</td><td class="n">23.7억원</td>
+          <td class="n down">▼ −6.8%</td>
+          <td><span class="pbar"><i style="width:39.5%"></i></span><span class="mono">39.5%</span> <span style="color:var(--g500);font-size:12px">(연 112억)</span></td>
+        </tr>
+        <tr>
+          <th scope="row">영업이익률</th>
+          <td class="n">11.8%</td><td class="n">14.2%</td>
+          <td class="n down">▼ −2.4%p</td>
+          <td><span style="color:var(--g500);font-size:12px">목표 14.0%</span></td>
+        </tr>
+        <tr>
+          <th scope="row">신규 수주</th>
+          <td class="n">214.0억원</td><td class="n">189.5억원</td>
+          <td class="n up">▲ +12.9%</td>
+          <td><span class="pbar"><i style="width:48.1%"></i></span><span class="mono">48.1%</span> <span style="color:var(--g500);font-size:12px">(연 890억)</span></td>
+        </tr>
+        <tr>
+          <th scope="row">수주 잔고</th>
+          <td class="n">468.2억원</td><td class="n">441.6억원</td>
+          <td class="n up">▲ +6.0%</td>
+          <td><span style="color:var(--g500)">—</span></td>
+        </tr>
+        <tr>
+          <th scope="row">임직원 수</th>
+          <td class="n">342명</td><td class="n">318명</td>
+          <td class="n up">▲ +24명</td>
+          <td><span style="color:var(--g500);font-size:12px">연말 목표 380명</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure>
+    <p class="fig-t">연간 목표 대비 상반기 진척률</p>
+    <p class="fig-u">단위: % · 검정 눈금 = 반기 경과 기준선 50%</p>
+    <svg viewBox="0 0 720 200" role="img" aria-label="연간 목표 대비 진척률 불릿 차트" aria-describedby="c1d">
+      <title id="c1t">연간 목표 대비 진척률 불릿 차트</title>
+      <desc id="c1d">매출 46.8%, 영업이익 39.5%, 신규 수주 48.1%로 세 지표 모두 반기 경과 기준선 50%에 미달한다.</desc>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="12.5">
+        <text class="vl" x="0" y="46">매출액</text>
+        <text class="vl" x="0" y="98">영업이익</text>
+        <text class="vl" x="0" y="150">신규 수주</text>
+      </g>
+      <!-- 트랙 -->
+      <rect class="track" x="130" y="28" width="520" height="24" rx="3"/>
+      <rect class="track" x="130" y="80" width="520" height="24" rx="3"/>
+      <rect class="track" x="130" y="132" width="520" height="24" rx="3"/>
+      <!-- 실적 바 -->
+      <rect class="b1" x="130" y="28" width="243.4" height="24" rx="3"/>
+      <rect class="b1" x="130" y="80" width="205.4" height="24" rx="3"/>
+      <rect class="b1" x="130" y="132" width="250.1" height="24" rx="3"/>
+      <!-- 기준선 tick 50% -->
+      <line class="tick" x1="390" y1="24" x2="390" y2="56"/>
+      <line class="tick" x1="390" y1="76" x2="390" y2="108"/>
+      <line class="tick" x1="390" y1="128" x2="390" y2="160"/>
+      <!-- 값 라벨 -->
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" class="vl" font-weight="600">
+        <text x="398" y="45">46.8%</text>
+        <text x="343.4" y="97">39.5%</text>
+        <text x="398" y="149">48.1%</text>
+      </g>
+      <!-- 축 -->
+      <line class="axis" x1="130" y1="168" x2="650" y2="168"/>
+      <g font-family="Helvetica Neue, Pretendard, system-ui, sans-serif" font-size="10.5" class="axl" text-anchor="middle">
+        <text x="130" y="186">0</text>
+        <text x="260" y="186">25</text>
+        <text x="390" y="186">50</text>
+        <text x="520" y="186">75</text>
+        <text x="650" y="186">100</text>
+      </g>
+    </svg>
+    <figcaption>세 지표 모두 반기 경과 기준선(50%)에 미달하며, 특히 <strong>영업이익 진척률 39.5%</strong>가 매출 진척률(46.8%)보다 7.3%p 낮아 수익성 목표 달성에 하반기 원가 개선이 필수임을 보여준다.</figcaption>
+  </figure>
+</section>
+
+<!-- 03 ─────────────────────────────── -->
+<section id="s03" aria-labelledby="h03">
+  <div class="sec-head">
+    <span class="sec-num">03</span>
+    <h2 id="h03">월별 실적 추이</h2>
+    <p class="lead">최근 6개월간 월별 매출과 신규 수주 추이다. 수주가 매출을 지속 상회하며 수주 잔고를 쌓고 있다.</p>
+  </div>
+
+  <figure>
+    <p class="fig-t">월별 매출·신규 수주 추이 (2026-01 ~ 2026-06)</p>
+    <ul class="legend" aria-hidden="true">
+      <li><span class="sw s-acc"></span>매출</li>
+      <li><span class="sw s-neu"></span>신규 수주</li>
+    </ul>
+    <p class="fig-u">단위: 억원</p>
+    <svg viewBox="0 0 760 300" role="img" aria-label="월별 매출 및 신규 수주 그룹 막대 차트" aria-describedby="c2d">
+      <title id="c2t">월별 매출 및 신규 수주 그룹 막대 차트</title>
+      <desc id="c2d">매출은 1월 51.2억원에서 6월 67.6억원으로, 신규 수주는 58.3억원에서 80.4억원으로 증가했다. 매 월 신규 수주가 매출을 상회한다.</desc>
+      <!-- 그리드 -->
+      <line class="gl" x1="64" y1="250" x2="724" y2="250"/>
+      <line class="gl" x1="64" y1="173.3" x2="724" y2="173.3"/>
+      <line class="gl" x1="64" y1="96.7" x2="724" y2="96.7"/>
+      <line class="gl" x1="64" y1="20" x2="724" y2="20"/>
+      <!-- Y축 라벨 -->
+      <g font-family="Helvetica Neue, Pretendard, system-ui, sans-serif" font-size="10.5" class="axl" text-anchor="end">
+        <text x="54" y="254">0</text>
+        <text x="54" y="177.3">30</text>
+        <text x="54" y="100.7">60</text>
+        <text x="54" y="24">90</text>
+      </g>
+      <!-- 막대: 매출(b1) / 수주(b2) -->
+      <g>
+        <rect class="b1" x="84"  y="119.2" width="32" height="130.8"/><rect class="b2" x="122" y="101.0" width="32" height="149.0"/>
+        <rect class="b1" x="194" y="110.0" width="32" height="140.0"/><rect class="b2" x="232" y="92.3"  width="32" height="157.7"/>
+        <rect class="b1" x="304" y="94.4"  width="32" height="155.6"/><rect class="b2" x="342" y="72.4"  width="32" height="177.6"/>
+        <rect class="b1" x="414" y="101.5" width="32" height="148.5"/><rect class="b2" x="452" y="88.5"  width="32" height="161.5"/>
+        <rect class="b1" x="524" y="92.3"  width="32" height="157.7"/><rect class="b2" x="562" y="70.1"  width="32" height="179.9"/>
+        <rect class="b1" x="634" y="77.3"  width="32" height="172.7"/><rect class="b2" x="672" y="44.5"  width="32" height="205.5"/>
+      </g>
+      <!-- 값 라벨 -->
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" class="vl" font-weight="600" text-anchor="middle">
+        <text x="100" y="113">51.2</text><text x="138" y="95">58.3</text>
+        <text x="210" y="104">54.8</text><text x="248" y="86">61.7</text>
+        <text x="320" y="88">60.9</text><text x="358" y="66">69.5</text>
+        <text x="430" y="95">58.1</text><text x="468" y="82">63.2</text>
+        <text x="540" y="86">61.7</text><text x="578" y="64">70.4</text>
+        <text x="650" y="71">67.6</text><text x="688" y="38">80.4</text>
+      </g>
+      <!-- X축 -->
+      <line class="axis" x1="64" y1="250" x2="724" y2="250"/>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11.5" class="axl" text-anchor="middle">
+        <text x="119" y="270">1월</text><text x="229" y="270">2월</text><text x="339" y="270">3월</text>
+        <text x="449" y="270">4월</text><text x="559" y="270">5월</text><text x="669" y="270">6월</text>
+      </g>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="10.5" class="axl" text-anchor="middle">
+        <text x="229" y="290">1분기</text><text x="559" y="290">2분기</text>
+      </g>
+      <line class="gl" x1="394" y1="20" x2="394" y2="278"/>
+    </svg>
+    <figcaption>6개월 연속 신규 수주가 매출을 상회했고 그 격차가 6월 <strong>12.8억원</strong>(80.4 − 67.6)으로 최대에 도달해, 수주 잔고 증가(441.6 → 468.2억원)의 원인을 설명한다.</figcaption>
+  </figure>
+
+  <div class="prose">
+    <p>2분기 매출은 4월 58.1억원 → 6월 67.6억원으로 월간 기준 우상향했고, 신규 수주도 6월 80.4억원으로 관측 기간 중 최고치를 기록했다. 3월 대비 4월의 일시적 매출 감소(60.9 → 58.1억원)는 HL-40 출시 지연 구간과 겹친다. 월별 원자료는 <a href="#s12">부록 A</a>에 수록했다.</p>
+  </div>
+</section>
+
+<!-- 04 ─────────────────────────────── -->
+<section id="s04" aria-labelledby="h04">
+  <div class="sec-head">
+    <span class="sec-num">04</span>
+    <h2 id="h04">사업부별 실적</h2>
+    <p class="lead">4개 사업부의 매출·비중·영업이익이다. 물류로봇이 매출의 절반, 영업이익의 60% 이상을 담당한다.</p>
+  </div>
+
+  <figure>
+    <p class="fig-t">사업부별 2분기 매출</p>
+    <p class="fig-u">단위: 억원 · 내림차순 · 최대 사업부 강조</p>
+    <svg viewBox="0 0 720 250" role="img" aria-label="사업부별 매출 수평 막대 차트" aria-describedby="c3d">
+      <title id="c3t">사업부별 매출 수평 막대 차트</title>
+      <desc id="c3d">물류로봇 94.6억원, 협동로봇 52.3억원, AMR 솔루션 28.7억원, 유지보수 서비스 11.8억원 순이다.</desc>
+      <!-- 세로 그리드 -->
+      <line class="gl" x1="238" y1="18" x2="238" y2="200"/>
+      <line class="gl" x1="358" y1="18" x2="358" y2="200"/>
+      <line class="gl" x1="478" y1="18" x2="478" y2="200"/>
+      <line class="gl" x1="598" y1="18" x2="598" y2="200"/>
+      <!-- 항목 라벨 -->
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="12.5" class="vl" text-anchor="end">
+        <text x="108" y="47">물류로봇</text>
+        <text x="108" y="93">협동로봇</text>
+        <text x="108" y="139">AMR 솔루션</text>
+        <text x="108" y="185">유지보수 서비스</text>
+      </g>
+      <!-- 막대 -->
+      <rect class="b1"   x="118" y="30"  width="454.1" height="26" rx="2"/>
+      <rect class="bmut" x="118" y="76"  width="251.0" height="26" rx="2"/>
+      <rect class="bmut" x="118" y="122" width="137.8" height="26" rx="2"/>
+      <rect class="bmut" x="118" y="168" width="56.6"  height="26" rx="2"/>
+      <!-- 값 라벨 -->
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" class="vl" font-weight="600">
+        <text x="580.1" y="48">94.6</text>
+        <text x="377.0" y="94">52.3</text>
+        <text x="263.8" y="140">28.7</text>
+        <text x="182.6" y="186">11.8</text>
+      </g>
+      <!-- X축 -->
+      <line class="axis" x1="118" y1="200" x2="640" y2="200"/>
+      <g font-family="Helvetica Neue, Pretendard, system-ui, sans-serif" font-size="10.5" class="axl" text-anchor="middle">
+        <text x="118" y="218">0</text>
+        <text x="238" y="218">25</text>
+        <text x="358" y="218">50</text>
+        <text x="478" y="218">75</text>
+        <text x="598" y="218">100</text>
+      </g>
+      <text x="379" y="240" font-family="Pretendard, system-ui, sans-serif" font-size="11" class="axl" text-anchor="middle">매출액 (억원)</text>
+    </svg>
+    <figcaption>물류로봇 단일 사업부 매출(94.6억원)이 나머지 3개 사업부 합계(92.8억원)를 근소하게 상회해, 포트폴리오가 물류로봇에 집중돼 있음을 보여준다.</figcaption>
+  </figure>
+
+  <figure>
+    <p class="fig-t">사업부별 매출 구성비</p>
+    <p class="fig-u">단위: % · 합계 100.0% (187.4억원)</p>
+    <div class="donut-wrap">
+      <svg viewBox="0 0 240 240" role="img" aria-label="사업부별 매출 구성비 도넛 차트" aria-describedby="c4d">
+        <title id="c4t">사업부별 매출 구성비 도넛 차트</title>
+        <desc id="c4d">물류로봇 50.5퍼센트, 협동로봇 27.9퍼센트, AMR 솔루션 15.3퍼센트, 유지보수 서비스 6.3퍼센트.</desc>
+        <g transform="rotate(-90 120 120)" fill="none" stroke-width="30">
+          <circle cx="120" cy="120" r="70" stroke="var(--accent)"      stroke-dasharray="222.11 217.71" stroke-dashoffset="0"/>
+          <circle cx="120" cy="120" r="70" stroke="var(--accent-2)" stroke-dasharray="122.71 317.11" stroke-dashoffset="-222.11"/>
+          <circle cx="120" cy="120" r="70" stroke="var(--chart-neu)"        stroke-dasharray="67.29 372.53"  stroke-dashoffset="-344.82"/>
+          <circle cx="120" cy="120" r="70" stroke="var(--chart-neu2)"        stroke-dasharray="27.71 412.11"  stroke-dashoffset="-412.11"/>
+        </g>
+        <text x="120" y="114" text-anchor="middle" font-family="Helvetica Neue, Pretendard, system-ui, sans-serif" font-size="26" font-weight="700" class="vl">187.4</text>
+        <text x="120" y="136" text-anchor="middle" font-family="Pretendard, system-ui, sans-serif" font-size="11.5" class="axl">억원 · 2분기 매출</text>
+      </svg>
+      <ul class="dlist">
+        <li><span class="sw s-acc"></span><span class="nm">물류로봇</span><span class="pv">94.6억원</span><span class="pc">50.5%</span></li>
+        <li><span class="sw s-acc2"></span><span class="nm">협동로봇</span><span class="pv">52.3억원</span><span class="pc">27.9%</span></li>
+        <li><span class="sw s-neu"></span><span class="nm">AMR 솔루션</span><span class="pv">28.7억원</span><span class="pc">15.3%</span></li>
+        <li><span class="sw s-neu2"></span><span class="nm">유지보수 서비스</span><span class="pv">11.8억원</span><span class="pc">6.3%</span></li>
+      </ul>
+    </div>
+    <figcaption>물류로봇·협동로봇 두 사업부가 매출의 <strong>78.4%</strong>를 차지해, HL-40(물류로봇) 양산 안정화가 전사 실적에 직결되는 구조다.</figcaption>
+  </figure>
+
+  <div class="tw">
+    <table>
+      <caption>표 2. 사업부별 2분기 실적</caption>
+      <thead>
+        <tr>
+          <th scope="col">사업부</th>
+          <th scope="col" class="n">매출 (억원)</th>
+          <th scope="col">비중</th>
+          <th scope="col" class="n">전분기 대비</th>
+          <th scope="col" class="n">영업이익 (억원)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">물류로봇</th>
+          <td class="n">94.6</td>
+          <td><span class="spark" style="width:101px"></span> <span class="mono">50.5%</span></td>
+          <td class="n up">▲ +18.2%</td>
+          <td class="n">13.4</td>
+        </tr>
+        <tr>
+          <th scope="row">협동로봇</th>
+          <td class="n">52.3</td>
+          <td><span class="spark mut" style="width:56px"></span> <span class="mono">27.9%</span></td>
+          <td class="n up">▲ +8.1%</td>
+          <td class="n">6.2</td>
+        </tr>
+        <tr>
+          <th scope="row">AMR 솔루션</th>
+          <td class="n">28.7</td>
+          <td><span class="spark mut" style="width:31px"></span> <span class="mono">15.3%</span></td>
+          <td class="n up">▲ +6.5%</td>
+          <td class="n">3.1</td>
+        </tr>
+        <tr>
+          <th scope="row">유지보수 서비스</th>
+          <td class="n">11.8</td>
+          <td><span class="spark mut" style="width:13px"></span> <span class="mono">6.3%</span></td>
+          <td class="n up">▲ +2.4%</td>
+          <td class="n down">−0.6</td>
+        </tr>
+        <tr class="tot">
+          <th scope="row">합계</th>
+          <td class="n">187.4</td>
+          <td><span class="mono">100.0%</span></td>
+          <td class="n up">▲ +12.3%</td>
+          <td class="n">22.1</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout note">
+    <span class="cl-l">유지보수 서비스 적자 전환</span>
+    <p>유지보수 서비스는 신규 서비스센터 2곳(대전·광주) 개소 비용으로 2분기 −0.6억원 적자 전환했다. <strong>3분기 흑자 복귀 전망</strong>이며, 9월 출시 예정인 유지보수 구독 요금제가 ARR 전환의 1단계다.</p>
+  </div>
+</section>
+
+<!-- 05 ─────────────────────────────── -->
+<section id="s05" aria-labelledby="h05">
+  <div class="sec-head">
+    <span class="sec-num">05</span>
+    <h2 id="h05">손익 요약</h2>
+    <p class="lead">매출은 12.3% 늘었으나 매출원가가 16.7% 늘며 증가율을 앞질렀다. 수익성 후퇴의 구조적 원인이다.</p>
+  </div>
+
+  <div class="tw">
+    <table>
+      <caption>표 3. 손익 요약 (2026년 2분기 vs 1분기, 단위: 억원)</caption>
+      <thead>
+        <tr>
+          <th scope="col">항목</th>
+          <th scope="col" class="n">2분기</th>
+          <th scope="col" class="n">1분기</th>
+          <th scope="col" class="n">증감</th>
+          <th scope="col" class="n">증감률</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">매출액</th><td class="n">187.4</td><td class="n">166.9</td><td class="n up">▲ +20.5</td><td class="n up">▲ +12.3%</td></tr>
+        <tr><th scope="row">매출원가</th><td class="n">128.6</td><td class="n">110.2</td><td class="n down">▲ +18.4</td><td class="n down">▲ +16.7%</td></tr>
+        <tr class="sub"><th scope="row">매출총이익</th><td class="n">58.8</td><td class="n">56.7</td><td class="n up">▲ +2.1</td><td class="n up">▲ +3.7%</td></tr>
+        <tr><th scope="row">판매관리비</th><td class="n">36.7</td><td class="n">33.0</td><td class="n down">▲ +3.7</td><td class="n down">▲ +11.2%</td></tr>
+        <tr class="sub"><th scope="row">영업이익</th><td class="n">22.1</td><td class="n">23.7</td><td class="n down">▼ −1.6</td><td class="n down">▼ −6.8%</td></tr>
+        <tr class="tot"><th scope="row">당기순이익</th><td class="n">17.9</td><td class="n">19.2</td><td class="n down">▼ −1.3</td><td class="n down">▼ −6.8%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warn">
+    <span class="cl-l">주의 · 원가 압박</span>
+    <p>매출원가 증가율(+16.7%)이 매출 증가율(+12.3%)을 <strong>4.4%p</strong> 초과했다. 매출총이익은 3.7% 증가에 그쳤고, 판매관리비 +11.2%가 겹치며 영업이익은 −6.8% 역성장했다. 원가 요인이 해소되지 않으면 하반기에도 같은 압박이 이어진다.</p>
+  </div>
+
+  <h3>주요 원가 압박 요인</h3>
+  <div class="tw">
+    <table>
+      <caption>표 4. 2분기 주요 원자재·부품 단가 변동</caption>
+      <thead>
+        <tr><th scope="col">항목</th><th scope="col" class="n">단가 변동</th><th scope="col">배경</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">서보모터</th><td class="n down">▲ +21%</td><td>엔저 반전</td></tr>
+        <tr><th scope="row">알루미늄 프레임</th><td class="n down">▲ +9%</td><td>원자재 시황</td></tr>
+        <tr><th scope="row">반도체 모듈</th><td class="n down">▲ +4%</td><td>원자재 시황</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose" style="font-size:13.5px;color:var(--g700)">서보모터 단가 상승(+21%)이 원가 압박의 최대 요인이며, 이는 <a href="#s08">§08 리스크</a>의 최우선 항목(심각도 높음 · 확률 높음)과 직결된다. 대응은 국산 대체 벤더 2곳 병행 검증 및 3분기 내 듀얼소싱 계약이다.</p>
+</section>
+
+<!-- 06 ─────────────────────────────── -->
+<section id="s06" aria-labelledby="h06">
+  <div class="sec-head">
+    <span class="sec-num">06</span>
+    <h2 id="h06">2분기 주요 완료 과제</h2>
+    <p class="lead">5개 과제가 계획대로 완료됐다. HL-40 양산 라인 가동과 ISO 13849 인증이 하반기 성장의 기반이다.</p>
+  </div>
+
+  <div class="tw">
+    <table class="zebra">
+      <caption>표 5. 2026년 2분기 완료 과제 및 성과</caption>
+      <thead>
+        <tr>
+          <th scope="col">과제</th>
+          <th scope="col">담당</th>
+          <th scope="col" class="n">완료일</th>
+          <th scope="col">성과</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">HL-40 물류로봇 양산 1차 라인 가동</th>
+          <td>생산본부</td><td class="n mono">05-18</td>
+          <td>월 120대 생산 능력 확보</td>
+        </tr>
+        <tr>
+          <th scope="row">쿠팡 풀필먼트 3개 센터 AMR 240대 납품</th>
+          <td>물류사업부</td><td class="n mono">06-05</td>
+          <td>계약액 43억원, 검수 통과율 99.2%</td>
+        </tr>
+        <tr>
+          <th scope="row">ISO 13849 기능안전 인증 획득</th>
+          <td>품질본부</td><td class="n mono">06-12</td>
+          <td>유럽 수출 필수 요건 충족</td>
+        </tr>
+        <tr>
+          <th scope="row">ERP-MES 통합 1단계</th>
+          <td>정보전략팀</td><td class="n mono">06-27</td>
+          <td>생산 리드타임 집계 자동화</td>
+        </tr>
+        <tr>
+          <th scope="row">협동로봇 HC-12 펌웨어 v3.2 배포</th>
+          <td>로봇SW팀</td><td class="n mono">04-22</td>
+          <td>사이클타임 7% 단축</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout pos">
+    <span class="cl-l">통찰 · 인증의 전략적 가치</span>
+    <p>ISO 13849 기능안전 인증(06-12)은 유럽 수출 필수 요건 충족을 넘어, <a href="#s08">§08</a>의 경쟁사 저가 공세 대응 전략(가격 대응 대신 안전 인증·유지보수 번들 차별화)의 실질적 근거가 된다. 북미 계약 지연 시 대안으로 지목된 DACH 지역 채널 개발의 선행 조건이기도 하다.</p>
+  </div>
+</section>
+
+<!-- 07 ─────────────────────────────── -->
+<section id="s07" aria-labelledby="h07">
+  <div class="sec-head">
+    <span class="sec-num">07</span>
+    <h2 id="h07">3분기 로드맵</h2>
+    <p class="lead">7월 착공부터 9월 구독 요금제 출시까지 5개 마일스톤이다. 8월 15일 북미 본계약이 최대 분기점이다.</p>
+  </div>
+
+  <ol class="tl">
+    <li class="act">
+      <div class="tl-card">
+        <div class="tl-top">
+          <span class="tl-d">07-21</span>
+          <span class="tl-h">HL-40 양산 2차 라인 증설 착공</span>
+          <span class="badge go">진행 중</span>
+        </div>
+        <p class="tl-n">투자 60억원, 완공 목표 11월. 집행 승인 요청 건은 <a href="#s11">§11 의사결정 요청 1번</a>.</p>
+      </div>
+    </li>
+    <li class="neg">
+      <div class="tl-card">
+        <div class="tl-top">
+          <span class="tl-d">08-15</span>
+          <span class="tl-h">북미 물류기업 파트너십 본계약</span>
+          <span class="badge mid">협상 중</span>
+        </div>
+        <p class="tl-n">3년 300억 규모, LOI 체결 완료. 위약 조항(계약액의 8%) 수용 여부는 <a href="#s11">§11 의사결정 요청 3번</a>.</p>
+      </div>
+    </li>
+    <li>
+      <div class="tl-card">
+        <div class="tl-top">
+          <span class="tl-d">08-29</span>
+          <span class="tl-h">HC-12 후속작 HC-20 설계 동결</span>
+          <span class="badge">예정</span>
+        </div>
+        <p class="tl-n">페이로드 20kg급.</p>
+      </div>
+    </li>
+    <li>
+      <div class="tl-card">
+        <div class="tl-top">
+          <span class="tl-d">09-09</span>
+          <span class="tl-h">도쿄 국제물류전 출품</span>
+          <span class="badge">예정</span>
+        </div>
+        <p class="tl-n">HL-40 해외 첫 공개.</p>
+      </div>
+    </li>
+    <li>
+      <div class="tl-card">
+        <div class="tl-top">
+          <span class="tl-d">09-30</span>
+          <span class="tl-h">유지보수 구독 요금제 출시</span>
+          <span class="badge">예정</span>
+        </div>
+        <p class="tl-n">ARR 전환 전략 1단계. 2분기 적자 전환한 유지보수 서비스(<a href="#s04">§04</a>)의 수익 구조 개선 수단.</p>
+      </div>
+    </li>
+  </ol>
+</section>
+
+<!-- 08 ─────────────────────────────── -->
+<section id="s08" aria-labelledby="h08">
+  <div class="sec-head">
+    <span class="sec-num">08</span>
+    <h2 id="h08">리스크</h2>
+    <p class="lead">5개 리스크를 심각도와 확률 2축으로 배치했다. 우상단(고심각도·고확률)에 위치한 서보모터 단가가 최우선 관리 대상이다.</p>
+  </div>
+
+  <figure>
+    <p class="fig-t">리스크 매트릭스 — 심각도 × 확률</p>
+    <p class="fig-u">R1~R5 = 아래 표 리스크 번호 · 점 색상 = 심각도 등급</p>
+    <svg viewBox="0 0 580 400" role="img" aria-label="심각도와 확률 2축 리스크 매트릭스" aria-describedby="c5d">
+      <title id="c5t">심각도와 확률 2축 리스크 매트릭스</title>
+      <desc id="c5d">서보모터 단가 상승은 심각도 높음 확률 높음, 북미 계약 지연은 심각도 높음 확률 중간, HL-40 초기 필드 불량은 심각도 중간 확률 중간, 경쟁사 저가 공세는 심각도 중간 확률 높음, 핵심 SW 인력 이탈은 심각도 낮음 확률 중간에 위치한다.</desc>
+      <!-- 셀 배경 -->
+      <g>
+        <rect class="cellC" x="100" y="30"  width="140" height="100"/>
+        <rect class="cellB" x="240" y="30"  width="140" height="100"/>
+        <rect class="cellA" x="380" y="30"  width="140" height="100"/>
+        <rect class="cellC" x="100" y="130" width="140" height="100"/>
+        <rect class="cellC" x="240" y="130" width="140" height="100"/>
+        <rect class="cellB" x="380" y="130" width="140" height="100"/>
+        <rect class="cellC" x="100" y="230" width="140" height="100" opacity="0.5"/>
+        <rect class="cellC" x="240" y="230" width="140" height="100" opacity="0.5"/>
+        <rect class="cellC" x="380" y="230" width="140" height="100" opacity="0.5"/>
+      </g>
+      <!-- 셀 구분선 -->
+      <g class="cellline">
+        <line x1="240" y1="30" x2="240" y2="330"/>
+        <line x1="380" y1="30" x2="380" y2="330"/>
+        <line x1="100" y1="130" x2="520" y2="130"/>
+        <line x1="100" y1="230" x2="520" y2="230"/>
+      </g>
+      <!-- 축선 -->
+      <line class="axis" x1="100" y1="330" x2="520" y2="330"/>
+      <line class="axis" x1="100" y1="30"  x2="100" y2="330"/>
+      <!-- Y축(심각도) 라벨 -->
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="12" class="vl" text-anchor="end">
+        <text x="88" y="84">높음</text>
+        <text x="88" y="184">중간</text>
+        <text x="88" y="284">낮음</text>
+      </g>
+      <text x="26" y="180" font-family="Pretendard, system-ui, sans-serif" font-size="12" class="axl" text-anchor="middle" transform="rotate(-90 26 180)">심각도 →</text>
+      <!-- X축(확률) 라벨 -->
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="12" class="vl" text-anchor="middle">
+        <text x="170" y="352">낮음</text>
+        <text x="310" y="352">중간</text>
+        <text x="450" y="352">높음</text>
+      </g>
+      <text x="310" y="378" font-family="Pretendard, system-ui, sans-serif" font-size="12" class="axl" text-anchor="middle">발생 확률 →</text>
+      <!-- 데이터 포인트 -->
+      <g font-family="JetBrains Mono, ui-monospace, SF Mono, Menlo, monospace" font-size="13" text-anchor="middle">
+        <circle class="rhi"  cx="450" cy="80"  r="19"/><text class="rtxt" x="450" y="85">R1</text>
+        <circle class="rhi"  cx="310" cy="80"  r="19"/><text class="rtxt" x="310" y="85">R2</text>
+        <circle class="rmid" cx="310" cy="180" r="19"/><text class="rtxt" x="310" y="185">R3</text>
+        <circle class="rmid" cx="450" cy="180" r="19"/><text class="rtxt" x="450" y="185">R4</text>
+        <circle class="rlo"  cx="310" cy="280" r="19"/><text class="rtxt" x="310" y="285">R5</text>
+      </g>
+    </svg>
+    <figcaption><strong>R1 서보모터 단가 추가 상승</strong>만이 심각도·확률 모두 '높음' 구간에 위치해 단독 최우선 리스크이며, 원가 압박(<a href="#s05">§05</a>)의 직접 원인과 동일한 항목이라 대응 실패 시 수익성 회복이 지연된다.</figcaption>
+  </figure>
+
+  <div class="tw">
+    <table>
+      <caption>표 6. 리스크 등록부 및 대응 계획</caption>
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">리스크</th>
+          <th scope="col">심각도</th>
+          <th scope="col">확률</th>
+          <th scope="col">대응</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row" class="mono">R1</th>
+          <td>서보모터 단가 추가 상승</td>
+          <td><span class="dot hi"></span><span class="badge hi">높음</span></td>
+          <td><span class="badge hi">높음</span></td>
+          <td>국산 대체 벤더 2곳 병행 검증, 3분기 내 듀얼소싱 계약</td>
+        </tr>
+        <tr>
+          <th scope="row" class="mono">R2</th>
+          <td>북미 계약 지연 또는 무산</td>
+          <td><span class="dot hi"></span><span class="badge hi">높음</span></td>
+          <td><span class="badge mid">중간</span></td>
+          <td>유럽 채널(DACH 지역) 병행 개발로 의존도 분산</td>
+        </tr>
+        <tr>
+          <th scope="row" class="mono">R3</th>
+          <td>HL-40 초기 필드 불량</td>
+          <td><span class="dot mid"></span><span class="badge mid">중간</span></td>
+          <td><span class="badge mid">중간</span></td>
+          <td>출하 전 번인 테스트 48→72시간 확대, 현장 FAE 6명 증원</td>
+        </tr>
+        <tr>
+          <th scope="row" class="mono">R4</th>
+          <td>경쟁사 저가 공세 (중국 A사)</td>
+          <td><span class="dot mid"></span><span class="badge mid">중간</span></td>
+          <td><span class="badge hi">높음</span></td>
+          <td>가격 대응 대신 안전 인증·유지보수 번들로 차별화</td>
+        </tr>
+        <tr>
+          <th scope="row" class="mono">R5</th>
+          <td>핵심 SW 인력 이탈</td>
+          <td><span class="dot lo"></span><span class="badge lo">낮음</span></td>
+          <td><span class="badge mid">중간</span></td>
+          <td>스톡옵션 2차 부여안 8월 이사회 상정</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 09 ─────────────────────────────── -->
+<section id="s09" aria-labelledby="h09">
+  <div class="sec-head">
+    <span class="sec-num">09</span>
+    <h2 id="h09">조직·채용</h2>
+    <p class="lead">2분기 순증 24명으로 342명에 도달했다. 3분기는 FAE 확보가 최우선이다.</p>
+  </div>
+
+  <div class="prose">
+    <p>2분기 신규 입사 <strong>31명</strong>, 퇴사 7명으로 순증 24명을 기록해 임직원 수는 318명에서 342명이 됐다. 직군별로는 로봇SW 12명, 생산 9명, 품질 4명, 영업 3명, 경영지원 3명이다. 3분기 채용 목표는 <strong>22명</strong>이며 <strong>FAE(필드 엔지니어) 6명</strong>이 최우선이다.</p>
+  </div>
+
+  <div class="tw">
+    <table>
+      <caption>표 7. 2분기 직군별 신규 입사 내역 및 3분기 계획</caption>
+      <thead>
+        <tr>
+          <th scope="col">구분</th>
+          <th scope="col" class="n">인원</th>
+          <th scope="col">비고</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">로봇SW</th><td class="n">12명</td><td><span class="spark" style="width:96px"></span></td></tr>
+        <tr><th scope="row">생산</th><td class="n">9명</td><td><span class="spark mut" style="width:72px"></span></td></tr>
+        <tr><th scope="row">품질</th><td class="n">4명</td><td><span class="spark mut" style="width:32px"></span></td></tr>
+        <tr><th scope="row">영업</th><td class="n">3명</td><td><span class="spark mut" style="width:24px"></span></td></tr>
+        <tr><th scope="row">경영지원</th><td class="n">3명</td><td><span class="spark mut" style="width:24px"></span></td></tr>
+        <tr class="sub"><th scope="row">신규 입사 합계</th><td class="n">31명</td><td></td></tr>
+        <tr><th scope="row">퇴사</th><td class="n down">▼ 7명</td><td></td></tr>
+        <tr class="tot"><th scope="row">순증</th><td class="n up">▲ 24명</td><td>318명 → 342명 (연말 목표 380명)</td></tr>
+        <tr><th scope="row">3분기 채용 목표</th><td class="n">22명</td><td>FAE(필드 엔지니어) 6명 최우선</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="prose" style="font-size:13.5px;color:var(--g700)">FAE 6명 증원은 <a href="#s08">§08 R3(HL-40 초기 필드 불량)</a>의 대응 조치와 동일한 인력으로, 채용 목표 달성 여부가 리스크 대응 실행력에 직결된다.</p>
+</section>
+
+<!-- 10 ─────────────────────────────── -->
+<section id="s10" aria-labelledby="h10">
+  <div class="sec-head">
+    <span class="sec-num">10</span>
+    <h2 id="h10">재무 상태</h2>
+    <p class="lead">현금 342억원, 부채비율 31.2%로 안정적이다. 운전자본 회전일수는 두 지표 모두 개선됐다.</p>
+  </div>
+
+  <div class="prose">
+    <p>기말 현금성 자산 <strong>342억원</strong>(전분기 358억원). 차입금 85억원(부채비율 31.2%). 2분기 CAPEX 28억원을 집행했고 3분기 증설 투자 60억원이 예정돼 있다. 운전자본 회전일수는 DSO 72일(전분기 78일), 재고자산 회전일수 61일(전분기 66일)로 개선됐다.</p>
+  </div>
+
+  <div class="tw">
+    <table>
+      <caption>표 8. 재무 상태 및 운전자본 지표</caption>
+      <thead>
+        <tr>
+          <th scope="col">항목</th>
+          <th scope="col" class="n">2분기</th>
+          <th scope="col" class="n">1분기</th>
+          <th scope="col" class="n">증감</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">현금성 자산</th><td class="n">342억원</td><td class="n">358억원</td><td class="n down">▼ −16억원</td></tr>
+        <tr><th scope="row">차입금</th><td class="n">85억원</td><td class="n">—</td><td class="n flat">—</td></tr>
+        <tr><th scope="row">부채비율</th><td class="n">31.2%</td><td class="n">—</td><td class="n flat">—</td></tr>
+        <tr><th scope="row">CAPEX 집행</th><td class="n">28억원</td><td class="n">—</td><td class="n flat">3분기 60억원 예정</td></tr>
+        <tr><th scope="row">DSO (매출채권 회전일수)</th><td class="n">72일</td><td class="n">78일</td><td class="n up">▼ −6일</td></tr>
+        <tr><th scope="row">재고자산 회전일수</th><td class="n">61일</td><td class="n">66일</td><td class="n up">▼ −5일</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure>
+    <p class="fig-t">운전자본 회전일수 개선</p>
+    <ul class="legend" aria-hidden="true">
+      <li><span class="sw s-neu"></span>1분기</li>
+      <li><span class="sw s-acc"></span>2분기</li>
+    </ul>
+    <p class="fig-u">단위: 일 · 값이 작을수록 개선</p>
+    <svg viewBox="0 0 720 200" role="img" aria-label="운전자본 회전일수 전분기 대비 비교 막대 차트" aria-describedby="c6d">
+      <title id="c6t">운전자본 회전일수 전분기 대비 비교 막대 차트</title>
+      <desc id="c6d">DSO는 78일에서 72일로 6일, 재고자산 회전일수는 66일에서 61일로 5일 단축됐다.</desc>
+      <!-- 세로 그리드 -->
+      <line class="gl" x1="290" y1="14" x2="290" y2="152"/>
+      <line class="gl" x1="410" y1="14" x2="410" y2="152"/>
+      <line class="gl" x1="530" y1="14" x2="530" y2="152"/>
+      <line class="gl" x1="650" y1="14" x2="650" y2="152"/>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="12" text-anchor="end">
+        <text class="vl"  x="160" y="38">DSO</text>
+        <text class="axl" x="160" y="62" font-size="10.5">DSO</text>
+        <text class="vl"  x="160" y="106">재고자산</text>
+        <text class="axl" x="160" y="130" font-size="10.5">재고자산</text>
+      </g>
+      <!-- 막대: 1분기(뮤트) / 2분기(액센트) -->
+      <rect class="bmut" x="170" y="24" width="374.4" height="18" rx="2"/>
+      <rect class="b1"   x="170" y="48" width="345.6" height="18" rx="2"/>
+      <rect class="bmut" x="170" y="92" width="316.8" height="18" rx="2"/>
+      <rect class="b1"   x="170" y="116" width="292.8" height="18" rx="2"/>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" font-weight="600" class="vl">
+        <text x="552" y="38">78일 (1Q)</text>
+        <text x="523" y="62" font-weight="700">72일 (2Q)</text>
+        <text x="494" y="106">66일 (1Q)</text>
+        <text x="470" y="130" font-weight="700">61일 (2Q)</text>
+      </g>
+      <!-- X축 -->
+      <line class="axis" x1="170" y1="152" x2="650" y2="152"/>
+      <g font-family="Helvetica Neue, Pretendard, system-ui, sans-serif" font-size="10.5" class="axl" text-anchor="middle">
+        <text x="170" y="170">0</text>
+        <text x="290" y="170">25</text>
+        <text x="410" y="170">50</text>
+        <text x="530" y="170">75</text>
+        <text x="650" y="170">100</text>
+      </g>
+      <text x="410" y="192" font-family="Pretendard, system-ui, sans-serif" font-size="11" class="axl" text-anchor="middle">회전일수 (일)</text>
+    </svg>
+    <figcaption>DSO −6일, 재고자산 회전일수 −5일로 두 운전자본 지표가 동시에 개선돼, 매출 12.3% 성장에도 현금 감소폭이 16억원에 그친 배경을 설명한다.</figcaption>
+  </figure>
+
+  <div class="callout pos">
+    <span class="cl-l">자금 여력</span>
+    <p>기말 현금 342억원 대비 3분기 증설 투자 60억원은 <strong>자체 자금으로 충당 가능</strong>하다. 부채비율 31.2% 수준에서 추가 차입 없이 집행할 수 있다는 것이 <a href="#s11">§11 의사결정 요청 1번</a>의 재무적 근거다.</p>
+  </div>
+</section>
+
+<!-- 11 ─────────────────────────────── -->
+<section id="s11" aria-labelledby="h11">
+  <div class="sec-head">
+    <span class="sec-num">11</span>
+    <h2 id="h11">의사결정 요청 사항</h2>
+    <p class="lead">경영진 승인이 필요한 3건이다. 각 항목은 앞선 섹션의 근거와 연결된다.</p>
+  </div>
+
+  <ol class="dec">
+    <li>
+      <span class="no" aria-hidden="true">1</span>
+      <div>
+        <h3>HL-40 2차 라인 증설 투자 60억원 집행 승인</h3>
+        <p>첨부: 투자심의 보고서 <span class="mono">IR-2026-014</span> · 착공 목표 07-21, 완공 목표 11월 · 자체 자금 충당 가능(<a href="#s10">§10</a>)</p>
+      </div>
+    </li>
+    <li>
+      <span class="no" aria-hidden="true">2</span>
+      <div>
+        <h3>스톡옵션 2차 부여안 이사회 상정 동의</h3>
+        <p>8월 이사회 상정 예정 · 핵심 SW 인력 이탈 리스크(<a href="#s08">§08 R5</a>) 대응 조치</p>
+      </div>
+    </li>
+    <li>
+      <span class="no" aria-hidden="true">3</span>
+      <div>
+        <h3>북미 파트너십 계약의 위약 조항(계약액의 8%) 수용 여부</h3>
+        <p>법무 검토 의견은 <strong>'조건부 수용'</strong> · 계약 규모 3년 300억원, 본계약 목표일 08-15(<a href="#s07">§07</a>)</p>
+      </div>
+    </li>
+  </ol>
+</section>
+
+<!-- 12 ─────────────────────────────── -->
+<section id="s12" aria-labelledby="h12">
+  <div class="sec-head">
+    <span class="sec-num">A</span>
+    <h2 id="h12">부록</h2>
+    <p class="lead">본문 차트의 원자료와 문서 작성 기준이다. 인쇄 시 자동으로 펼쳐진다.</p>
+  </div>
+
+  <details>
+    <summary>부록 A · 월별 실적 원자료 (2026-01 ~ 2026-06)</summary>
+    <div class="det-body">
+      <div class="tw">
+        <table class="zebra">
+          <caption>표 A-1. 월별 매출 및 신규 수주 (단위: 억원)</caption>
+          <thead>
+            <tr>
+              <th scope="col">월</th>
+              <th scope="col" class="n">매출</th>
+              <th scope="col" class="n">신규 수주</th>
+              <th scope="col" class="n">수주−매출</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row" class="mono">2026-01</th><td class="n">51.2</td><td class="n">58.3</td><td class="n up">▲ +7.1</td></tr>
+            <tr><th scope="row" class="mono">2026-02</th><td class="n">54.8</td><td class="n">61.7</td><td class="n up">▲ +6.9</td></tr>
+            <tr><th scope="row" class="mono">2026-03</th><td class="n">60.9</td><td class="n">69.5</td><td class="n up">▲ +8.6</td></tr>
+            <tr class="sub"><th scope="row">1분기 소계</th><td class="n">166.9</td><td class="n">189.5</td><td class="n up">▲ +22.6</td></tr>
+            <tr><th scope="row" class="mono">2026-04</th><td class="n">58.1</td><td class="n">63.2</td><td class="n up">▲ +5.1</td></tr>
+            <tr><th scope="row" class="mono">2026-05</th><td class="n">61.7</td><td class="n">70.4</td><td class="n up">▲ +8.7</td></tr>
+            <tr><th scope="row" class="mono">2026-06</th><td class="n">67.6</td><td class="n">80.4</td><td class="n up">▲ +12.8</td></tr>
+            <tr class="sub"><th scope="row">2분기 소계</th><td class="n">187.4</td><td class="n">214.0</td><td class="n up">▲ +26.6</td></tr>
+            <tr class="tot"><th scope="row">상반기 누계</th><td class="n">354.3</td><td class="n">403.5</td><td class="n up">▲ +49.2</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:13px;color:var(--g500);margin:0">소계·누계·차액 열은 보고서 본문의 월별 값에서 산출한 파생 수치다.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>부록 B · 작성 기준 및 데이터 출처</summary>
+    <div class="det-body">
+      <div class="tw">
+        <table>
+          <caption>표 B-1. 문서 작성 기준</caption>
+          <thead>
+            <tr><th scope="col">항목</th><th scope="col">내용</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">문서번호</th><td class="mono">HW-BR-2026-Q2</td></tr>
+            <tr><th scope="row">작성 주체</th><td>경영기획실</td></tr>
+            <tr><th scope="row">작성일</th><td class="mono">2026-07-15</td></tr>
+            <tr><th scope="row">대상 기간</th><td class="mono">2026-04-01 ~ 2026-06-30</td></tr>
+            <tr><th scope="row">재무 수치 성격</th><td>외부 감사 전 <strong>잠정치</strong></td></tr>
+            <tr><th scope="row">참조 첨부</th><td>투자심의 보고서 <span class="mono">IR-2026-014</span> (§11 요청 1번)</td></tr>
+            <tr><th scope="row">문의처</th><td>경영기획실 <a href="mailto:plan@hanwool-robotics.example">plan@hanwool-robotics.example</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:13px;color:var(--g500);margin:0">본 HTML 문서의 모든 수치는 원본 보고서를 출처로 하며, 파생 수치(소계·차액·비율 비교)는 해당 위치에 명시했다.</p>
+    </div>
+  </details>
+</section>
+
+</main>
+</div>
+
+<footer>
+  <div class="foot-in">
+    <dl>
+      <div><dt>문서번호</dt><dd class="mono">HW-BR-2026-Q2</dd></div>
+      <div><dt>작성일</dt><dd class="mono">2026-07-15</dd></div>
+      <div><dt>작성 주체</dt><dd>경영기획실</dd></div>
+      <div><dt>대상 기간</dt><dd class="mono">2026-04-01 ~ 2026-06-30</dd></div>
+      <div><dt>데이터 출처</dt><dd>경영기획실 내부 집계</dd></div>
+      <div><dt>문의</dt><dd><a href="mailto:plan@hanwool-robotics.example">plan@hanwool-robotics.example</a></dd></div>
+    </dl>
+    <p class="disc">본 보고서의 재무 수치는 외부 감사 전 잠정치입니다. HL-40 출시 지연에 따른 기회손실(약 18억원)은 추정치이며, 3분기 로드맵의 목표일·상태는 2026-07-15 기준입니다. 본 문서는 내부 경영 보고 목적으로 작성됐으며 투자 판단의 근거로 사용될 수 없습니다.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root=document.documentElement, KEY='hw-br-2026-q2-theme';
+  var saved=null;
+  try{saved=localStorage.getItem(KEY);}catch(e){}
+  if(saved){root.setAttribute('data-theme',saved);}
+  var btn=document.querySelector('.theme-toggle'), lbl=btn.querySelector('.tt-label');
+  function sync(){
+    var dark=root.getAttribute('data-theme')==='dark'
+      || (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    btn.setAttribute('aria-pressed', dark?'true':'false');
+    lbl.textContent = dark ? '라이트 모드' : '다크 모드';
+  }
+  sync();
+  btn.addEventListener('click',function(){
+    var dark=root.getAttribute('data-theme')==='dark'
+      || (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    var next = dark ? 'light' : 'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem(KEY,next);}catch(e){}
+    sync();
+  });
+
+  var links={};
+  Array.prototype.forEach.call(document.querySelectorAll('.toc a'),function(a){
+    links[a.getAttribute('href').slice(1)]=a;
+  });
+  var secs=Array.prototype.slice.call(document.querySelectorAll('main section[id]'));
+  if('IntersectionObserver' in window && secs.length){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(!en.isIntersecting) return;
+        for(var k in links){ links[k].classList.remove('on'); }
+        if(links[en.target.id]) links[en.target.id].classList.add('on');
+      });
+    },{rootMargin:'-12% 0px -72% 0px', threshold:0});
+    secs.forEach(function(s){ io.observe(s); });
+  }
+})();
+</script>
+</body>
+</html>

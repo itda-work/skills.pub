@@ -1,0 +1,222 @@
+{
+ "schema_version": "1.0",
+ "domain": "longterm-care",
+ "document": "beneficiary-list",
+ "title": "수급자 명단",
+ "format": "xlsx",
+ "fields": [
+  {
+   "name": "장기요양인정번호",
+   "type": "string",
+   "grade": "식별자",
+   "generator": {
+    "kind": "code",
+    "pattern": "LX########"
+   },
+   "desc": "가상 번호 — 'LX' 접두는 실제 인정번호 체계(L+숫자)와 겹치지 않는다"
+  },
+  {
+   "name": "수급자명",
+   "type": "string",
+   "grade": "식별자",
+   "generator": {
+    "kind": "person_name",
+    "dup_ratio": 0.06
+   },
+   "desc": ""
+  },
+  {
+   "name": "성별",
+   "type": "string",
+   "grade": "준식별자",
+   "generator": {
+    "kind": "choice",
+    "values": [
+     "남",
+     "여"
+    ],
+    "weights": [
+     30,
+     70
+    ]
+   },
+   "desc": ""
+  },
+  {
+   "name": "생년월일",
+   "type": "date",
+   "grade": "준식별자",
+   "generator": {
+    "kind": "date",
+    "start": "1928-01-01",
+    "end": "1960-12-31"
+   },
+   "desc": ""
+  },
+  {
+   "name": "주민등록번호",
+   "type": "string",
+   "grade": "식별자",
+   "generator": {
+    "kind": "rrn",
+    "birth_from": "생년월일",
+    "gender_from": "성별"
+   },
+   "desc": ""
+  },
+  {
+   "name": "장기요양등급",
+   "type": "string",
+   "grade": "민감정보",
+   "generator": {
+    "kind": "choice",
+    "values": [
+     "1등급",
+     "2등급",
+     "3등급",
+     "4등급",
+     "5등급",
+     "인지지원등급"
+    ],
+    "weights": [
+     5,
+     15,
+     35,
+     30,
+     10,
+     5
+    ]
+   },
+   "desc": ""
+  },
+  {
+   "name": "인정유효기간시작",
+   "type": "date",
+   "grade": "준식별자",
+   "generator": {
+    "kind": "date",
+    "start": "2024-01-01",
+    "end": "2025-12-01"
+   },
+   "desc": ""
+  },
+  {
+   "name": "인정유효기간종료",
+   "type": "date",
+   "grade": "준식별자",
+   "generator": {
+    "kind": "date_after",
+    "from": "인정유효기간시작",
+    "min_days": 365,
+    "max_days": 1460
+   },
+   "desc": ""
+  },
+  {
+   "name": "급여종류",
+   "type": "string",
+   "grade": "준식별자",
+   "generator": {
+    "kind": "choice",
+    "values": [
+     "시설급여",
+     "주야간보호",
+     "방문요양",
+     "방문목욕"
+    ]
+   },
+   "desc": ""
+  },
+  {
+   "name": "보호자연락처",
+   "type": "string",
+   "grade": "식별자",
+   "generator": {
+    "kind": "phone"
+   },
+   "desc": ""
+  },
+  {
+   "name": "주소",
+   "type": "string",
+   "grade": "식별자",
+   "generator": {
+    "kind": "address"
+   },
+   "desc": ""
+  },
+  {
+   "name": "본인부담율",
+   "type": "int",
+   "grade": "민감정보",
+   "generator": {
+    "kind": "choice",
+    "values": [
+     0,
+     6,
+     9,
+     15,
+     20
+    ]
+   },
+   "desc": "% — 감경 여부"
+  }
+ ],
+ "rules": [
+  {
+   "id": "R1",
+   "kind": "compare",
+   "left": "인정유효기간시작",
+   "op": "<",
+   "right": "인정유효기간종료",
+   "desc": "유효기간 시작 < 종료"
+  },
+  {
+   "id": "R2",
+   "kind": "in_set",
+   "field": "장기요양등급",
+   "values": [
+    "1등급",
+    "2등급",
+    "3등급",
+    "4등급",
+    "5등급",
+    "인지지원등급"
+   ],
+   "desc": "등급 6종"
+  },
+  {
+   "id": "R3",
+   "kind": "unique",
+   "field": "장기요양인정번호",
+   "desc": "인정번호 중복 없음"
+  }
+ ],
+ "reid_keys": [
+  "장기요양등급",
+  "급여종류",
+  "생년월일"
+ ],
+ "legal": [
+  {
+   "law": "노인장기요양보험법",
+   "article": "(조문 확인 필요)",
+   "note": "장기요양기관 종사자 비밀 누설 금지·수급자 정보 보호 — legal-basis.md 미수록",
+   "status": "확인 필요"
+  },
+  {
+   "law": "개인정보 보호법",
+   "article": "제23조 제1항",
+   "note": "건강·등급 정보는 민감정보",
+   "status": "확인"
+  },
+  {
+   "law": "개인정보 보호법",
+   "article": "제24조",
+   "note": "주민번호 등 고유식별정보 처리 제한",
+   "status": "확인"
+  }
+ ],
+ "seed_examples": [],
+ "preset_notice": "이 프리셋의 항목·규칙은 해당 업무의 문서 구조를 예측해 만든 것일 뿐 정확하지 않습니다. 실제 업무의 데이터 구조(항목 이름·규칙·서식)를 알려주시면 그에 맞춰 생성할 수 있습니다."
+}

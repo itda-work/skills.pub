@@ -1,0 +1,1 @@
+# brain-audit 신선도 스캔(freshness.py)은 stdlib 전용 — 외부 의존 없음 (Python 3.10+).

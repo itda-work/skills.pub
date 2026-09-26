@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>페이루프 결제 승인 API 장애 회고 · 2026-08-19 · INC-2026-0819-01</title>
+<meta name="description" content="2026-08-19 14:07~14:49 페이루프 결제 승인 API 장애(SEV-1) 포스트모템 — 영향 42분, 실패 승인 98,861건, 최대 오류율 35.4%, 근본 원인은 커넥션 풀 환경변수 오타.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<style>
+/* ══ 팔레트 축: tech-vivid-dark (다크 부팅) ═══════════════════════
+   다크 = 프리셋 표 값 그대로. 라이트 짝 = minimal-mono 표 + accent 만
+   color-mix(in srgb, #1ED760 70%, #000). --warn 은 프리셋 무관 고정. */
+:root{
+  --bg:#121212; --paper:#1F1F1F; --tint:#1F1F1F; --ink:#FFFFFF;
+  --g500:#B3B3B3; --accent:#1ED760; --accent-2:#1ED760; --line:#2A2A2A;
+  --pos:#1ED760; --neg:#E22134; --warn:#E0A030;
+  --g100:var(--tint); --g300:var(--line);
+  --g700:color-mix(in srgb, var(--ink) 80%, var(--bg));
+  --accent-d:color-mix(in srgb, var(--accent) 85%, #000);
+  --sans:"Pretendard",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --display:"Arial Black","Arial Bold",var(--sans);
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]){
+    --bg:#FFFFFF; --paper:#FFFFFF; --tint:#F4F4F4; --ink:#171A20;
+    --g500:#5C5E62; --accent:color-mix(in srgb, #1ED760 70%, #000);
+    --accent-2:var(--accent); --line:#E8E8E8;
+    --pos:#3E6AE1; --neg:#E82127; --warn:#9A6206;
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#FFFFFF; --paper:#FFFFFF; --tint:#F4F4F4; --ink:#171A20;
+  --g500:#5C5E62; --accent:color-mix(in srgb, #1ED760 70%, #000);
+  --accent-2:var(--accent); --line:#E8E8E8;
+  --pos:#3E6AE1; --neg:#E82127; --warn:#9A6206;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#121212; --paper:#1F1F1F; --tint:#1F1F1F; --ink:#FFFFFF;
+  --g500:#B3B3B3; --accent:#1ED760; --accent-2:#1ED760; --line:#2A2A2A;
+  --pos:#1ED760; --neg:#E22134; --warn:#E0A030;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+  font-size:15px; line-height:1.7; word-break:keep-all; text-wrap:pretty;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{line-height:1.25; margin:0; font-weight:700}
+p{margin:0 0 16px}
+a{color:var(--ink); text-decoration:underline; text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--ink); outline-offset:3px}
+::selection{background:var(--tint)}
+
+/* ══ 토글 ═══════════════════════════════════════════════════ */
+.tt{
+  position:fixed; top:16px; right:16px; z-index:60;
+  display:inline-flex; align-items:center; gap:8px;
+  background:var(--tint); color:var(--g500); border:0; border-radius:4px;
+  padding:8px 12px; font:inherit; font-size:12px; font-weight:500; cursor:pointer;
+}
+.tt:hover{color:var(--ink)}
+
+/* ══ 골격 ═══════════════════════════════════════════════════ */
+.shell{max-width:1240px; margin:0 auto; padding:0 20px}
+@media (min-width:1100px){
+  .shell{display:grid; grid-template-columns:220px minmax(0,1fr); gap:64px; padding:0 40px}
+}
+nav.toc{display:none}
+@media (min-width:1100px){
+  nav.toc{display:block; position:sticky; top:0; align-self:start; max-height:100vh; overflow-y:auto; padding:96px 0 40px}
+  .toc-t{font-size:12px; font-weight:500; color:var(--g500); letter-spacing:.04em; margin:0 0 14px}
+  .toc ul{list-style:none; margin:0; padding:0}
+  .toc a{display:block; padding:5px 0; color:var(--g500); text-decoration:none; font-size:13px; line-height:1.45}
+  .toc a:hover{color:var(--ink)}
+  .toc a.on{color:var(--ink); font-weight:700}
+  .toc .sub{padding-left:12px; font-size:12.5px}
+}
+main{padding:0 0 24px; min-width:0}
+.prose{max-width:680px}
+.wide{max-width:920px}
+section{margin-bottom:0; scroll-margin-top:16px}
+section + section{margin-top:64px}
+h2{font-size:24px; margin-bottom:8px; position:relative}
+h3{font-size:18px; font-weight:600; margin:32px 0 12px}
+.lead{color:var(--g700); font-size:15px; margin:8px 0 24px; max-width:680px}
+.anchor{color:var(--g500); text-decoration:none; font-weight:400; margin-left:8px; opacity:0; font-size:18px}
+h2:hover .anchor,h3:hover .anchor,.anchor:focus-visible{opacity:1}
+
+/* ══ 히어로 — 밴드·룰 없음 ═══════════════════════════════════ */
+.hero{padding:96px 0 32px; border-bottom:1px solid var(--line); margin-bottom:48px}
+.badge{
+  display:inline-flex; align-items:center; gap:6px; background:var(--tint);
+  border-radius:4px; padding:4px 10px; font-size:11px; font-weight:500; color:var(--g500);
+}
+.dot{width:6px; height:6px; border-radius:50%; background:var(--pos); display:block}
+.hero h1{font-size:clamp(30px,4.5vw,40px); margin:16px 0 0; max-width:20ch}
+.hero .sum{font-size:16px; color:var(--g700); margin:16px 0 0; max-width:60ch}
+.hmeta{font-size:13px; color:var(--g500); margin:24px 0 0}
+.hmeta span::after{content:" · "; color:var(--line)}
+.hmeta span:last-child::after{content:""}
+
+/* ══ 인라인 스탯 행 (KPI) ═══════════════════════════════════ */
+.stats{
+  display:flex; flex-wrap:wrap; gap:0 32px; margin:0 0 32px; padding:16px 0;
+  border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+}
+.stats div{padding:4px 0; min-width:104px}
+.stats dt{font-size:12px; font-weight:500; color:var(--g500); margin:0 0 2px}
+.stats dd{margin:0; font-size:24px; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; font-family:var(--display); letter-spacing:0}
+.stats dd .u{font-size:14px; font-weight:500; color:var(--g500); margin-left:2px; font-family:var(--sans)}
+.stats .key dd{color:var(--accent)}
+
+/* ══ 콜아웃 — tint 색면 + 좌측 2px 의미색 (::before, 보더 아님) ══ */
+.co{position:relative; background:var(--tint); border-radius:6px; padding:14px 18px 14px 20px; margin:24px 0; max-width:920px}
+.co::before{content:""; position:absolute; left:0; top:0; bottom:0; width:2px; border-radius:6px 0 0 6px; background:var(--ink)}
+.co .l{display:block; font-size:12px; font-weight:500; color:var(--g500); margin-bottom:4px}
+.co p{margin:0; font-size:14.5px}
+.co.ref::before{background:var(--accent)}
+.co.ref .l{color:var(--accent)}
+.co.warn::before{background:var(--warn)}
+.co.warn .l{color:var(--warn)}
+.co.risk::before{background:var(--neg)}
+.co.risk .l{color:var(--neg)}
+
+/* ══ 표 ═════════════════════════════════════════════════════ */
+.tw{overflow-x:auto; margin:20px 0; max-width:920px}
+table{border-collapse:collapse; width:100%; font-size:14px}
+caption{caption-side:top; text-align:left; font-size:12px; font-weight:500; color:var(--g500); padding:0 0 8px}
+th,td{padding:8px 12px; text-align:left; vertical-align:top}
+thead th{font-size:12px; font-weight:500; color:var(--g500); border-bottom:1px solid var(--ink); white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--line)}
+tbody th{font-weight:500}
+.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+.mono{font-family:var(--mono); font-size:12.5px; white-space:nowrap}
+tr.tot > *{font-weight:700; border-top:1px solid var(--ink)}
+.neg{color:var(--neg)}
+.mut{color:var(--g500)}
+th[scope="col"].sticky{position:sticky; top:0; background:var(--bg)}
+
+/* ══ 상태 배지 (텍스트, pill 금지) ═══════════════════════════ */
+.st{display:inline-block; background:var(--tint); border-radius:4px; padding:1px 7px; font-size:11px; font-weight:500; color:var(--g500); white-space:nowrap}
+.st.done{color:var(--ink)}
+.st.hot{color:var(--neg)}
+
+/* ══ 코드 블록 ══════════════════════════════════════════════ */
+.cb{position:relative; margin:20px 0; max-width:920px}
+.cb .lang{position:absolute; top:10px; right:12px; font-size:11px; color:var(--g500); font-weight:500}
+pre{background:var(--tint); border-radius:6px; margin:0; padding:16px 18px; overflow-x:auto;
+    font-family:var(--mono); font-size:13px; line-height:1.65; color:var(--g700)}
+pre .add{color:var(--ink); font-weight:600}
+pre .del{color:var(--neg)}
+pre .cm{color:var(--g500)}
+code{font-family:var(--mono); font-size:.92em; background:var(--tint); border-radius:3px; padding:1px 4px}
+pre code{background:none; padding:0; font-size:inherit}
+
+/* ══ 차트 ═══════════════════════════════════════════════════ */
+figure{margin:24px 0; max-width:920px}
+figcaption{font-size:13px; color:var(--g500); margin-top:10px}
+svg{display:block; width:100%; height:auto}
+.grid{stroke:var(--line); stroke-width:1}
+.ser{stroke:var(--ink); fill:none; stroke-width:1.5; stroke-linejoin:round; stroke-linecap:round}
+.ser-a{stroke:var(--accent); fill:none; stroke-width:1.5; stroke-linejoin:round; stroke-linecap:round}
+.bar{fill:var(--ink)}
+.bar-m{fill:var(--g300)}
+.mk{fill:var(--ink)}
+.mk-a{fill:var(--accent)}
+/* SVG 텍스트 색 — 라이트·다크 양쪽에서 토큰을 따른다 */
+.t-mut{fill:var(--g500)}
+.t-ink{fill:var(--ink)}
+.t-acc{fill:var(--accent)}
+.t-inv{fill:var(--bg)}
+.lgd{display:flex; gap:20px; font-size:12px; color:var(--g500); margin-top:10px}
+.lgd i{display:inline-block; width:12px; height:12px; border-radius:2px; margin-right:6px; vertical-align:-1px}
+
+/* ══ 타임라인 mono 목록 (점·선 없음) ═════════════════════════ */
+.tl{list-style:none; margin:20px 0; padding:0; max-width:680px}
+.tl li{display:flex; gap:16px; padding:7px 0; border-bottom:1px solid var(--line); font-size:14px}
+.tl time{font-family:var(--mono); font-size:12.5px; color:var(--g500); flex:0 0 52px}
+
+/* ══ 체크리스트 ═════════════════════════════════════════════ */
+.chk{list-style:none; margin:20px 0; padding:0; max-width:680px}
+.chk li{display:flex; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); font-size:14.5px}
+.chk input{margin:5px 0 0; accent-color:var(--g500); flex:0 0 auto}
+.chk .id{font-family:var(--mono); font-size:12.5px; color:var(--g500); flex:0 0 30px; padding-top:1px}
+
+ul.plain{padding-left:18px; margin:12px 0 16px; max-width:680px}
+ul.plain li{margin:0 0 8px}
+
+/* ══ 부록 ═══════════════════════════════════════════════════ */
+details{margin:12px 0; max-width:920px}
+summary{cursor:pointer; font-size:14.5px; font-weight:600; padding:10px 0; border-bottom:1px solid var(--line); list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"＋ "; color:var(--g500); font-weight:400}
+details[open] summary::before{content:"－ "}
+.dbody{padding:4px 0 8px}
+
+/* ══ 푸터 ═══════════════════════════════════════════════════ */
+footer{border-top:1px solid var(--line); margin-top:64px; padding:20px 0 48px; font-size:13px; color:var(--g500)}
+footer span::after{content:" · "; color:var(--line)}
+footer span:last-child::after{content:""}
+
+/* ══ 인쇄 — 무조건 라이트 ════════════════════════════════════ */
+@page{size:A4; margin:18mm 16mm}
+@media print{
+  :root{
+    color-scheme:light !important;
+    --bg:#FFFFFF; --paper:#FFFFFF; --tint:#F4F4F4; --ink:#171A20;
+    --g500:#5C5E62; --accent:#158F41; --accent-2:#158F41; --line:#D9D9D9;
+    --g700:#3A3D42; --pos:#3E6AE1; --neg:#E82127; --warn:#9A6206;
+  }
+  body{background:#fff; color:#171A20; font-size:10.5pt}
+  nav.toc,.tt,.no-print,.anchor{display:none !important}
+  .shell{display:block; max-width:none; padding:0}
+  .hero{padding:0 0 16pt}
+  main{padding:0}
+  section,figure,table,.stats,.co,.cb{break-inside:avoid}
+  h2,h3{break-after:avoid}
+  .tw{overflow:visible}
+  thead th.sticky{position:static}
+  details{display:block}
+  details > *{display:block}
+  summary::before{content:""}
+  a{text-decoration:none}
+}
+</style>
+</head>
+<body>
+<button class="tt" type="button" aria-pressed="true"><span class="tt-l">라이트 모드</span></button>
+
+<div class="shell">
+<nav class="toc" aria-label="문서 목차">
+  <p class="toc-t">목차</p>
+  <ul>
+    <li><a href="#impact">영향 범위와 요약</a></li>
+    <li><a href="#timeline">사건 타임라인</a></li>
+    <li><a href="#metrics">오류 추이 지표</a></li>
+    <li><a href="#cause">근본 원인</a></li>
+    <li><a href="#recovery">복구 과정과 소요</a></li>
+    <li><a href="#review">잘된 점과 아쉬운 점</a></li>
+    <li><a href="#actions">재발 방지 액션</a></li>
+    <li><a href="#followup">후속 모니터링</a></li>
+    <li><a href="#appendix">부록</a></li>
+  </ul>
+</nav>
+
+<main>
+<header class="hero">
+  <span class="badge"><span class="dot"></span>SEV-1 · 해결됨</span>
+  <h1>결제 승인 API 장애 회고</h1>
+  <p class="sum">2026년 8월 19일 14시 07분부터 14시 49분까지 42분간 페이루프 결제 승인 API 의 오류율이 최대 35.4% 까지 상승해 승인 요청 98,861건이 실패했다. 원인은 배포 v4.18.0 에 포함된 데이터베이스 커넥션 풀 설정의 환경변수 이름 오타로, 풀 상한이 200에서 기본값 40으로 축소되면서 피크 트래픽에 풀이 고갈된 것이다. 롤백으로 복구했고 데이터 손실은 없다.</p>
+  <p class="hmeta"><span>작성 SRE 박선우</span><span>2026-08-21</span><span>v1.2</span><span>INC-2026-0819-01</span><span>검토 완료</span></p>
+</header>
+
+<section id="impact" aria-labelledby="impact-h">
+  <h2 id="impact-h">영향 범위와 요약<a class="anchor" href="#impact" aria-label="영향 범위와 요약 섹션 링크">#</a></h2>
+  <p class="lead">장애는 결제 승인 단일 도메인에 국한됐고 정산·가맹점 관리·정기결제는 정상이었다. 실패한 승인은 클라이언트 자동 재시도와 사후 배치로 전량 처리돼 미결 거래는 남지 않았다.</p>
+
+  <dl class="stats">
+    <div><dt>심각도</dt><dd>SEV-1</dd></div>
+    <div class="key"><dt>총 영향 시간</dt><dd>42<span class="u">분</span></dd></div>
+    <div><dt>감지 소요</dt><dd>4<span class="u">분</span></dd></div>
+    <div><dt>실패 승인</dt><dd>98,861<span class="u">건</span></dd></div>
+    <div><dt>최대 오류율</dt><dd>35.4<span class="u">%</span></dd></div>
+    <div><dt>영향 가맹점</dt><dd>1,284<span class="u">곳</span></dd></div>
+  </dl>
+
+  <div class="prose">
+    <p>영향 구간(14:05~14:49 집계 버킷 기준) 동안 결제 승인 API 는 391,310건의 요청을 받아 98,861건을 실패 처리했다. 평균 오류율은 25.3% 로, 평시 정상 범위인 0.1~0.2% 대비 약 150배다. 전체 등록 가맹점 3,470곳 중 1,284곳(37.0%)에서 최소 1건 이상의 승인 실패가 관측됐다.</p>
+    <p>결제수단별로는 신용카드 실패율이 30.8% 로 가장 높았다. 커넥션 풀을 공유하지 않는 계좌이체 경로는 10.6% 로 상대적으로 낮았는데, 이 차이가 뒤에서 원인을 좁히는 단서가 됐다.</p>
+  </div>
+
+  <div class="tw">
+  <table>
+    <caption>표 1. 결제수단별 영향 (영향 구간 14:05~14:49, 5분 버킷 합계)</caption>
+    <thead><tr>
+      <th scope="col">결제수단</th>
+      <th scope="col" class="num">승인 요청</th>
+      <th scope="col" class="num">실패</th>
+      <th scope="col" class="num">장애 중 실패율</th>
+      <th scope="col" class="num">평시 실패율</th>
+      <th scope="col" class="num">증감</th>
+    </tr></thead>
+    <tbody>
+      <tr><th scope="row">신용카드</th><td class="num">219,134</td><td class="num">67,500</td><td class="num">30.80%</td><td class="num">0.11%</td><td class="num neg">▲ 30.69%p</td></tr>
+      <tr><th scope="row">간편결제</th><td class="num">121,306</td><td class="num">25,960</td><td class="num">21.40%</td><td class="num">0.09%</td><td class="num neg">▲ 21.31%p</td></tr>
+      <tr><th scope="row">계좌이체</th><td class="num">50,870</td><td class="num">5,401</td><td class="num">10.62%</td><td class="num">0.18%</td><td class="num neg">▲ 10.44%p</td></tr>
+      <tr class="tot"><th scope="row">합계</th><td class="num">391,310</td><td class="num">98,861</td><td class="num">25.26%</td><td class="num">0.12%</td><td class="num neg">▲ 25.14%p</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 720 250" role="img" aria-labelledby="c4t" aria-label="결제수단별 실패율 비교 그룹 막대 차트. 신용카드는 평시 0.11퍼센트에서 장애 중 30.8퍼센트로, 간편결제는 0.09퍼센트에서 21.4퍼센트로, 계좌이체는 0.18퍼센트에서 10.6퍼센트로 상승했다.">
+      <title id="c4t">결제수단별 실패율 — 평시 대비 장애 중</title>
+      <g class="grid">
+        <line x1="60" y1="149.7" x2="700" y2="149.7"/>
+        <line x1="60" y1="99.4" x2="700" y2="99.4"/>
+        <line x1="60" y1="49.1" x2="700" y2="49.1"/>
+      </g>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" class="t-mut" text-anchor="end">
+        <text x="50" y="204">0</text>
+        <text x="50" y="153.7">10</text>
+        <text x="50" y="103.4">20</text>
+        <text x="50" y="53.1">30</text>
+      </g>
+      <rect class="bar-m" x="100" y="198" width="46" height="2"/>
+      <rect class="bar" x="154" y="45.1" width="46" height="154.9"/>
+      <rect class="bar-m" x="320" y="198" width="46" height="2"/>
+      <rect class="bar" x="374" y="92.4" width="46" height="107.6"/>
+      <rect class="bar-m" x="540" y="198" width="46" height="2"/>
+      <rect class="bar" x="594" y="146.7" width="46" height="53.3"/>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" class="t-mut" text-anchor="middle">
+        <text x="123" y="192">0.11</text>
+        <text x="343" y="192">0.09</text>
+        <text x="563" y="192">0.18</text>
+      </g>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" font-weight="600" class="t-ink" text-anchor="middle">
+        <text x="177" y="39">30.80</text>
+        <text x="397" y="86">21.40</text>
+        <text x="617" y="141">10.62</text>
+      </g>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="12" class="t-mut" text-anchor="middle">
+        <text x="150" y="222">신용카드</text>
+        <text x="370" y="222">간편결제</text>
+        <text x="590" y="222">계좌이체</text>
+        <text x="380" y="243">단위: 실패율 %</text>
+      </g>
+    </svg>
+    <div class="lgd" aria-hidden="true">
+      <span><i style="background:var(--g300)"></i>평시(8월 1~18일 평균)</span>
+      <span><i style="background:var(--ink)"></i>장애 중(14:05~14:49)</span>
+    </div>
+    <figcaption>커넥션 풀을 공유하는 카드·간편결제 경로만 크게 무너졌다 — 실패가 업스트림이 아니라 자체 풀에서 발생했다는 첫 증거다.</figcaption>
+  </figure>
+
+  <div class="co ref">
+    <span class="l">참고</span>
+    <p>실패한 98,861건 중 91,449건은 가맹점 클라이언트의 자동 재시도(멱등키 기반)로 장애 구간 안에서 이미 성공 처리됐다. 사후 재처리 대상은 7,412건이었고 15:20 배치로 7,398건이 성공, 14건은 카드사 승인 유효시간 만료로 영구 실패했다.</p>
+  </div>
+</section>
+
+<section id="timeline" aria-labelledby="timeline-h">
+  <h2 id="timeline-h">사건 타임라인<a class="anchor" href="#timeline" aria-label="사건 타임라인 섹션 링크">#</a></h2>
+  <p class="lead">모든 시각은 KST 기준이며 출처는 배포 파이프라인 로그·알림 매니저 이력·인시던트 채널 타임스탬프다. 인지에서 완화까지 38분이 걸렸고, 그중 20분이 원인 규명 구간이었다.</p>
+
+  <div class="tw">
+  <table>
+    <caption>표 2. 사건 타임라인 (2026-08-19, KST)</caption>
+    <thead><tr>
+      <th scope="col">시각</th>
+      <th scope="col">이벤트</th>
+      <th scope="col">담당</th>
+      <th scope="col">상태</th>
+    </tr></thead>
+    <tbody>
+      <tr><th scope="row" class="mono">14:02</th><td>결제 승인 서비스 v4.18.0 프로덕션 배포 시작(전 노드 순차)</td><td>배포플랫폼 이하늘</td><td><span class="st">정상</span></td></tr>
+      <tr><th scope="row" class="mono">14:06</th><td>배포 완료, 헬스체크 전 노드 통과</td><td>배포플랫폼 이하늘</td><td><span class="st">정상</span></td></tr>
+      <tr><th scope="row" class="mono">14:07</th><td>승인 오류율 상승 시작(0.12% → 2.40%)</td><td>—</td><td><span class="st hot">미인지</span></td></tr>
+      <tr><th scope="row" class="mono">14:11</th><td><code>auth_error_rate_5m</code> 경고 발화, 온콜 호출</td><td>SRE 박선우</td><td><span class="st">감지</span></td></tr>
+      <tr><th scope="row" class="mono">14:16</th><td>SEV-1 승격, 인시던트 채널 개설 및 지휘 인계</td><td>인시던트관리 최유진</td><td><span class="st done">대응</span></td></tr>
+      <tr><th scope="row" class="mono">14:23</th><td>가설 1 「카드사 응답 지연」 기각 — 업스트림 p99 평시 수준 확인</td><td>결제플랫폼 정민아</td><td><span class="st">기각</span></td></tr>
+      <tr><th scope="row" class="mono">14:29</th><td>계좌이체 경로만 정상인 점에 착안해 커넥션 풀 메트릭 확인, 사용률 100% 포착</td><td>SRE 박선우</td><td><span class="st done">단서</span></td></tr>
+      <tr><th scope="row" class="mono">14:36</th><td>근본 원인 확정 — v4.18.0 의 환경변수 이름 오타로 풀 상한 200 → 40</td><td>결제플랫폼 김도현</td><td><span class="st done">확정</span></td></tr>
+      <tr><th scope="row" class="mono">14:38</th><td>v4.17.3 롤백 결정 및 실행(핫픽스 전진 배포 대신 롤백 선택)</td><td>인시던트관리 최유진</td><td><span class="st done">결정</span></td></tr>
+      <tr><th scope="row" class="mono">14:42</th><td>전 노드 롤백 완료, 커넥션 풀 사용률 34% 로 하락</td><td>배포플랫폼 이하늘</td><td><span class="st done">복구</span></td></tr>
+      <tr><th scope="row" class="mono">14:49</th><td>오류율 0.41% 로 정상 범위 복귀</td><td>SRE 박선우</td><td><span class="st done">정상</span></td></tr>
+      <tr><th scope="row" class="mono">14:54</th><td>15분 관찰 후 SEV 해제, 가맹점 공지 발송</td><td>인시던트관리 최유진</td><td><span class="st done">종료</span></td></tr>
+      <tr><th scope="row" class="mono">15:20</th><td>실패 승인 재처리 배치 완료(7,412건 중 7,398건 성공)</td><td>결제플랫폼 김도현</td><td><span class="st done">완료</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>대응 단계 요약<a class="anchor" href="#timeline" aria-label="대응 단계 요약 링크">#</a></h3>
+  <ul class="tl">
+    <li><time>14:07</time><span>장애 시작 — 첫 승인 실패 발생</span></li>
+    <li><time>14:11</time><span>감지 — 알림 발화까지 4분</span></li>
+    <li><time>14:16</time><span>분류 — SEV-1 승격까지 5분</span></li>
+    <li><time>14:36</time><span>원인 규명 — 확정까지 20분(전체 구간의 48%)</span></li>
+    <li><time>14:42</time><span>롤백 — 실행부터 완료까지 6분</span></li>
+    <li><time>14:49</time><span>검증 — 정상 복귀 확인까지 7분</span></li>
+  </ul>
+
+  <figure>
+    <svg viewBox="0 0 720 150" role="img" aria-labelledby="c3t" aria-label="대응 단계별 소요 시간 스택 막대 차트. 총 42분 중 감지 4분, 분류 5분, 원인 규명 20분, 롤백 6분, 검증 7분이 소요됐다.">
+      <title id="c3t">대응 단계별 소요 시간 (총 42분)</title>
+      <rect class="bar-m" x="40" y="34" width="62.9" height="26"/>
+      <rect class="bar-m" x="102.9" y="34" width="78.6" height="26"/>
+      <rect class="bar" x="181.5" y="34" width="314.3" height="26"/>
+      <rect class="bar-m" x="495.8" y="34" width="94.3" height="26"/>
+      <rect class="bar-m" x="590.1" y="34" width="109.9" height="26"/>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" class="t-mut" text-anchor="middle">
+        <text x="71.5" y="80">감지</text><text x="71.5" y="95">4분</text>
+        <text x="142.2" y="80">분류</text><text x="142.2" y="95">5분</text>
+        <text x="543" y="80">롤백</text><text x="543" y="95">6분</text>
+        <text x="645" y="80">검증</text><text x="645" y="95">7분</text>
+      </g>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="12" font-weight="600" class="t-inv" text-anchor="middle">
+        <text x="338.6" y="52">원인 규명 20분</text>
+      </g>
+      <g class="grid"><line x1="40" y1="112" x2="700" y2="112"/></g>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" class="t-mut">
+        <text x="40" y="128">14:07</text>
+        <text x="700" y="128" text-anchor="end">14:49</text>
+        <text x="370" y="145" text-anchor="middle">단위: 분 · 총 42분</text>
+      </g>
+    </svg>
+    <figcaption>단축 여지는 롤백 실행이 아니라 원인 규명 구간에 있다 — 20분 중 12분이 업스트림 가설 검증에 쓰였다.</figcaption>
+  </figure>
+
+  <div class="co warn">
+    <span class="l">주의</span>
+    <p>14:06 배포 완료 시점의 헬스체크는 전 노드를 통과했다. 헬스체크가 커넥션을 1개만 획득하는 얕은 검사라 풀 상한 축소를 탐지하지 못했다. 배포 게이트를 헬스체크만으로 두면 이 계열의 결함은 매번 통과한다.</p>
+  </div>
+</section>
+
+<section id="metrics" aria-labelledby="metrics-h">
+  <h2 id="metrics-h">오류 추이 지표<a class="anchor" href="#metrics" aria-label="오류 추이 지표 섹션 링크">#</a></h2>
+  <p class="lead">5분 집계 버킷 기준 오류율과 실패 유형 구성이다. 원본 13개 버킷의 요청·실패 건수는 부록 A 에 전량 수록했다.</p>
+
+  <figure>
+    <svg viewBox="0 0 720 260" role="img" aria-labelledby="c1t" aria-label="승인 오류율 5분 단위 시계열 라인 차트. 14시 00분 0.12퍼센트에서 시작해 14시 30분 35.4퍼센트로 정점을 찍고, 롤백 후 14시 50분 0.41퍼센트로 정상 범위에 복귀했다.">
+      <title id="c1t">승인 오류율 추이 (2026-08-19 14:00~15:00, 5분 버킷)</title>
+      <g class="grid">
+        <line x1="56" y1="162" x2="700" y2="162"/>
+        <line x1="56" y1="116" x2="700" y2="116"/>
+        <line x1="56" y1="70" x2="700" y2="70"/>
+      </g>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" class="t-mut" text-anchor="end">
+        <text x="48" y="212">0</text>
+        <text x="48" y="166">10</text>
+        <text x="48" y="120">20</text>
+        <text x="48" y="74">30</text>
+        <text x="48" y="28">40</text>
+      </g>
+      <path class="ser" d="M56,207.4 L109.7,197 L163.3,122.4 L217,64.5 L270.7,47.9 L324.3,55.7 L378,45.2 L431.7,57.6 L485.3,77.8 L539,163.8"/>
+      <path class="ser-a" d="M539,163.8 L592.7,206.1 L646.3,207.4 L700,207.5"/>
+      <g class="mk">
+        <circle cx="378" cy="45.2" r="3.5"/>
+      </g>
+      <g class="mk-a">
+        <circle cx="592.7" cy="206.1" r="3.5"/>
+      </g>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" font-weight="600" class="t-ink" text-anchor="middle">
+        <text x="378" y="34">35.4</text>
+      </g>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" font-weight="600" class="t-acc" text-anchor="middle">
+        <text x="600" y="226">0.41</text>
+      </g>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" class="t-mut" text-anchor="middle">
+        <text x="56" y="228">14:00</text>
+        <text x="163.3" y="228">14:10</text>
+        <text x="270.7" y="228">14:20</text>
+        <text x="378" y="228">14:30</text>
+        <text x="485.3" y="228">14:40</text>
+        <text x="592.7" y="242">14:50</text>
+        <text x="700" y="228">15:00</text>
+        <text x="378" y="256">단위: 오류율 % · 회색 = 장애 구간, 녹색 = 롤백 후 회복 구간</text>
+      </g>
+    </svg>
+    <figcaption>롤백 완료(14:42) 후 7분 만에 정상 범위로 떨어졌다 — 회복 기울기가 가파른 것은 원인이 상태 오염이 아니라 설정값 하나였음을 뜻한다.</figcaption>
+  </figure>
+
+  <figure>
+    <svg viewBox="0 0 720 210" role="img" aria-labelledby="c2t" aria-label="실패 유형 구성 수평 막대 차트. 커넥션 획득 타임아웃 70,389건 71.2퍼센트, 업스트림 5xx 18,190건 18.4퍼센트, 재시도 소진 7,019건 7.1퍼센트, 기타 3,263건 3.3퍼센트.">
+      <title id="c2t">실패 유형 구성 (총 98,861건)</title>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="12" class="t-mut" text-anchor="end">
+        <text x="190" y="46">커넥션 획득 타임아웃</text>
+        <text x="190" y="84">업스트림 5xx</text>
+        <text x="190" y="122">재시도 소진</text>
+        <text x="190" y="160">기타</text>
+      </g>
+      <rect class="bar" x="200" y="30" width="500" height="22"/>
+      <rect class="bar-m" x="200" y="68" width="129.2" height="22"/>
+      <rect class="bar-m" x="200" y="106" width="49.9" height="22"/>
+      <rect class="bar-m" x="200" y="144" width="23.2" height="22"/>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" class="t-mut">
+        <text x="336" y="84">18,190 · 18.4%</text>
+        <text x="257" y="122">7,019 · 7.1%</text>
+        <text x="230" y="160">3,263 · 3.3%</text>
+      </g>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" font-weight="600" class="t-inv">
+        <text x="690" y="46" text-anchor="end">70,389 · 71.2%</text>
+      </g>
+      <g class="grid"><line x1="200" y1="180" x2="700" y2="180"/></g>
+      <g font-family="Pretendard, system-ui, sans-serif" font-size="11" class="t-mut">
+        <text x="200" y="196">0</text>
+        <text x="700" y="196" text-anchor="end">70,389건</text>
+        <text x="450" y="196" text-anchor="middle">단위: 실패 건수</text>
+      </g>
+    </svg>
+    <figcaption>실패의 71.2% 가 커넥션 획득 단계에서 발생했다 — 업스트림 5xx 18.4% 는 풀 고갈에 따른 타임아웃 재시도가 카드사에 몰린 2차 효과다.</figcaption>
+  </figure>
+
+  <div class="co">
+    <span class="l">결정</span>
+    <p>실패 유형 분류는 애플리케이션 예외 코드가 아니라 <code>db.pool.acquire.timeout</code> 스팬 유무를 1차 기준으로 삼았다. 예외 코드만으로 세면 커넥션 타임아웃이 업스트림 5xx 로 위장돼 원인 비중이 절반 이하로 보인다.</p>
+  </div>
+</section>
+
+<section id="cause" aria-labelledby="cause-h">
+  <h2 id="cause-h">근본 원인<a class="anchor" href="#cause" aria-label="근본 원인 섹션 링크">#</a></h2>
+  <p class="lead">v4.18.0 에 포함된 커넥션 풀 설정 리팩터에서 환경변수 이름의 밑줄 하나가 빠졌다. 오버라이드가 적용되지 않아 라이브러리 기본값 40이 쓰였고, 피크 트래픽의 동시 요청 수가 그 값을 넘어서면서 획득 대기가 250ms 타임아웃을 초과했다.</p>
+
+  <div class="cb">
+    <span class="lang">diff</span>
+<pre><code><span class="cm"># payloop-auth/config/db.yaml — v4.17.3 → v4.18.0</span>
+ pool:
+<span class="del">-  maxSize: ${AUTH_DB_POOL_MAX:-200}</span>
+<span class="add">+  maxSize: ${AUTH_DB_POOLMAX:-40}</span>
+   acquireTimeoutMs: 250
+   idleTimeoutMs: 30000
+   validationQuery: "SELECT 1"</code></pre>
+  </div>
+
+  <div class="prose">
+    <p>배포 환경에는 <code>AUTH_DB_POOL_MAX=200</code> 이 설정돼 있었으나 새 이름 <code>AUTH_DB_POOLMAX</code> 는 정의된 적이 없다. 설정 로더는 미정의 변수를 오류로 다루지 않고 기본값으로 조용히 대체한다. 부팅 로그에도 경고가 남지 않았다.</p>
+    <p>평시 동시 요청 수는 노드당 60~90 수준이라 상한 40으로는 처음부터 부족했다. 14:02 배포 직후 5분간은 순차 배포로 구버전 노드가 트래픽을 나눠 받아 증상이 가려졌고, 14:06 마지막 노드가 교체되면서 전면화됐다.</p>
+  </div>
+
+  <div class="tw">
+  <table>
+    <caption>표 3. 기여 요인 분해</caption>
+    <thead><tr>
+      <th scope="col">계층</th>
+      <th scope="col">사실</th>
+      <th scope="col">이것이 없었다면</th>
+    </tr></thead>
+    <tbody>
+      <tr><th scope="row">직접 원인</th><td>환경변수 이름 오타로 풀 상한이 200에서 40으로 축소</td><td>장애 자체가 발생하지 않음</td></tr>
+      <tr><th scope="row">증폭 요인</th><td>미정의 환경변수를 기본값으로 조용히 대체(경고 없음)</td><td>부팅 단계에서 실패해 배포가 중단됨</td></tr>
+      <tr><th scope="row">탐지 지연</th><td>헬스체크가 커넥션 1개만 획득하는 얕은 검사</td><td>카나리 단계에서 차단</td></tr>
+      <tr><th scope="row">규명 지연</th><td>풀 사용률 지표가 대시보드 3번째 탭에 있어 20분간 미확인</td><td>원인 규명 20분 → 5분 내외로 단축</td></tr>
+      <tr><th scope="row">영향 확대</th><td>커넥션 획득 타임아웃 250ms 도달 시 즉시 실패(백프레셔 없음)</td><td>지연으로 흡수되어 SEV-2 수준에 그침</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="co risk">
+    <span class="l">위험</span>
+    <p>같은 설정 로더를 쓰는 서비스가 정산(<code>payloop-settle</code>)·정기결제(<code>payloop-recur</code>) 등 11개 더 있다. 미정의 환경변수의 조용한 기본값 대체는 이 11개 전부에서 동일하게 성립하므로, 액션 A-1 은 결제 승인 서비스 한정이 아니라 공용 로더 계층에서 처리한다.</p>
+  </div>
+</section>
+
+<section id="recovery" aria-labelledby="recovery-h">
+  <h2 id="recovery-h">복구 과정과 소요<a class="anchor" href="#recovery" aria-label="복구 과정과 소요 섹션 링크">#</a></h2>
+  <p class="lead">핫픽스 전진 배포 대신 롤백을 택했다. 원인이 설정값 한 줄이라 핫픽스가 더 빠를 수 있었지만, 확정 시점(14:36)에 이미 29분이 경과해 검증되지 않은 배포를 추가로 넣는 위험을 피했다.</p>
+
+  <div class="cb">
+    <span class="lang">bash</span>
+<pre><code><span class="cm"># 14:38 롤백 실행 — 전 노드 동시(순차 아님)</span>
+$ payloop deploy rollback payloop-auth \
+    --to v4.17.3 --regions kr-central-1 --strategy all-at-once
+<span class="cm">→ 12/12 nodes rolled back in 3m41s</span>
+<span class="cm">→ db.pool.utilization: 100% → 34% (14:42:18)</span></code></pre>
+  </div>
+
+  <div class="cb">
+    <span class="lang">text</span>
+<pre><code>2026-08-19T14:11:04+09:00  WARN   alertmanager  fired  rule=auth_error_rate_5m
+    severity=warning  value=0.186  threshold=0.05  for=2m
+    labels={service=payloop-auth, env=prod, region=kr-central-1}
+2026-08-19T14:11:04+09:00  INFO   notifier      route=slack#payments-oncall
+    status=delivered  latency_ms=412
+2026-08-19T14:13:40+09:00  WARN   alertmanager  fired  rule=upstream_5xx_ratio
+    severity=warning  value=0.061  threshold=0.03  for=5m
+2026-08-19T14:16:22+09:00  ERROR  alertmanager  fired  rule=auth_error_rate_burn
+    severity=critical  value=0.312  threshold=0.20  for=1m</code></pre>
+  </div>
+
+  <div class="prose">
+    <p>알림은 정상 동작했다. 14:11 경고와 14:16 심각 알림 모두 임계를 넘긴 직후 발화했고 전달 지연은 412ms 였다. 14:13 에 함께 발화한 <code>upstream_5xx_ratio</code> 는 결과적으로 오도 신호였다 — 이 알림이 카드사 지연 가설을 12분간 붙들게 했다.</p>
+  </div>
+</section>
+
+<section id="review" aria-labelledby="review-h">
+  <h2 id="review-h">잘된 점과 아쉬운 점<a class="anchor" href="#review" aria-label="잘된 점과 아쉬운 점 섹션 링크">#</a></h2>
+  <p class="lead">개인의 판단 착오가 아니라 관측 배치와 게이트 설계의 문제로 본다. 같은 상황에서 다른 온콜이 대응했어도 원인 규명 소요는 비슷했을 것이다.</p>
+
+  <h3>잘된 점<a class="anchor" href="#review" aria-label="잘된 점 링크">#</a></h3>
+  <ul class="plain">
+    <li>알림 임계가 적절해 오류율 18.6% 시점에 4분 만에 감지됐다. 임계를 5%로 잡은 것이 유효했다.</li>
+    <li>결제수단별 실패율 차이를 단서로 삼아 업스트림 가설을 기각한 판단(14:23)이 규명의 전환점이었다.</li>
+    <li>핫픽스 대신 롤백을 택한 결정이 추가 위험을 만들지 않았다. 검증된 아티팩트로 되돌리는 것이 29분 경과 시점의 옳은 선택이었다.</li>
+    <li>멱등키 설계 덕분에 재처리에서 이중 승인이 0건이었다.</li>
+  </ul>
+
+  <h3>아쉬운 점<a class="anchor" href="#review" aria-label="아쉬운 점 링크">#</a></h3>
+  <ul class="plain">
+    <li>커넥션 풀 사용률에 알림이 없었다. 지표는 수집되고 있었지만 아무도 보지 않는 대시보드 3번째 탭에 있었다 — 수집과 관측은 다르다.</li>
+    <li>배포 후 자동 검증이 헬스체크뿐이었다. 오류율 기반 카나리 게이트가 있었다면 14:04에 자동 차단됐다.</li>
+    <li><code>upstream_5xx_ratio</code> 알림이 2차 효과를 1차 원인처럼 보이게 했다. 파생 알림에 인과 방향 표시가 없다.</li>
+    <li>설정 변경이 코드 리뷰를 통과했다. 환경변수 이름 변경은 diff 상 한 글자라 사람이 잡기 어렵다.</li>
+  </ul>
+
+  <div class="co warn">
+    <span class="l">주의</span>
+    <p>「리뷰를 더 꼼꼼히 한다」를 액션으로 넣지 않았다. 이 결함은 사람의 주의력으로 막는 종류가 아니다 — 정의되지 않은 환경변수를 부팅 시점에 실패로 만드는 것이 유일하게 재현 가능한 방어다.</p>
+  </div>
+</section>
+
+<section id="actions" aria-labelledby="actions-h">
+  <h2 id="actions-h">재발 방지 액션<a class="anchor" href="#actions" aria-label="재발 방지 액션 섹션 링크">#</a></h2>
+  <p class="lead">7개 항목 중 2개는 완료, 3개는 진행 중, 2개는 대기 상태다. A-1 과 A-3 이 이 장애의 재발을 직접 막는 항목이고 나머지는 영향 축소·규명 단축을 목표로 한다.</p>
+
+  <ul class="chk">
+    <li><input type="checkbox" disabled checked aria-hidden="true"><span class="id">A-2</span><span>커넥션 풀 사용률 알림 신설 — 80% 5분 지속 시 경고, 95% 2분 지속 시 심각</span></li>
+    <li><input type="checkbox" disabled checked aria-hidden="true"><span class="id">A-5</span><span>SEV-1 승격 기준 문서화 및 결제 도메인 런북 갱신</span></li>
+    <li><input type="checkbox" disabled aria-hidden="true"><span class="id">A-1</span><span>공용 설정 로더에 환경변수 스키마 검증 도입 — 선언되지 않은 키 참조 시 부팅 실패</span></li>
+    <li><input type="checkbox" disabled aria-hidden="true"><span class="id">A-3</span><span>배포 후 5분 자동 카나리 게이트 — 오류율 1% 초과 시 자동 롤백</span></li>
+    <li><input type="checkbox" disabled aria-hidden="true"><span class="id">A-7</span><span>결제 장애 단일 대시보드 구성 — 풀 사용률·업스트림 지연·오류율을 한 화면에</span></li>
+    <li><input type="checkbox" disabled aria-hidden="true"><span class="id">A-4</span><span>커넥션 획득 실패 시 즉시 오류 대신 백프레셔 큐 전환 검토</span></li>
+    <li><input type="checkbox" disabled aria-hidden="true"><span class="id">A-6</span><span>실패 승인 재처리 파이프라인 상시화 — 수동 배치를 이벤트 기반으로</span></li>
+  </ul>
+
+  <div class="tw">
+  <table>
+    <caption>표 4. 액션 아이템 담당·기한·상태 (기준일 2026-08-21)</caption>
+    <thead><tr>
+      <th scope="col">ID</th>
+      <th scope="col">항목</th>
+      <th scope="col">담당</th>
+      <th scope="col">기한</th>
+      <th scope="col">우선순위</th>
+      <th scope="col">상태</th>
+    </tr></thead>
+    <tbody>
+      <tr><th scope="row" class="mono">A-1</th><td>설정 로더 환경변수 스키마 검증</td><td>결제플랫폼 김도현</td><td class="num mono">2026-08-26</td><td>P0</td><td><span class="st hot">진행 중</span></td></tr>
+      <tr><th scope="row" class="mono">A-2</th><td>커넥션 풀 사용률 알림 신설</td><td>SRE 박선우</td><td class="num mono">2026-08-22</td><td>P0</td><td><span class="st done">완료</span></td></tr>
+      <tr><th scope="row" class="mono">A-3</th><td>배포 후 자동 카나리 오류율 게이트</td><td>배포플랫폼 이하늘</td><td class="num mono">2026-09-05</td><td>P0</td><td><span class="st hot">진행 중</span></td></tr>
+      <tr><th scope="row" class="mono">A-4</th><td>커넥션 획득 백프레셔 큐 전환 검토</td><td>결제플랫폼 정민아</td><td class="num mono">2026-09-19</td><td>P2</td><td><span class="st">대기</span></td></tr>
+      <tr><th scope="row" class="mono">A-5</th><td>SEV-1 승격 기준 문서화·런북 갱신</td><td>인시던트관리 최유진</td><td class="num mono">2026-08-29</td><td>P1</td><td><span class="st done">완료</span></td></tr>
+      <tr><th scope="row" class="mono">A-6</th><td>실패 승인 재처리 상시 파이프라인</td><td>결제플랫폼 김도현</td><td class="num mono">2026-10-10</td><td>P2</td><td><span class="st">대기</span></td></tr>
+      <tr><th scope="row" class="mono">A-7</th><td>결제 장애 단일 대시보드 구성</td><td>SRE 박선우</td><td class="num mono">2026-09-12</td><td>P1</td><td><span class="st hot">진행 중</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="co ref">
+    <span class="l">참고</span>
+    <p>A-1 은 결제 승인 서비스가 아니라 공용 설정 로더 라이브러리(<code>payloop-config</code> v2.4)에서 처리한다. 적용 대상 12개 서비스는 라이브러리 버전 상향만으로 검증이 켜지며, 기존 설정과의 호환을 위해 경고 모드를 2주간 운영한 뒤 실패 모드로 전환한다.</p>
+  </div>
+</section>
+
+<section id="followup" aria-labelledby="followup-h">
+  <h2 id="followup-h">후속 모니터링<a class="anchor" href="#followup" aria-label="후속 모니터링 섹션 링크">#</a></h2>
+  <p class="lead">액션 완료 여부와 별개로 4주간 세 지표를 주간 점검한다. 점검 결과는 매주 화요일 결제플랫폼 정례에서 확인하고, 이상 시 이 문서를 개정한다.</p>
+
+  <div class="tw">
+  <table>
+    <caption>표 5. 후속 관찰 지표 (2026-08-21 ~ 2026-09-18)</caption>
+    <thead><tr>
+      <th scope="col">지표</th>
+      <th scope="col">정상 범위</th>
+      <th scope="col" class="num">8월 20일</th>
+      <th scope="col" class="num">8월 21일</th>
+      <th scope="col">판정</th>
+    </tr></thead>
+    <tbody>
+      <tr><th scope="row">승인 오류율(일 평균)</th><td>≤ 0.20%</td><td class="num">0.11%</td><td class="num">0.13%</td><td><span class="st done">정상</span></td></tr>
+      <tr><th scope="row">커넥션 풀 사용률(p99)</th><td>≤ 70%</td><td class="num">38%</td><td class="num">41%</td><td><span class="st done">정상</span></td></tr>
+      <tr><th scope="row">승인 지연 p99</th><td>≤ 800ms</td><td class="num">612ms</td><td class="num">648ms</td><td><span class="st done">정상</span></td></tr>
+      <tr><th scope="row">미결 승인 잔량</th><td>0건</td><td class="num">0건</td><td class="num">0건</td><td><span class="st done">정상</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="prose">
+    <p>재발 판정 기준은 「동일 원인(설정 오버라이드 미적용)으로 인한 SEV-2 이상 장애」다. 다른 원인의 커넥션 풀 고갈은 재발로 세지 않되 A-4 검토 범위에 편입한다.</p>
+  </div>
+</section>
+
+<section id="appendix" aria-labelledby="appendix-h">
+  <h2 id="appendix-h">부록<a class="anchor" href="#appendix" aria-label="부록 섹션 링크">#</a></h2>
+  <p class="lead">본문에서 요약한 지표의 원본과 알림 규칙 현황이다. 인쇄 시 자동으로 펼쳐진다.</p>
+
+  <details>
+    <summary>부록 A. 5분 버킷 원본 지표 (13개 버킷)</summary>
+    <div class="dbody">
+      <div class="tw">
+      <table>
+        <caption>표 A-1. 승인 요청·실패·오류율 (2026-08-19 14:00~15:00, KST)</caption>
+        <thead><tr>
+          <th scope="col" class="sticky">버킷 시작</th>
+          <th scope="col" class="num sticky">승인 요청</th>
+          <th scope="col" class="num sticky">실패</th>
+          <th scope="col" class="num sticky">오류율</th>
+          <th scope="col" class="sticky">구간</th>
+        </tr></thead>
+        <tbody>
+          <tr><th scope="row" class="mono">14:00</th><td class="num">41,820</td><td class="num">50</td><td class="num">0.12%</td><td class="mut">정상</td></tr>
+          <tr><th scope="row" class="mono">14:05</th><td class="num">42,310</td><td class="num">1,015</td><td class="num">2.40%</td><td class="neg">장애</td></tr>
+          <tr><th scope="row" class="mono">14:10</th><td class="num">43,660</td><td class="num">8,121</td><td class="num">18.60%</td><td class="neg">장애</td></tr>
+          <tr><th scope="row" class="mono">14:15</th><td class="num">44,120</td><td class="num">13,765</td><td class="num">31.20%</td><td class="neg">장애</td></tr>
+          <tr><th scope="row" class="mono">14:20</th><td class="num">43,980</td><td class="num">15,305</td><td class="num">34.80%</td><td class="neg">장애</td></tr>
+          <tr><th scope="row" class="mono">14:25</th><td class="num">43,510</td><td class="num">14,402</td><td class="num">33.10%</td><td class="neg">장애</td></tr>
+          <tr><th scope="row" class="mono">14:30</th><td class="num">44,260</td><td class="num">15,668</td><td class="num">35.40%</td><td class="neg">장애 · 정점</td></tr>
+          <tr><th scope="row" class="mono">14:35</th><td class="num">43,720</td><td class="num">14,296</td><td class="num">32.70%</td><td class="neg">장애</td></tr>
+          <tr><th scope="row" class="mono">14:40</th><td class="num">43,090</td><td class="num">12,194</td><td class="num">28.30%</td><td class="neg">장애 · 롤백</td></tr>
+          <tr><th scope="row" class="mono">14:45</th><td class="num">42,660</td><td class="num">4,095</td><td class="num">9.60%</td><td class="mut">회복</td></tr>
+          <tr><th scope="row" class="mono">14:50</th><td class="num">41,930</td><td class="num">172</td><td class="num">0.41%</td><td class="mut">정상</td></tr>
+          <tr><th scope="row" class="mono">14:55</th><td class="num">41,540</td><td class="num">58</td><td class="num">0.14%</td><td class="mut">정상</td></tr>
+          <tr><th scope="row" class="mono">15:00</th><td class="num">41,380</td><td class="num">46</td><td class="num">0.11%</td><td class="mut">정상</td></tr>
+          <tr class="tot"><th scope="row">영향 구간 합계</th><td class="num">391,310</td><td class="num">98,861</td><td class="num">25.26%</td><td>14:05~14:45 버킷</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="mut" style="font-size:13px">영향 구간 합계는 14:05부터 14:45까지 9개 버킷의 합이다. 실제 장애 시작(14:07)과 종료(14:49)는 버킷 경계와 일치하지 않으므로 합계는 5분 단위 상한 집계다.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>부록 B. 알림 규칙 현황 및 변경</summary>
+    <div class="dbody">
+      <div class="tw">
+      <table>
+        <caption>표 B-1. 결제 승인 도메인 알림 규칙 (장애 시점 기준 + 조치)</caption>
+        <thead><tr>
+          <th scope="col">규칙</th>
+          <th scope="col">등급</th>
+          <th scope="col">임계</th>
+          <th scope="col">발화 시각</th>
+          <th scope="col">조치</th>
+        </tr></thead>
+        <tbody>
+          <tr><th scope="row" class="mono">auth_error_rate_5m</th><td>경고</td><td>&gt; 5% · 2분 지속</td><td class="mono">14:11:04</td><td>유지</td></tr>
+          <tr><th scope="row" class="mono">auth_error_rate_burn</th><td>심각</td><td>&gt; 20% · 1분 지속</td><td class="mono">14:16:22</td><td>유지</td></tr>
+          <tr><th scope="row" class="mono">upstream_5xx_ratio</th><td>경고</td><td>&gt; 3% · 5분 지속</td><td class="mono">14:13:40</td><td>인과 방향 라벨 추가</td></tr>
+          <tr><th scope="row" class="mono">db_pool_utilization</th><td class="mut">없음</td><td class="mut">규칙 부재</td><td class="mut">미발화</td><td>A-2 로 신설(완료)</td></tr>
+          <tr><th scope="row" class="mono">deploy_canary_error</th><td class="mut">없음</td><td class="mut">규칙 부재</td><td class="mut">미발화</td><td>A-3 으로 신설(진행 중)</td></tr>
+          <tr><th scope="row" class="mono">auth_latency_p99</th><td>경고</td><td>&gt; 800ms · 5분 지속</td><td class="mono">14:12:55</td><td>유지</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary>부록 C. 재처리 배치 결과</summary>
+    <div class="dbody">
+      <div class="tw">
+      <table>
+        <caption>표 C-1. 실패 승인 처리 경로별 분해 (총 98,861건)</caption>
+        <thead><tr>
+          <th scope="col">처리 경로</th>
+          <th scope="col" class="num">건수</th>
+          <th scope="col" class="num">비중</th>
+          <th scope="col">완료 시각</th>
+        </tr></thead>
+        <tbody>
+          <tr><th scope="row">클라이언트 자동 재시도(장애 구간 내 성공)</th><td class="num">91,449</td><td class="num">92.50%</td><td class="mono">14:49</td></tr>
+          <tr><th scope="row">사후 배치 재처리 성공</th><td class="num">7,398</td><td class="num">7.48%</td><td class="mono">15:20</td></tr>
+          <tr><th scope="row">영구 실패(카드사 승인 유효시간 만료)</th><td class="num neg">14</td><td class="num">0.01%</td><td class="mono">15:20</td></tr>
+          <tr class="tot"><th scope="row">합계</th><td class="num">98,861</td><td class="num">100.00%</td><td>—</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p style="font-size:14px">비중은 소수점 둘째 자리 반올림이라 항목 합이 99.99% 로 표시되며, 합계 행은 원 건수 기준 100% 다. 영구 실패 14건은 해당 가맹점 6곳에 개별 통지했고, 전액 수기 재승인으로 8월 20일 오전에 처리 완료했다. 이중 승인은 0건이다.</p>
+    </div>
+  </details>
+</section>
+
+<footer>
+  <p><span>페이루프 결제플랫폼실 · SRE팀</span><span>INC-2026-0819-01</span><span>문서 v1.2</span><span>작성 2026-08-21 09:40 KST</span></p>
+  <p><span>데이터 출처: 배포 파이프라인 로그, 알림 매니저 이력, APM 5분 집계 버킷, 인시던트 채널 타임스탬프</span></p>
+  <p><span>본 문서는 내부 회고용이며 가맹점 대외 공지와 수치 기준이 다를 수 있다(대외 공지는 10분 버킷 기준).</span></p>
+</footer>
+</main>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement, KEY='payloop-inc-0819-theme', btn=document.querySelector('.tt'), lbl=btn.querySelector('.tt-l');
+  var saved=null;
+  try{saved=localStorage.getItem(KEY);}catch(e){}
+  if(saved==='light'||saved==='dark'){root.setAttribute('data-theme',saved);}
+  function isDark(){
+    var t=root.getAttribute('data-theme');
+    if(t) return t==='dark';
+    return !window.matchMedia('(prefers-color-scheme: light)').matches;
+  }
+  function sync(){
+    var d=isDark();
+    btn.setAttribute('aria-pressed', d?'true':'false');
+    lbl.textContent = d ? '라이트 모드' : '다크 모드';
+  }
+  sync();
+  btn.addEventListener('click',function(){
+    var next = isDark() ? 'light' : 'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem(KEY,next);}catch(e){}
+    sync();
+  });
+  var links={};
+  Array.prototype.forEach.call(document.querySelectorAll('.toc a'),function(a){
+    links[a.getAttribute('href').slice(1)]=a;
+  });
+  var secs=Array.prototype.slice.call(document.querySelectorAll('main section[id]'));
+  if('IntersectionObserver' in window && secs.length){
+    var io=new IntersectionObserver(function(en){
+      en.forEach(function(e){
+        if(!e.isIntersecting) return;
+        for(var k in links){ links[k].classList.remove('on'); }
+        if(links[e.target.id]) links[e.target.id].classList.add('on');
+      });
+    },{rootMargin:'-10% 0px -70% 0px', threshold:0});
+    secs.forEach(function(s){ io.observe(s); });
+  }
+})();
+</script>
+</body>
+</html>

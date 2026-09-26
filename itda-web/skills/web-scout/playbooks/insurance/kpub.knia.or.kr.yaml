@@ -1,0 +1,27 @@
+schema_version: 1
+host: kpub.knia.or.kr
+domain: insurance
+label: 손해보험협회 공시실
+group: institution
+locations:
+- location_id: kpub-disclosure-data
+  item: 공시규정자료실
+  item_kind: disclosure
+  url: https://kpub.knia.or.kr/summary/disclosureData/disclosureDataList.do
+  discovery_path: static_list
+  repeat_access: L2
+  auth_state: none
+  grade: B
+  note: 루트(/)는 69B JS 리다이렉트 → main.do. 'JS 셸' 오판 사례 — 최종 URL 재시도로 B · 목록 항목은 onclick
+    goDetail(id) 폼 POST — GET disclosureDataView.do?boardIdx=<id> 성립(실측 200·본문 3,540자)
+  expected:
+    content_type_prefix: text/html
+    min_records: 3
+    freshness_days: 120
+  evidence:
+    observed_at: '2026-08-30'
+    samples: 1
+    browser: aside
+  export_eligible: true
+  js_link: goDetail\('(\d+)'\)
+  js_link_template: /summary/disclosureData/disclosureDataView.do?boardIdx={1}

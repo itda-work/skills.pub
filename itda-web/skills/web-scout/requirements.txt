@@ -1,0 +1,3 @@
+# itda-web-scout requirements — HTTP 는 형제 스킬 web-reader(curl_cffi·beautifulsoup4) 재사용
+PyYAML>=6.0
+beautifulsoup4>=4.12

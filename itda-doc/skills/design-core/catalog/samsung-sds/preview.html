@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>samsung-sds-corporate — DESIGN.md 미니 프리뷰</title>
+<style>
+  /* 직해석 미니 프리뷰 — catalog/samsung-sds/DESIGN.md frontmatter 를 에이전트가 직접 렌더 (#1021) */
+  :root{
+    --primary:#1428A0; --primary-light:#5B8DEF; --on-primary:#FFFFFF;
+    --canvas:#FFFFFF; --surface:#EEF2FB; --ink:#14181F; --muted:#5C6470;
+    --hairline:#D5DBE8; --compare-blue:#6E84CF; --compare-gray:#A9B2C3;
+    --success:#0E7C4A; --danger:#C0392B;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--canvas);color:var(--ink);
+       font-family:Pretendard,"Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+       font-size:16px;line-height:1.65}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 24px 64px}
+  .kicker{font-family:"Helvetica Neue",Pretendard,sans-serif;font-size:13px;font-weight:700;
+          letter-spacing:1.5px;text-transform:uppercase;color:var(--primary)}
+  section{margin-top:64px}
+  h2.sec{font-size:36px;font-weight:700;line-height:1.2;letter-spacing:-.3px;margin-top:6px}
+
+  /* 히어로 밴드 (component.hero-band) */
+  .hero{background:var(--primary);color:var(--on-primary);padding:64px 24px 40px;margin-bottom:0}
+  .hero .inner{max-width:1000px;margin:0 auto}
+  .hero .kicker{color:rgba(255,255,255,.8)}
+  .hero h1{font-size:48px;font-weight:700;line-height:1.15;letter-spacing:-.5px;max-width:22ch;margin-top:10px}
+  .hero .kpis{display:flex;gap:40px;margin-top:40px;border-top:1px solid rgba(255,255,255,.3);padding-top:16px;flex-wrap:wrap}
+  .hero .kpi .n{font-family:"Helvetica Neue",Pretendard,sans-serif;font-size:32px;font-weight:700;letter-spacing:-.5px}
+  .hero .kpi .l{font-size:12px;color:rgba(255,255,255,.75);margin-top:2px}
+
+  /* 스와치 */
+  .swatches{display:flex;gap:14px;flex-wrap:wrap;margin-top:20px}
+  .sw{display:flex;align-items:center;gap:8px}
+  .sw i{width:38px;height:38px;border-radius:4px;border:1px solid var(--hairline);display:inline-block;flex:none}
+  .sw code{font-size:11px;color:var(--muted);font-family:ui-monospace,monospace;line-height:1.35}
+  .sw code b{color:var(--ink)}
+
+  /* 타이포 위계 */
+  .type-row{border-top:1px solid var(--hairline);padding:14px 0;display:flex;gap:24px;align-items:baseline}
+  .type-row:first-of-type{border-top:none}
+  .type-row .tag{width:150px;flex:none;font-size:11px;color:var(--muted);font-family:ui-monospace,monospace}
+  .t-dxl{font-size:48px;font-weight:700;line-height:1.15;letter-spacing:-.5px}
+  .t-dlg{font-size:36px;font-weight:700;line-height:1.2;letter-spacing:-.3px}
+  .t-tlg{font-size:24px;font-weight:700;line-height:1.3}
+  .t-stat{font-family:"Helvetica Neue",Pretendard,sans-serif;font-size:32px;font-weight:700;letter-spacing:-.5px;color:var(--primary)}
+  .t-body{font-size:16px;line-height:1.65;max-width:56ch}
+  .t-cap{font-size:12px;color:var(--muted);letter-spacing:.2px}
+
+  /* 버튼 */
+  .actions{display:flex;gap:12px;margin-top:20px}
+  .btn{display:inline-flex;align-items:center;height:44px;padding:12px 24px;border-radius:2px;
+       font-size:14px;font-weight:700;letter-spacing:.3px;text-decoration:none;cursor:pointer;border:none}
+  .btn-primary{background:var(--primary);color:var(--on-primary)}
+  .btn-outline{background:transparent;color:var(--primary);border:1px solid var(--primary)}
+
+  /* 카드 그리드 (component.card) */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:20px}
+  .card{background:var(--surface);border:1px solid var(--hairline);border-radius:4px;padding:24px}
+  .card .chip{font-family:"Helvetica Neue",Pretendard,sans-serif;font-size:13px;font-weight:700;color:var(--primary)}
+  .card h3{font-size:20px;font-weight:600;margin-top:8px}
+  .card p{font-size:14px;color:var(--muted);margin-top:6px;line-height:1.6}
+
+  /* 데이터 표 (component.data-table-*) */
+  table{width:100%;border-collapse:collapse;margin-top:20px;font-size:14px}
+  thead th{background:var(--primary);color:var(--on-primary);font-weight:700;text-align:left;padding:10px 12px}
+  thead th.num, td.num{text-align:right}
+  tbody td{padding:10px 12px;border-bottom:1px solid var(--hairline)}
+  tbody tr:nth-child(even){background:var(--surface)}
+  .up{color:var(--success);font-weight:700}
+  .down{color:var(--danger);font-weight:700}
+
+  /* 차트 위계 (막대 — 주인공 블루 vs 비교군) */
+  .bars{display:flex;gap:28px;align-items:flex-end;height:140px;margin-top:20px;border-bottom:1px solid var(--hairline);padding:0 8px}
+  .bar{width:56px;display:flex;flex-direction:column;justify-content:flex-end;height:100%}
+  .bar i{display:block;border-radius:2px 2px 0 0}
+  .bar span{font-size:11px;color:var(--muted);text-align:center;margin-top:6px}
+  .legend{display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--muted)}
+  .legend i{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:5px;vertical-align:middle}
+
+  /* 출처 푸터 (component.source-footer) */
+  .src{border-top:1px solid var(--hairline);margin-top:14px;padding-top:12px;display:flex;justify-content:space-between;
+       font-size:12px;color:var(--muted);letter-spacing:.2px}
+
+  /* 클로징 밴드 (블루 샌드위치) */
+  .closing{background:var(--primary);color:var(--on-primary);padding:40px 24px;margin-top:64px}
+  .closing .inner{max-width:1000px;margin:0 auto}
+  .closing .msg{font-size:24px;font-weight:700;max-width:30ch}
+  .closing .meta{font-size:12px;color:rgba(255,255,255,.7);margin-top:16px}
+</style>
+</head>
+<body>
+
+<!-- 히어로 밴드: 킥커 + 주장형 헤드라인 + KPI 스트립 -->
+<div class="hero"><div class="inner">
+  <div class="kicker">SAMSUNG SDS · DESIGN PREVIEW</div>
+  <h1>절제와 규율이 코퍼레이트 신뢰를 만든다</h1>
+  <div class="kpis">
+    <div class="kpi"><div class="n">60~70%</div><div class="l">Samsung Blue 시각 비중</div></div>
+    <div class="kpi"><div class="n">1px</div><div class="l">헤어라인 규율</div></div>
+    <div class="kpi"><div class="n">0</div><div class="l">그림자·그라데이션</div></div>
+    <div class="kpi"><div class="n">100%</div><div class="l">수치 표면 출처 라인</div></div>
+  </div>
+</div></div>
+
+<div class="wrap">
+
+<section>
+  <div class="kicker">COLOR PALETTE &amp; ROLES</div>
+  <h2 class="sec">색 — 역할별 스와치</h2>
+  <div class="swatches">
+    <div class="sw"><i style="background:#1428A0"></i><code><b>primary</b><br>지배·버튼·표헤더<br>#1428A0</code></div>
+    <div class="sw"><i style="background:#5B8DEF"></i><code><b>primary-light</b><br>보조 막대·칩<br>#5B8DEF</code></div>
+    <div class="sw"><i style="background:#FFFFFF"></i><code><b>canvas</b><br>본문 배경<br>#FFFFFF</code></div>
+    <div class="sw"><i style="background:#EEF2FB"></i><code><b>surface</b><br>카드·zebra<br>#EEF2FB</code></div>
+    <div class="sw"><i style="background:#14181F"></i><code><b>ink</b><br>본문 텍스트<br>#14181F</code></div>
+    <div class="sw"><i style="background:#5C6470"></i><code><b>muted</b><br>보조·출처<br>#5C6470</code></div>
+    <div class="sw"><i style="background:#D5DBE8"></i><code><b>hairline</b><br>구획선<br>#D5DBE8</code></div>
+    <div class="sw"><i style="background:#0E7C4A"></i><code><b>success</b><br>상승·긍정<br>#0E7C4A</code></div>
+    <div class="sw"><i style="background:#C0392B"></i><code><b>danger</b><br>하락·경고<br>#C0392B</code></div>
+  </div>
+</section>
+
+<section>
+  <div class="kicker">TYPOGRAPHY RULES</div>
+  <h2 class="sec">타이포 위계</h2>
+  <div style="margin-top:20px">
+    <div class="type-row"><span class="tag">display-xl 48/700</span><span class="t-dxl">주장형 헤드라인 Aa 123</span></div>
+    <div class="type-row"><span class="tag">display-lg 36/700</span><span class="t-dlg">섹션 헤드 Aa 123</span></div>
+    <div class="type-row"><span class="tag">title-lg 24/700</span><span class="t-tlg">카드 타이틀 Aa 123</span></div>
+    <div class="type-row"><span class="tag">kicker 13/700/1.5px</span><span class="kicker">EXECUTIVE SUMMARY</span></div>
+    <div class="type-row"><span class="tag">stat-number 32/700</span><span class="t-stat">4,820</span></div>
+    <div class="type-row"><span class="tag">body-md 16/400</span><span class="t-body">본문 — 한글과 영문(ABC abc 0123)이 Pretendard 단일 스택으로 이렇게 보입니다. 본문은 400을 유지하고 가운데 정렬하지 않습니다.</span></div>
+    <div class="type-row"><span class="tag">caption 12/400</span><span class="t-cap">자료: 출처 라인 — 수치가 있는 모든 표면에 필수</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="kicker">COMPONENT STYLINGS</div>
+  <h2 class="sec">버튼 · 카드 · 표</h2>
+  <div class="actions">
+    <button class="btn btn-primary">주요 동작 (button-primary)</button>
+    <button class="btn btn-outline">보조 동작 (button-outline)</button>
+  </div>
+  <div class="cards">
+    <div class="card"><div class="chip">01</div><h3>절제된 그리드</h3><p>2×3 카드 그리드 — surface 배경, 헤어라인 테두리, 4px 라운드.</p></div>
+    <div class="card"><div class="chip">02</div><h3>킥커 규율</h3><p>모든 섹션 헤드 위에 같은 위치의 대문자 영문 킥커를 반복합니다.</p></div>
+    <div class="card"><div class="chip">03</div><h3>출처 라인</h3><p>수치가 등장하는 모든 표면에 '자료: …' 캡션 — IR 신뢰 문법.</p></div>
+  </div>
+  <table>
+    <thead><tr><th>사업부</th><th class="num">매출(십억)</th><th class="num">YoY</th></tr></thead>
+    <tbody>
+      <tr><td>클라우드</td><td class="num">1,240</td><td class="num up">▲ +18.2%</td></tr>
+      <tr><td>물류 BPO</td><td class="num">2,860</td><td class="num up">▲ +6.4%</td></tr>
+      <tr><td>SI</td><td class="num">720</td><td class="num down">▼ -2.1%</td></tr>
+    </tbody>
+  </table>
+  <div class="src"><span>자료: 샘플 데이터(프리뷰용)</span><span>1 / 1</span></div>
+</section>
+
+<section>
+  <div class="kicker">CHART HIERARCHY</div>
+  <h2 class="sec">차트 위계 — 채도로 만든다</h2>
+  <div class="bars">
+    <div class="bar"><i style="height:78%;background:var(--primary)"></i><span>주인공</span></div>
+    <div class="bar"><i style="height:56%;background:var(--compare-blue)"></i><span>비교군 A</span></div>
+    <div class="bar"><i style="height:42%;background:var(--compare-gray)"></i><span>비교군 B</span></div>
+    <div class="bar"><i style="height:64%;background:var(--primary-light)"></i><span>보조</span></div>
+  </div>
+  <div class="legend">
+    <span><i style="background:var(--primary)"></i>#1428A0 주 시리즈</span>
+    <span><i style="background:var(--compare-blue)"></i>#6E84CF 비교</span>
+    <span><i style="background:var(--compare-gray)"></i>#A9B2C3 비교</span>
+    <span><i style="background:var(--primary-light)"></i>#5B8DEF 보조</span>
+  </div>
+  <div class="src"><span>자료: 기본 파랑/주황 금지 — 위계는 채도로</span><span>차트 규율</span></div>
+</section>
+
+</div>
+
+<!-- 클로징 밴드: 블루 샌드위치 마무리 -->
+<div class="closing"><div class="inner">
+  <div class="kicker" style="color:rgba(255,255,255,.8)">CLOSING</div>
+  <div class="msg">도입과 마무리는 블루, 본문은 화이트 — 샌드위치 리듬.</div>
+  <div class="meta">catalog/samsung-sds/DESIGN.md 직해석 미니 프리뷰 · 자립 HTML(외부 의존 0) · #1021</div>
+</div></div>
+
+</body>
+</html>

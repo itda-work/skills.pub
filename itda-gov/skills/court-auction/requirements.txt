@@ -1,0 +1,2 @@
+# court-auction은 Python 표준 라이브러리(urllib, http.cookiejar 등)만 사용합니다.
+# 별도 설치 패키지가 없습니다.

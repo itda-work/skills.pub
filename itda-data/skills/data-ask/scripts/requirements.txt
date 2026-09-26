@@ -1,0 +1,3 @@
+duckdb>=1.3
+# cp949(한국 엑셀) 파일에는 duckdb 코어 `encodings` 확장 필요:
+#   최초 1회 온라인에서 `INSTALL encodings;` → 이후 오프라인 `LOAD encodings` (safe_exec 자동).

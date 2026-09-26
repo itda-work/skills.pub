@@ -1,0 +1,4 @@
+kist-aix/hwpx (MIT) Copyright (c) 2026 Minsoo Kim
+
+header.xml 은 gov-report 의 header.xml(kist-aix/hwpx 파생)을 기반으로 scripts/derive_template_headers.py 가 이 템플릿의 조판 스타일을 덧붙여 생성한다.
+section0.skel.xml·style-map.json·manifest.json 과 조판 로직(hwpx_report/layouts.py)은 itda-skills 가 새로 설계했다(#1651). 외부 공개 스킬의 템플릿·코드를 복제하지 않았다.

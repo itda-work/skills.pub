@@ -1,0 +1,382 @@
+{
+  "currencies": [
+    {
+      "code": "USD",
+      "name_ko": "미국 달러",
+      "name_en": "US Dollar",
+      "unit": 1,
+      "aliases_ko": ["달러", "미달러"]
+    },
+    {
+      "code": "JPY",
+      "name_ko": "일본 엔",
+      "name_en": "Japanese Yen",
+      "unit": 100,
+      "aliases_ko": ["엔", "엔화"]
+    },
+    {
+      "code": "EUR",
+      "name_ko": "유로",
+      "name_en": "Euro",
+      "unit": 1,
+      "aliases_ko": ["유로화"]
+    },
+    {
+      "code": "GBP",
+      "name_ko": "영국 파운드",
+      "name_en": "British Pound",
+      "unit": 1,
+      "aliases_ko": ["파운드"]
+    },
+    {
+      "code": "CAD",
+      "name_ko": "캐나다 달러",
+      "name_en": "Canadian Dollar",
+      "unit": 1,
+      "aliases_ko": ["캐나다달러"]
+    },
+    {
+      "code": "CHF",
+      "name_ko": "스위스 프랑",
+      "name_en": "Swiss Franc",
+      "unit": 1,
+      "aliases_ko": ["프랑"]
+    },
+    {
+      "code": "AUD",
+      "name_ko": "호주 달러",
+      "name_en": "Australian Dollar",
+      "unit": 1,
+      "aliases_ko": ["호주달러"]
+    },
+    {
+      "code": "NZD",
+      "name_ko": "뉴질랜드 달러",
+      "name_en": "New Zealand Dollar",
+      "unit": 1,
+      "aliases_ko": ["뉴질랜드달러"]
+    },
+    {
+      "code": "CNY",
+      "name_ko": "중국 위안",
+      "name_en": "Chinese Yuan",
+      "unit": 1,
+      "aliases_ko": ["위안", "인민폐"]
+    },
+    {
+      "code": "CNH",
+      "name_ko": "위안 (역외)",
+      "name_en": "Chinese Yuan (Offshore)",
+      "unit": 1,
+      "aliases_ko": ["역외위안"]
+    },
+    {
+      "code": "HKD",
+      "name_ko": "홍콩 달러",
+      "name_en": "Hong Kong Dollar",
+      "unit": 1,
+      "aliases_ko": ["홍콩달러"]
+    },
+    {
+      "code": "TWD",
+      "name_ko": "대만 달러",
+      "name_en": "Taiwan Dollar",
+      "unit": 1,
+      "aliases_ko": ["대만달러"]
+    },
+    {
+      "code": "MNT",
+      "name_ko": "몽골 투그릭",
+      "name_en": "Mongolian Tugrik",
+      "unit": 1,
+      "aliases_ko": ["투그릭"]
+    },
+    {
+      "code": "KZT",
+      "name_ko": "카자흐스탄 텡게",
+      "name_en": "Kazakhstani Tenge",
+      "unit": 1,
+      "aliases_ko": ["텡게"]
+    },
+    {
+      "code": "THB",
+      "name_ko": "태국 밧",
+      "name_en": "Thai Baht",
+      "unit": 1,
+      "aliases_ko": ["밧"]
+    },
+    {
+      "code": "SGD",
+      "name_ko": "싱가포르 달러",
+      "name_en": "Singapore Dollar",
+      "unit": 1,
+      "aliases_ko": ["싱가포르달러"]
+    },
+    {
+      "code": "IDR",
+      "name_ko": "인도네시아 루피아",
+      "name_en": "Indonesian Rupiah",
+      "unit": 100,
+      "aliases_ko": ["루피아"]
+    },
+    {
+      "code": "MYR",
+      "name_ko": "말레이시아 링깃",
+      "name_en": "Malaysian Ringgit",
+      "unit": 1,
+      "aliases_ko": ["링깃"]
+    },
+    {
+      "code": "PHP",
+      "name_ko": "필리핀 페소",
+      "name_en": "Philippine Peso",
+      "unit": 1,
+      "aliases_ko": ["필리핀페소"]
+    },
+    {
+      "code": "VND",
+      "name_ko": "베트남 동",
+      "name_en": "Vietnamese Dong",
+      "unit": 100,
+      "aliases_ko": ["동"]
+    },
+    {
+      "code": "BND",
+      "name_ko": "브루나이 달러",
+      "name_en": "Brunei Dollar",
+      "unit": 1,
+      "aliases_ko": ["브루나이달러"]
+    },
+    {
+      "code": "INR",
+      "name_ko": "인도 루피",
+      "name_en": "Indian Rupee",
+      "unit": 1,
+      "aliases_ko": ["루피"]
+    },
+    {
+      "code": "PKR",
+      "name_ko": "파키스탄 루피",
+      "name_en": "Pakistani Rupee",
+      "unit": 1,
+      "aliases_ko": ["파키스탄루피"]
+    },
+    {
+      "code": "BDT",
+      "name_ko": "방글라데시 타카",
+      "name_en": "Bangladeshi Taka",
+      "unit": 1,
+      "aliases_ko": ["타카"]
+    },
+    {
+      "code": "KHR",
+      "name_ko": "캄보디아 리엘",
+      "name_en": "Cambodian Riel",
+      "unit": 1,
+      "aliases_ko": ["리엘"]
+    },
+    {
+      "code": "MOP",
+      "name_ko": "마카오 파타카",
+      "name_en": "Macanese Pataca",
+      "unit": 1,
+      "aliases_ko": ["파타카"]
+    },
+    {
+      "code": "NPR",
+      "name_ko": "네팔 루피",
+      "name_en": "Nepalese Rupee",
+      "unit": 1,
+      "aliases_ko": ["네팔루피"]
+    },
+    {
+      "code": "LKR",
+      "name_ko": "스리랑카 루피",
+      "name_en": "Sri Lankan Rupee",
+      "unit": 1,
+      "aliases_ko": ["스리랑카루피"]
+    },
+    {
+      "code": "UZS",
+      "name_ko": "우즈베키스탄 숨",
+      "name_en": "Uzbekistani Som",
+      "unit": 1,
+      "aliases_ko": ["숨"]
+    },
+    {
+      "code": "MMK",
+      "name_ko": "미얀마 짯",
+      "name_en": "Myanmar Kyat",
+      "unit": 1,
+      "aliases_ko": ["짯"]
+    },
+    {
+      "code": "MXN",
+      "name_ko": "멕시코 페소",
+      "name_en": "Mexican Peso",
+      "unit": 1,
+      "aliases_ko": ["멕시코페소"]
+    },
+    {
+      "code": "BRL",
+      "name_ko": "브라질 헤알",
+      "name_en": "Brazilian Real",
+      "unit": 1,
+      "aliases_ko": ["헤알"]
+    },
+    {
+      "code": "ARS",
+      "name_ko": "아르헨티나 페소",
+      "name_en": "Argentine Peso",
+      "unit": 1,
+      "aliases_ko": ["아르헨티나페소"]
+    },
+    {
+      "code": "CLP",
+      "name_ko": "칠레 페소",
+      "name_en": "Chilean Peso",
+      "unit": 1,
+      "aliases_ko": ["칠레페소"]
+    },
+    {
+      "code": "COP",
+      "name_ko": "콜롬비아 페소",
+      "name_en": "Colombian Peso",
+      "unit": 1,
+      "aliases_ko": ["콜롬비아페소"]
+    },
+    {
+      "code": "SEK",
+      "name_ko": "스웨덴 크로나",
+      "name_en": "Swedish Krona",
+      "unit": 1,
+      "aliases_ko": ["크로나"]
+    },
+    {
+      "code": "DKK",
+      "name_ko": "덴마크 크로네",
+      "name_en": "Danish Krone",
+      "unit": 1,
+      "aliases_ko": ["크로네"]
+    },
+    {
+      "code": "NOK",
+      "name_ko": "노르웨이 크로네",
+      "name_en": "Norwegian Krone",
+      "unit": 1,
+      "aliases_ko": ["노르웨이크로네"]
+    },
+    {
+      "code": "RUB",
+      "name_ko": "러시아 루블",
+      "name_en": "Russian Ruble",
+      "unit": 1,
+      "aliases_ko": ["루블"]
+    },
+    {
+      "code": "HUF",
+      "name_ko": "헝가리 포린트",
+      "name_en": "Hungarian Forint",
+      "unit": 1,
+      "aliases_ko": ["포린트"]
+    },
+    {
+      "code": "PLN",
+      "name_ko": "폴란드 즈워티",
+      "name_en": "Polish Zloty",
+      "unit": 1,
+      "aliases_ko": ["즈워티"]
+    },
+    {
+      "code": "CZK",
+      "name_ko": "체코 코루나",
+      "name_en": "Czech Koruna",
+      "unit": 1,
+      "aliases_ko": ["코루나"]
+    },
+    {
+      "code": "RON",
+      "name_ko": "루마니아 레우",
+      "name_en": "Romanian Leu",
+      "unit": 1,
+      "aliases_ko": ["레우"]
+    },
+    {
+      "code": "SAR",
+      "name_ko": "사우디아라비아 리얄",
+      "name_en": "Saudi Riyal",
+      "unit": 1,
+      "aliases_ko": ["리얄"]
+    },
+    {
+      "code": "QAR",
+      "name_ko": "카타르 리얄",
+      "name_en": "Qatari Riyal",
+      "unit": 1,
+      "aliases_ko": ["카타르리얄"]
+    },
+    {
+      "code": "ILS",
+      "name_ko": "이스라엘 셰켈",
+      "name_en": "Israeli Shekel",
+      "unit": 1,
+      "aliases_ko": ["셰켈"]
+    },
+    {
+      "code": "JOD",
+      "name_ko": "요르단 디나르",
+      "name_en": "Jordanian Dinar",
+      "unit": 1,
+      "aliases_ko": ["디나르"]
+    },
+    {
+      "code": "KWD",
+      "name_ko": "쿠웨이트 디나르",
+      "name_en": "Kuwaiti Dinar",
+      "unit": 1,
+      "aliases_ko": ["쿠웨이트디나르"]
+    },
+    {
+      "code": "BHD",
+      "name_ko": "바레인 디나르",
+      "name_en": "Bahraini Dinar",
+      "unit": 1,
+      "aliases_ko": ["바레인디나르"]
+    },
+    {
+      "code": "AED",
+      "name_ko": "아랍에미리트 디르함",
+      "name_en": "UAE Dirham",
+      "unit": 1,
+      "aliases_ko": ["디르함"]
+    },
+    {
+      "code": "TRY",
+      "name_ko": "튀르키예 리라",
+      "name_en": "Turkish Lira",
+      "unit": 1,
+      "aliases_ko": ["리라"]
+    },
+    {
+      "code": "OMR",
+      "name_ko": "오만 리얄",
+      "name_en": "Omani Rial",
+      "unit": 1,
+      "aliases_ko": ["오만리얄"]
+    },
+    {
+      "code": "ZAR",
+      "name_ko": "남아프리카공화국 랜드",
+      "name_en": "South African Rand",
+      "unit": 1,
+      "aliases_ko": ["랜드"]
+    },
+    {
+      "code": "EGP",
+      "name_ko": "이집트 파운드",
+      "name_en": "Egyptian Pound",
+      "unit": 1,
+      "aliases_ko": ["이집트파운드"]
+    }
+  ]
+}

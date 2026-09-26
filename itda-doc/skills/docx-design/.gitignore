@@ -1,0 +1,10 @@
+# 재생성 가능한 산출물·스크래치 (gen.py / verify.py / render.py 가 만듦)
+__pycache__/
+*.pyc
+_verify/
+_render/
+examples/*/_verify/
+examples/*/_render/
+examples/*/assets/
+examples/*/novatech-*.docx
+examples/*/tokens.txt

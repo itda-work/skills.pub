@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "name": "예시-설비팀-용어집",
+  "entries": [
+    {
+      "category": "거래처",
+      "value": "가나다엘리베이터",
+      "aliases": ["가나다엘리", "GANADA ELEVATOR"]
+    },
+    {
+      "category": "거래처",
+      "value": "라마바산업"
+    },
+    {
+      "category": "프로젝트",
+      "value": "PJ-2026-047"
+    },
+    {
+      "category": "담당자",
+      "value": "홍길동"
+    },
+    {
+      "category": "단가",
+      "value": "1,850,000원"
+    }
+  ]
+}

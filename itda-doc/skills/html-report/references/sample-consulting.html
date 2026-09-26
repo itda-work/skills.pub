@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>동해식품 냉동 간편식 B2B 신사업 진입 검토 · DH-STR-2026-014</title>
+<meta name="description" content="동해식품(주) 냉동 간편식 B2B 진입 검토 — 3개 시나리오 비교 결과 OEM 선행 후 2029년 자체 라인 전환(C안)이 5년 NPV 118억원·손익분기 26개월로 최적. 전략기획팀 작성, 대외비.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<style>
+/* ── 팔레트: consulting-mbb (references/styles/README.md 프리셋 표 인라인) ── */
+:root{
+  --bg:#FFFFFF; --paper:#FFFFFF; --tint:#EEF3FC; --ink:#15193B; --g500:#5C6470;
+  --accent:#1E2761; --accent-2:#CADCFC; --line:#D9DEE8;
+  --pos:#0E7C4A; --neg:#C0392B; --warn:#9A6206;
+  --accent-d:color-mix(in srgb,var(--accent) 85%,#000);
+  --g100:var(--tint); --g300:var(--line);
+  --g700:color-mix(in srgb,var(--ink) 80%,var(--bg));
+  /* 파생 역할 변수 — 전경으로 쓰는 액센트, 차트 시리즈 */
+  --accent-fg:var(--accent); --link:var(--accent); --on-accent:#FFFFFF;
+  --s1:var(--accent); --s2:var(--accent-2); --s3:var(--g300);
+  --sans:"Pretendard",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --display:"Helvetica Neue",var(--sans);
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+/* ── 다크 짝 (README 파생 규칙) ─────────────────────────── */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1218; --paper:#171B24; --tint:#1E2430; --ink:#E7EAF0; --g500:#98A2B3;
+    --accent:color-mix(in srgb,#1E2761 65%,#FFF); --line:#2A3140;
+    --pos:#4CC38A; --neg:#F0776A; --warn:#E0A030;
+    --accent-fg:var(--accent-2); --link:var(--accent-2); --on-accent:#0F1218;
+    --s1:var(--accent-2); --s2:color-mix(in srgb,var(--accent-2) 42%,var(--bg)); --s3:var(--g500);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1218; --paper:#171B24; --tint:#1E2430; --ink:#E7EAF0; --g500:#98A2B3;
+  --accent:color-mix(in srgb,#1E2761 65%,#FFF); --line:#2A3140;
+  --pos:#4CC38A; --neg:#F0776A; --warn:#E0A030;
+  --accent-fg:var(--accent-2); --link:var(--accent-2); --on-accent:#0F1218;
+  --s1:var(--accent-2); --s2:color-mix(in srgb,var(--accent-2) 42%,var(--bg)); --s3:var(--g500);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.7;word-break:keep-all;text-wrap:pretty;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;line-height:1.25;font-weight:700}
+p,ul,ol,dl{margin:0}
+a{color:var(--link)}
+:focus-visible{outline:2px solid var(--accent-fg);outline-offset:3px;border-radius:2px}
+.num{font-variant-numeric:tabular-nums}
+.lat{font-family:var(--display);font-variant-numeric:tabular-nums}
+
+/* ── 토글 ─────────────────────────── */
+.theme-toggle{position:fixed;top:14px;right:14px;z-index:60;background:var(--paper);color:var(--ink);
+  border:1px solid var(--line);border-radius:2px;padding:7px 12px;font:inherit;font-size:12px;
+  font-weight:600;letter-spacing:.04em;cursor:pointer;box-shadow:0 1px 6px rgba(21,25,59,.10)}
+
+/* ── 표지 히어로 ─────────────────────────── */
+.hero{border-top:8px solid var(--accent);background:var(--bg)}
+.hero-in{max-width:1300px;margin:0 auto;padding:48px 24px 40px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--g500);
+  display:flex;flex-wrap:wrap;gap:8px 14px;margin-bottom:20px}
+.eyebrow .cf{color:var(--neg)}
+.hero h1{font-size:clamp(30px,4.4vw,44px);max-width:20ch;letter-spacing:-.005em}
+.hero .sub{margin-top:18px;max-width:60ch;font-size:16px;color:var(--g700)}
+.meta{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);
+  display:flex;flex-wrap:wrap;gap:6px 28px;font-size:12px;color:var(--g500)}
+.meta b{font-weight:600;color:var(--ink)}
+
+/* ── 레이아웃 ─────────────────────────── */
+.shell{max-width:1300px;margin:0 auto;padding:0 24px 72px}
+main{min-width:0;max-width:1000px}
+main>section{padding-top:64px}
+main>section>p,main>section>ul,main>section>ol,.prose{max-width:720px}
+.kicker{font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--g500);margin-bottom:8px}
+h2{font-size:clamp(21px,2.6vw,27px);max-width:26ch}
+.lead{margin-top:14px;color:var(--g700);font-size:15.5px}
+h3{font-size:17px;margin-top:40px}
+h3+p,h3+ul{margin-top:10px}
+main p+p{margin-top:14px}
+ul.b{margin-top:12px;padding-left:18px}
+ul.b li{margin-top:6px}
+.toc{display:none}
+@media (min-width:1100px){
+  .shell{display:grid;grid-template-columns:214px minmax(0,1fr);gap:56px;align-items:start}
+  .toc{display:block;position:sticky;top:24px;padding-top:64px;max-height:100vh;overflow:auto}
+  .toc-h{font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--g500);max-width:none}
+  .toc ol{list-style:none;margin-top:12px;padding:0;border-left:1px solid var(--line)}
+  .toc a{display:block;padding:6px 0 6px 12px;margin-left:-1px;border-left:2px solid transparent;
+    font-size:12.5px;line-height:1.4;color:var(--g500);text-decoration:none}
+  .toc a:hover{color:var(--ink)}
+  .toc a.on{color:var(--accent-fg);border-left-color:var(--accent-fg);font-weight:600}
+}
+
+/* ── Executive Summary / 콜아웃 ─────────────────────────── */
+.exec{background:var(--tint);border-left:4px solid var(--accent);padding:28px 28px 30px;margin-top:48px}
+.exec h2{max-width:24ch}
+.exec ol{margin-top:20px;padding-left:0;list-style:none;counter-reset:ex}
+.exec ol li{counter-increment:ex;position:relative;padding-left:36px;margin-top:14px;max-width:64ch}
+.exec ol li::before{content:counter(ex,decimal-leading-zero);position:absolute;left:0;top:1px;
+  font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent-fg);letter-spacing:.02em}
+.exec ol li b{font-weight:700;color:var(--ink)}
+.note{background:var(--tint);border-left:3px solid var(--accent);padding:16px 18px;margin-top:24px;max-width:720px}
+.note.warn{border-left-color:var(--warn)}
+.note.neg{border-left-color:var(--neg)}
+.note .nl{font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--g500);margin-bottom:6px}
+.note p{font-size:14.5px}
+
+/* ── 숫자 행 (KPI) ─────────────────────────── */
+dl.stats{margin-top:28px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+dl.stats>div{padding:18px 16px;border-left:1px solid var(--line)}
+dl.stats>div:first-child{border-left:0;padding-left:0}
+dl.stats dt{font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--g500)}
+dl.stats dd{margin:6px 0 0;font-family:var(--display);font-size:28px;font-weight:700;
+  line-height:1.15;color:var(--accent-fg);font-variant-numeric:tabular-nums}
+dl.stats dd span{font-size:14px;font-weight:600}
+dl.stats .d{margin-top:6px;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.up{color:var(--pos)} .down{color:var(--neg)} .flat{color:var(--g500)}
+@media (max-width:820px){dl.stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  dl.stats>div{border-left:0;border-top:1px solid var(--line);padding-left:0}
+  dl.stats>div:nth-child(2n){padding-left:16px;border-left:1px solid var(--line)}}
+
+/* ── Exhibit ─────────────────────────── */
+.exh{margin-top:36px}
+.exh-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;
+  border-bottom:1px solid var(--line);padding-bottom:8px}
+.exh-n{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--accent-fg)}
+.exh-t{font-size:14.5px;font-weight:600}
+.exh-u{margin-left:auto;font-size:11.5px;color:var(--g500)}
+.src,.srcx{margin-top:10px;font-size:11px;color:var(--g500)}
+figure{margin:0}
+figure svg{width:100%;height:auto;display:block;margin-top:16px}
+figcaption{margin-top:12px;font-size:13.5px;color:var(--g700);max-width:72ch}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:12px;padding:0;list-style:none;
+  font-size:11.5px;color:var(--g500)}
+.legend li{display:flex;align-items:center;gap:6px}
+.sw{width:11px;height:11px;display:inline-block}
+.sw1{background:var(--s1)} .sw2{background:var(--s2)} .sw3{background:var(--s3)}
+.swi{background:var(--ink)} .swn{background:var(--neg)}
+
+/* ── 표 ─────────────────────────── */
+.tw{margin-top:16px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:13.5px}
+thead th{background:var(--accent);color:var(--on-accent);font-size:12px;font-weight:600;
+  letter-spacing:.02em;text-align:left;padding:9px 10px;white-space:nowrap;position:sticky;top:0}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) thead th{background:var(--tint);color:var(--ink);
+    border-bottom:2px solid var(--accent-2)}
+}
+:root[data-theme="dark"] thead th{background:var(--tint);color:var(--ink);
+  border-bottom:2px solid var(--accent-2)}
+tbody th{font-weight:600;text-align:left}
+td,tbody th{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.sub>*{border-top:2px solid var(--ink)}
+tr.tot>*{background:var(--tint);font-weight:700;border-bottom:0}
+caption{caption-side:bottom;text-align:left;font-size:11px;color:var(--g500);padding-top:8px}
+.bar{display:block;height:6px;background:var(--s1);margin-top:5px}
+.dot{display:inline-block;width:8px;height:8px;margin-right:6px;vertical-align:1px}
+.d-hi{background:var(--neg)} .d-md{background:var(--warn)} .d-lo{background:var(--g500)}
+
+/* ── 부록 ─────────────────────────── */
+details{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+summary{cursor:pointer;font-size:14px;font-weight:600;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"＋ ";color:var(--accent-fg);font-weight:700}
+details[open] summary::before{content:"－ "}
+details>.exh:first-of-type{margin-top:20px}
+
+/* ── 푸터 ─────────────────────────── */
+footer{border-top:1px solid var(--line);margin-top:72px;padding:20px 0 8px;
+  display:flex;flex-wrap:wrap;gap:8px 24px;font-size:11.5px;color:var(--g500)}
+footer .r{margin-left:auto;font-family:var(--mono)}
+
+/* ── SVG 공통 ─────────────────────────── */
+svg text{font-family:"Pretendard",system-ui,-apple-system,sans-serif;fill:var(--ink)}
+svg .ax{fill:var(--g500)}
+svg .vl{fill:var(--g700);font-weight:600}
+svg .gl{stroke:var(--line);stroke-width:1}
+svg .axis{stroke:var(--g500);stroke-width:1}
+svg .zero{stroke:var(--g500);stroke-width:1;stroke-dasharray:3 3}
+svg .f1{fill:var(--s1)} svg .f2{fill:var(--s2)} svg .f3{fill:var(--s3)}
+svg .fi{fill:var(--ink)} svg .fneg{fill:var(--neg)}
+svg .l1{stroke:var(--s1);stroke-width:2.5;fill:none}
+svg .l2{stroke:var(--s2);stroke-width:1.8;fill:none}
+svg .l3{stroke:var(--s3);stroke-width:1.8;fill:none}
+svg .trk{fill:var(--tint)}
+svg .tick{stroke:var(--ink);stroke-width:2.5}
+svg .conn{stroke:var(--g500);stroke-width:1;stroke-dasharray:2 2}
+svg .cellhi{fill:color-mix(in srgb,var(--neg) 14%,transparent)}
+svg .cellmd{fill:color-mix(in srgb,var(--warn) 13%,transparent)}
+svg .celllo{fill:var(--tint)}
+svg .cellline{stroke:var(--bg);stroke-width:2;fill:none}
+svg .mtx{fill:none;stroke:var(--line);stroke-width:1}
+svg .rlbl{fill:var(--on-accent);font-weight:700}
+
+/* ── 인쇄 ─────────────────────────── */
+@page{size:A4;margin:18mm 16mm;
+  @bottom-center{content:counter(page);font-family:"Pretendard",sans-serif;font-size:9pt;color:#5C6470}}
+@media print{
+  :root,:root[data-theme="dark"],:root:not([data-theme="light"]){
+    --bg:#FFFFFF;--paper:#FFFFFF;--tint:#EEF3FC;--ink:#15193B;--g500:#5C6470;
+    --accent:#1E2761;--accent-2:#CADCFC;--line:#D9DEE8;
+    --pos:#0E7C4A;--neg:#C0392B;--warn:#9A6206;
+    --accent-fg:#1E2761;--link:#1E2761;--on-accent:#FFFFFF;
+    --s1:#1E2761;--s2:#CADCFC;--s3:#D9DEE8;color-scheme:light}
+  thead th{background:#1E2761!important;color:#FFFFFF!important;border-bottom:0!important;position:static}
+  body{background:#fff;font-size:10.5pt}
+  nav.toc,.theme-toggle,.no-print{display:none!important}
+  .shell{display:block;max-width:none;padding:0}
+  main{max-width:none}
+  section,figure,table,.exh,.exec,dl.stats,.note{break-inside:avoid}
+  h2,h3,.exh-h{break-after:avoid}
+  main>section{padding-top:26px}
+  details{display:block}
+  details>*{display:block}
+  summary::before{content:""}
+  .tw{overflow:visible}
+  table{min-width:0}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<button class="theme-toggle" type="button" aria-pressed="false">
+  <span class="tt-label">다크 모드</span>
+</button>
+
+<header class="hero">
+  <div class="hero-in">
+    <p class="eyebrow">
+      <span>동해식품(주) 경영위원회</span><span>전략 검토 보고</span>
+      <span class="cf">대외비 — 사내 한정</span>
+    </p>
+    <h1>냉동 간편식 B2B는 OEM 병행으로 2027년에 진입해야 한다</h1>
+    <p class="sub">세 진입 시나리오를 5년 순현재가치와 손익분기로 비교한 결과, OEM 선행 후 2029년 자체 라인으로 전환하는 C안만이 NPV 118억원과 5년 내 투자 회수를 동시에 달성한다.</p>
+    <p class="meta">
+      <span>작성 <b>전략기획팀</b></span>
+      <span>일자 <b class="lat">2026-09-03</b></span>
+      <span>버전 <b class="lat">v1.2</b></span>
+      <span>배포 <b>경영위원회 · 사업본부장</b></span>
+      <span>문서번호 <b class="lat">DH-STR-2026-014</b></span>
+    </p>
+  </div>
+</header>
+
+<div class="shell">
+<nav class="toc" aria-label="문서 목차">
+  <p class="toc-h">목차</p>
+  <ol>
+    <li><a href="#s0">요약 — OEM으로 시작</a></li>
+    <li><a href="#s1">시장 연 12.2% 성장</a></li>
+    <li><a href="#s2">가용 CAPA 31% 부족</a></li>
+    <li><a href="#s3">초기 마진 5% 미만</a></li>
+    <li><a href="#s4">C안만 NPV 100억 초과</a></li>
+    <li><a href="#s5">A안은 투자 미회수</a></li>
+    <li><a href="#s6">변동의 67%가 원료·단가</a></li>
+    <li><a href="#s7">4분기 지연 = 1년 손실</a></li>
+    <li><a href="#s8">권고 5건 승인 요청</a></li>
+    <li><a href="#s9">부록 — 산출 근거</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section id="s0" class="exec" aria-labelledby="s0h">
+  <p class="kicker">Executive Summary</p>
+  <h2 id="s0h">진입은 하되 자체 증설이 아닌 OEM으로 시작해야 한다</h2>
+  <p class="lead">본 검토는 냉동 간편식 B2B 시장의 성장성, 당사 생산 여력, 경쟁 단가 구조, 세 가지 진입 시나리오의 재무 성과를 순서대로 다룬다.</p>
+  <ol>
+    <li>국내 냉동 간편식 B2B 시장은 2025년 <b class="num">1조 8,400억원</b>에서 2030년 <b class="num">3조 2,700억원</b>으로 연평균 <b class="num">12.2%</b> 성장한다.</li>
+    <li>당사 냉동 4개 라인의 2026년 상반기 가동률은 <b class="num">71.0%</b>이며, 기존 계약 예약분을 제외하고 신규 사업에 배정 가능한 물량은 연 <b class="num">2,400톤</b>으로 2031년 정상 가동 물량의 <b class="num">31%</b>에 그친다.</li>
+    <li>OEM 선행 후 2029년 자체 라인으로 전환하는 <b>C안의 5년 NPV는 118억원</b>으로, 즉시 자체 증설하는 A안(<span class="num">41억원</span>)의 <b class="num">2.9배</b>다.</li>
+    <li>최대 리스크는 원료 어가와 상위 3사의 단가 인하이며, 이 두 변수가 NPV 변동 폭의 <b class="num">67%</b>를 만든다. 원료 어가가 <span class="num">10%</span> 상승하면 C안 NPV는 <span class="num">118억원 → 76억원</span>으로 <b class="num">36%</b> 축소된다.</li>
+    <li>2026년 4분기 내 OEM 파트너 2개사 실사·계약을 완료해야 2027년 3분기 초도 납품이 가능하다. 이 시한을 놓치면 진입은 <b class="num">1년</b> 지연되고 5년 NPV는 <b class="num">44억원</b> 감소한다.</li>
+  </ol>
+  <dl class="stats">
+    <div>
+      <dt>2030년 시장 규모</dt>
+      <dd class="num">32,700<span> 억원</span></dd>
+      <p class="d up">▲ 연평균 12.2%</p>
+    </div>
+    <div>
+      <dt>C안 초기 투자</dt>
+      <dd class="num">112<span> 억원</span></dd>
+      <p class="d up">▼ 58.2% (A안 268억 대비)</p>
+    </div>
+    <div>
+      <dt>C안 5년 NPV</dt>
+      <dd class="num">118<span> 억원</span></dd>
+      <p class="d up">▲ 77억원 (A안 대비)</p>
+    </div>
+    <div>
+      <dt>C안 평균 영업이익률</dt>
+      <dd class="num">11.3<span> %</span></dd>
+      <p class="d up">▲ 4.4%p (A안 6.9% 대비)</p>
+    </div>
+    <div>
+      <dt>2031년 목표 점유율</dt>
+      <dd class="num">1.5<span> %</span></dd>
+      <p class="d up">▲ 1.5%p (신규 진입)</p>
+    </div>
+  </dl>
+  <p class="srcx">자료: 본문 Exhibit 1·4·8·9 종합. 초기 투자·NPV는 할인율 9.0%(당사 WACC) 기준, 부록 A 가정표 참조.</p>
+</section>
+
+<section id="s1" aria-labelledby="s1h">
+  <p class="kicker">논점 1</p>
+  <h2 id="s1h">냉동 간편식 B2B 시장은 5년간 연 12.2%로 성장한다</h2>
+  <p class="lead">전체 시장 규모와 세그먼트 구성을 확인해, 진입 여부 판단의 전제인 성장 지속성을 검증한다.</p>
+  <p>국내 냉동 간편식 B2B 시장은 2025년 1조 8,400억원 규모다. 급식 위탁 확대와 외식 프랜차이즈의 조리 표준화가 동시에 진행되면서 2030년 3조 2,700억원까지 확대된다. 이는 연평균 12.2% 성장으로, 같은 기간 가공식품 전체 성장률(연 4.1%)의 약 3배다.</p>
+  <p>성장의 질도 확인이 필요하다. 다섯 세그먼트 중 편의점·리테일 PB(연 15.1%)와 외식 프랜차이즈(연 14.0%)가 시장 성장을 견인하며, 두 세그먼트가 2030년 시장의 55.2%를 차지한다. 반면 당사가 기존 냉동 수산 가공에서 관계를 보유한 급식·단체급식은 성장률이 연 9.8%로 상대적으로 낮지만, 2030년에도 1조 280억원으로 단일 최대 세그먼트 지위를 유지한다.</p>
+
+  <div class="exh">
+    <figure>
+      <div class="exh-h">
+        <span class="exh-n">Exhibit 1</span>
+        <span class="exh-t">국내 냉동 간편식 B2B 시장 규모 추이 (2025~2030)</span>
+        <span class="exh-u">단위: 억원</span>
+      </div>
+      <ul class="legend" aria-hidden="true">
+        <li><span class="sw swi"></span>2025 실적</li>
+        <li><span class="sw sw1"></span>2026~2030 전망</li>
+      </ul>
+      <svg viewBox="0 0 760 300" role="img" aria-label="국내 냉동 간편식 B2B 시장 규모는 2025년 1조 8,400억원에서 2030년 3조 2,700억원으로 연평균 12.2% 성장한다." aria-labelledby="c1t">
+        <title id="c1t">국내 냉동 간편식 B2B 시장 규모 추이 막대 차트</title>
+        <line class="gl" x1="76" y1="250" x2="736" y2="250"/>
+        <line class="gl" x1="76" y1="187.1" x2="736" y2="187.1"/>
+        <line class="gl" x1="76" y1="124.3" x2="736" y2="124.3"/>
+        <line class="gl" x1="76" y1="61.4" x2="736" y2="61.4"/>
+        <g class="ax" font-size="10.5" text-anchor="end">
+          <text x="66" y="254">0</text>
+          <text x="66" y="191.1">10,000</text>
+          <text x="66" y="128.3">20,000</text>
+          <text x="66" y="65.4">30,000</text>
+        </g>
+        <rect class="fi" x="100" y="134.3" width="62" height="115.7"/>
+        <rect class="f1" x="210" y="120.2" width="62" height="129.8"/>
+        <rect class="f1" x="320" y="104.3" width="62" height="145.7"/>
+        <rect class="f1" x="430" y="86.5" width="62" height="163.5"/>
+        <rect class="f1" x="540" y="66.8" width="62" height="183.2"/>
+        <rect class="f1" x="650" y="44.5" width="62" height="205.5"/>
+        <g class="vl" font-size="11" text-anchor="middle">
+          <text x="131" y="126.3">18,400</text>
+          <text x="241" y="112.2">20,650</text>
+          <text x="351" y="96.3">23,180</text>
+          <text x="461" y="78.5">26,010</text>
+          <text x="571" y="58.8">29,150</text>
+          <text x="681" y="36.5">32,700</text>
+        </g>
+        <line class="axis" x1="76" y1="250" x2="736" y2="250"/>
+        <g class="ax" font-size="11" text-anchor="middle">
+          <text x="131" y="270">2025</text>
+          <text x="241" y="270">2026E</text>
+          <text x="351" y="270">2027E</text>
+          <text x="461" y="270">2028E</text>
+          <text x="571" y="270">2029E</text>
+          <text x="681" y="270">2030E</text>
+        </g>
+        <text class="ax" x="76" y="292" font-size="11">연평균 성장률 12.2% · 5년 누적 +77.7%</text>
+      </svg>
+      <figcaption>시장은 <strong>5년 내내 연 12% 안팎의 균일한 성장</strong>을 보이며 특정 연도에 성장이 몰리지 않는다. 즉 진입 시점이 1년 늦어도 시장 자체가 닫히지는 않지만, 매년 약 2,500억원씩 커지는 신규 물량을 경쟁사가 선점하는 구조다.</figcaption>
+      <p class="src">자료: 한국농수산식품유통공사 「가공식품 세분시장 현황: 냉동식품편」(2026-03), 식품산업통계정보 B2B 출하액, 당사 전략기획팀 추정.</p>
+    </figure>
+  </div>
+
+  <div class="exh">
+    <div class="exh-h">
+      <span class="exh-n">Exhibit 2</span>
+      <span class="exh-t">세그먼트별 시장 규모와 성장률</span>
+      <span class="exh-u">단위: 억원, %</span>
+    </div>
+    <div class="tw">
+      <table>
+        <caption>구성비는 각 연도 시장 전체 대비 비중이며, 반올림으로 합계가 100.0%와 0.1%p 차이 날 수 있다.</caption>
+        <thead>
+          <tr>
+            <th scope="col">세그먼트</th>
+            <th scope="col" class="n">2025 규모</th>
+            <th scope="col" class="n">2025 구성비</th>
+            <th scope="col" class="n">2030 규모</th>
+            <th scope="col" class="n">2030 구성비</th>
+            <th scope="col" class="n">CAGR</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">급식·단체급식</th><td class="n">6,440</td><td class="n">35.0</td><td class="n">10,280</td><td class="n">31.4</td><td class="n">9.8</td></tr>
+          <tr><th scope="row">외식 프랜차이즈</th><td class="n">5,520</td><td class="n">30.0</td><td class="n">10,630</td><td class="n">32.5</td><td class="n">14.0</td></tr>
+          <tr><th scope="row">편의점·리테일 PB</th><td class="n">3,680</td><td class="n">20.0</td><td class="n">7,430</td><td class="n">22.7</td><td class="n">15.1</td></tr>
+          <tr><th scope="row">온라인 D2C 벤더</th><td class="n">1,840</td><td class="n">10.0</td><td class="n">3,160</td><td class="n">9.7</td><td class="n">11.4</td></tr>
+          <tr><th scope="row">기타(수출·군납 등)</th><td class="n">920</td><td class="n">5.0</td><td class="n">1,200</td><td class="n">3.7</td><td class="n">5.5</td></tr>
+          <tr class="tot"><th scope="row">합계</th><td class="n">18,400</td><td class="n">100.0</td><td class="n">32,700</td><td class="n">100.0</td><td class="n">12.2</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">자료: 한국농수산식품유통공사 「가공식품 세분시장 현황: 냉동식품편」(2026-03), 세그먼트 분해는 당사 전략기획팀 추정(방법론은 부록 B).</p>
+  </div>
+
+  <div class="note">
+    <p class="nl">판단 기준</p>
+    <p>본 검토는 급식·단체급식과 외식 프랜차이즈 두 세그먼트만을 진입 대상으로 본다. 편의점 PB는 성장률이 가장 높지만 리테일 3사와의 연간 단가 협상 구조상 후발 진입 마진이 6% 미만으로, 당사 최소 요구수익률(9.0%)을 충족하지 못한다.</p>
+  </div>
+</section>
+
+<section id="s2" aria-labelledby="s2h">
+  <p class="kicker">논점 2</p>
+  <h2 id="s2h">당사 가용 CAPA는 정상 가동 물량의 31%에 그친다</h2>
+  <p class="lead">진입을 결정하기 전에, 증설 없이 확보 가능한 생산 여력이 목표 물량을 감당하는지부터 확인한다.</p>
+  <p>당사는 강릉 2개 라인, 속초 1개 라인, 포항 임가공 1개 라인 등 연 12,000톤 규모의 냉동 생산 능력을 보유한다. 2026년 상반기 실적을 연환산한 생산량은 8,520톤으로 전사 가동률은 71.0%다. 표면상 3,480톤의 여유가 있어 보이지만, 기존 수산 가공 고객과의 연간 계약 예약분 1,080톤을 제외하면 신규 사업에 배정 가능한 물량은 2,400톤이다.</p>
+  <p>정상 가동에 도달하는 2031년 목표 물량은 7,800톤이다. 즉 자체 설비만으로는 목표의 30.8%만 소화할 수 있고, 나머지 5,400톤은 증설 또는 외부 위탁으로 조달해야 한다. 라인별로 보면 여유가 가장 큰 곳은 포항 임가공(가동률 50.0%)이지만, 이 라인은 냉동 간편식에 필요한 급속 동결 터널과 개별 포장 설비가 없어 설비 개조 없이는 전환할 수 없다.</p>
+
+  <div class="exh">
+    <figure>
+      <div class="exh-h">
+        <span class="exh-n">Exhibit 3</span>
+        <span class="exh-t">냉동 라인별 가동률과 목표 가동률</span>
+        <span class="exh-u">단위: % · 검정 눈금 = 라인별 목표 가동률</span>
+      </div>
+      <svg viewBox="0 0 760 250" role="img" aria-label="냉동 라인별 가동률은 강릉 1라인 82.0%, 강릉 2라인 70.0%, 속초 라인 61.0%, 포항 임가공 50.0%이며 전사 71.0%로 목표 88%에 17.0%포인트 미달한다." aria-labelledby="c3t">
+        <title id="c3t">냉동 라인별 가동률 불릿 차트</title>
+        <g font-size="12.5">
+          <text x="0" y="40">강릉 1라인</text>
+          <text x="0" y="76">강릉 2라인</text>
+          <text x="0" y="112">속초 라인</text>
+          <text x="0" y="148">포항 임가공</text>
+          <text x="0" y="192" font-weight="700">전사 합계</text>
+        </g>
+        <rect class="trk" x="124" y="24" width="600" height="22"/>
+        <rect class="trk" x="124" y="60" width="600" height="22"/>
+        <rect class="trk" x="124" y="96" width="600" height="22"/>
+        <rect class="trk" x="124" y="132" width="600" height="22"/>
+        <rect class="trk" x="124" y="176" width="600" height="22"/>
+        <rect class="f1" x="124" y="24" width="492" height="22"/>
+        <rect class="f1" x="124" y="60" width="420" height="22"/>
+        <rect class="f1" x="124" y="96" width="366" height="22"/>
+        <rect class="f1" x="124" y="132" width="300" height="22"/>
+        <rect class="fi" x="124" y="176" width="426" height="22"/>
+        <line class="tick" x1="676" y1="20" x2="676" y2="50"/>
+        <line class="tick" x1="652" y1="56" x2="652" y2="86"/>
+        <line class="tick" x1="634" y1="92" x2="634" y2="122"/>
+        <line class="tick" x1="604" y1="128" x2="604" y2="158"/>
+        <line class="tick" x1="652" y1="172" x2="652" y2="202"/>
+        <g class="vl" font-size="11">
+          <text x="624" y="40">82.0</text>
+          <text x="552" y="76">70.0</text>
+          <text x="498" y="112">61.0</text>
+          <text x="432" y="148">50.0</text>
+          <text x="558" y="192" font-weight="700">71.0</text>
+        </g>
+        <line class="gl" x1="0" y1="166" x2="724" y2="166"/>
+        <line class="axis" x1="124" y1="214" x2="724" y2="214"/>
+        <g class="ax" font-size="10.5" text-anchor="middle">
+          <text x="124" y="230">0</text>
+          <text x="274" y="230">25</text>
+          <text x="424" y="230">50</text>
+          <text x="574" y="230">75</text>
+          <text x="724" y="230">100</text>
+        </g>
+      </svg>
+      <figcaption>모든 라인이 목표 가동률에 미달하지만, <strong>미달 폭이 가장 큰 포항 임가공(30.0%포인트)</strong>은 설비 개조 투자를 전제해야만 실질 여력이 된다. 곧 "가동률에 여유가 있으니 추가 투자가 불필요하다"는 판단은 성립하지 않는다.</figcaption>
+      <p class="src">자료: 당사 생산관리시스템 2026-01~06 실적(연환산), 라인별 목표 가동률은 2026년 생산본부 사업계획.</p>
+    </figure>
+  </div>
+
+  <div class="exh">
+    <div class="exh-h">
+      <span class="exh-n">Exhibit 4</span>
+      <span class="exh-t">냉동 라인 CAPA 현황과 신규 배정 가능 물량</span>
+      <span class="exh-u">단위: 톤/년, %</span>
+    </div>
+    <div class="tw">
+      <table>
+        <caption>생산량은 2026년 1~6월 실적의 연환산치. 신규 배정 가능 = 여유 물량 − 기존 계약 예약분.</caption>
+        <thead>
+          <tr>
+            <th scope="col">라인</th>
+            <th scope="col" class="n">정격 CAPA</th>
+            <th scope="col" class="n">생산량</th>
+            <th scope="col" class="n">가동률</th>
+            <th scope="col" class="n">여유 물량</th>
+            <th scope="col" class="n">계약 예약분</th>
+            <th scope="col" class="n">신규 배정 가능</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">강릉 1라인</th><td class="n">4,800</td><td class="n">3,936</td><td class="n">82.0</td><td class="n">864</td><td class="n">420</td><td class="n">444</td></tr>
+          <tr><th scope="row">강릉 2라인</th><td class="n">3,600</td><td class="n">2,520</td><td class="n">70.0</td><td class="n">1,080</td><td class="n">300</td><td class="n">780</td></tr>
+          <tr><th scope="row">속초 라인</th><td class="n">2,400</td><td class="n">1,464</td><td class="n">61.0</td><td class="n">936</td><td class="n">240</td><td class="n">696</td></tr>
+          <tr><th scope="row">포항 임가공</th><td class="n">1,200</td><td class="n">600</td><td class="n">50.0</td><td class="n">600</td><td class="n">120</td><td class="n">480</td></tr>
+          <tr class="tot"><th scope="row">합계</th><td class="n">12,000</td><td class="n">8,520</td><td class="n">71.0</td><td class="n">3,480</td><td class="n">1,080</td><td class="n">2,400</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">자료: 당사 생산관리시스템(2026-06-30 기준), 계약 예약분은 영업본부 연간 공급계약 대장.</p>
+  </div>
+
+  <div class="note warn">
+    <p class="nl">주의</p>
+    <p>포항 임가공 라인의 여유 480톤은 급속 동결 터널·개별 포장 설비 증설(18억원)을 전제로만 활용 가능하다. 본 검토의 세 시나리오는 모두 이 <strong>18억원을 초기 투자에 포함</strong>한 뒤 480톤을 가용 물량으로 계상했다.</p>
+  </div>
+</section>
+
+<section id="s3" aria-labelledby="s3h">
+  <p class="kicker">논점 3</p>
+  <h2 id="s3h">후발 진입 초기 마진은 5%에 그쳐 자체 생산 전환이 불가피하다</h2>
+  <p class="lead">시장이 커진다는 사실만으로는 진입 근거가 되지 않는다. 경쟁 구조가 후발 주자에게 남기는 마진을 확인한다.</p>
+  <p>2025년 기준 상위 3개사(한백푸드시스템·대성F&amp;B·미주냉동)가 시장의 52.5%를 점유한다. 세 회사의 합산 냉동 CAPA는 95,500톤으로 당사 전체 냉동 능력(12,000톤)의 8배다. 급식 입찰에서 이들이 제시하는 평균 납품단가는 6,450~7,140원/kg 대이며, 후발 주자가 초기 물량을 확보하려면 이 구간의 하단을 따라가야 한다.</p>
+  <p>당사 원가 구조를 대입하면 진입 단가는 6,980원/kg, 제조원가는 5,050원/kg으로 매출총이익률은 27.7%다. 여기에서 물류·보관(4.0%p), 판관비(6.3%p), OEM 위탁 수수료(12.6%p)를 차감하면 영업이익률은 4.8%에 그친다. 당사 기존 수산 가공 사업(13.6%)의 3분의 1 수준이며 최소 요구수익률 9.0%에도 미달한다. 전량 위탁으로는 사업이 성립하지 않고 자체 생산 전환이 전제되어야 한다는 것이 이 구조의 결론이다.</p>
+
+  <div class="exh">
+    <figure>
+      <div class="exh-h">
+        <span class="exh-n">Exhibit 5</span>
+        <span class="exh-t">냉동 간편식 B2B 점유율 상위 5개사와 당사 목표</span>
+        <span class="exh-u">단위: % (2025년 실적, 당사는 2031년 목표)</span>
+      </div>
+      <ul class="legend" aria-hidden="true">
+        <li><span class="sw sw1"></span>상위 3개사</li>
+        <li><span class="sw sw2"></span>4~5위</li>
+        <li><span class="sw swi"></span>당사 2031년 목표</li>
+      </ul>
+      <svg viewBox="0 0 760 285" role="img" aria-label="2025년 점유율은 한백푸드시스템 21.4%, 대성에프앤비 17.9%, 미주냉동 13.2%, 동원 계열 8.6%, 세림델리 6.1%이며 당사 2031년 목표는 1.5%다." aria-labelledby="c5t">
+        <title id="c5t">경쟁사 점유율 수평 막대 차트</title>
+        <g font-size="12.5">
+          <text x="0" y="38">한백푸드시스템</text>
+          <text x="0" y="76">대성F&amp;B</text>
+          <text x="0" y="114">미주냉동</text>
+          <text x="0" y="152">동원 계열</text>
+          <text x="0" y="190">세림델리</text>
+          <text x="0" y="234" font-weight="700">당사 목표</text>
+        </g>
+        <rect class="f1" x="140" y="22" width="564.1" height="24"/>
+        <rect class="f1" x="140" y="60" width="471.8" height="24"/>
+        <rect class="f1" x="140" y="98" width="348.0" height="24"/>
+        <rect class="f2" x="140" y="136" width="226.7" height="24"/>
+        <rect class="f2" x="140" y="174" width="160.8" height="24"/>
+        <rect class="fi" x="140" y="218" width="39.5" height="24"/>
+        <g class="vl" font-size="11">
+          <text x="712.1" y="38">21.4</text>
+          <text x="619.8" y="76">17.9</text>
+          <text x="496.0" y="114">13.2</text>
+          <text x="374.7" y="152">8.6</text>
+          <text x="308.8" y="190">6.1</text>
+          <text x="187.5" y="234" font-weight="700">1.5</text>
+        </g>
+        <line class="gl" x1="0" y1="208" x2="724" y2="208"/>
+        <line class="axis" x1="140" y1="252" x2="724" y2="252"/>
+        <g class="ax" font-size="10.5" text-anchor="middle">
+          <text x="140" y="268">0</text>
+          <text x="271.8" y="268">5</text>
+          <text x="403.6" y="268">10</text>
+          <text x="535.4" y="268">15</text>
+          <text x="667.2" y="268">20</text>
+        </g>
+      </svg>
+      <figcaption>상위 3개사 합계 <strong>52.5%</strong>가 단가 기준선을 정하며, 당사 2031년 목표 1.5%는 이들과 정면 경쟁이 아니라 <strong>급식 3개사·프랜차이즈 2개사의 2차 벤더 지위</strong>를 전제로 산정했다. 기타 중소 120여 개사(32.8%)가 실제 경쟁 상대다.</figcaption>
+      <p class="src">자료: 각 사 2025 사업보고서·감사보고서, 식품산업통계정보 출하액, 급식 3개사 구매 담당 인터뷰(2026-07, 5건). 당사 목표는 전략기획팀 산정.</p>
+    </figure>
+  </div>
+
+  <div class="exh">
+    <div class="exh-h">
+      <span class="exh-n">Exhibit 6</span>
+      <span class="exh-t">상위 5개사 경쟁 프로파일</span>
+      <span class="exh-u">단위: 억원, %, 원/kg, 톤/년</span>
+    </div>
+    <div class="tw">
+      <table>
+        <caption>평균 납품단가는 급식·프랜차이즈 채널 가중평균. 기타의 CAPA는 개별 파악 불가로 미기재.</caption>
+        <thead>
+          <tr>
+            <th scope="col">기업</th>
+            <th scope="col" class="n">2025 매출</th>
+            <th scope="col" class="n">점유율</th>
+            <th scope="col" class="n">평균 납품단가</th>
+            <th scope="col" class="n">냉동 CAPA</th>
+            <th scope="col">주력 채널</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">한백푸드시스템</th><td class="n">3,938</td><td class="n">21.4</td><td class="n">6,820</td><td class="n">38,000</td><td>급식·프랜차이즈</td></tr>
+          <tr><th scope="row">대성F&amp;B</th><td class="n">3,294</td><td class="n">17.9</td><td class="n">7,140</td><td class="n">31,000</td><td>프랜차이즈</td></tr>
+          <tr><th scope="row">미주냉동</th><td class="n">2,429</td><td class="n">13.2</td><td class="n">6,450</td><td class="n">26,500</td><td>급식</td></tr>
+          <tr><th scope="row">동원 계열</th><td class="n">1,582</td><td class="n">8.6</td><td class="n">7,880</td><td class="n">15,200</td><td>리테일 PB</td></tr>
+          <tr><th scope="row">세림델리</th><td class="n">1,122</td><td class="n">6.1</td><td class="n">8,240</td><td class="n">8,900</td><td>온라인 D2C</td></tr>
+          <tr class="sub"><th scope="row">소계 (상위 5사)</th><td class="n">12,365</td><td class="n">67.2</td><td class="n">7,097</td><td class="n">119,600</td><td>—</td></tr>
+          <tr><th scope="row">기타 (중소 120여 개사)</th><td class="n">6,035</td><td class="n">32.8</td><td class="n">7,510</td><td class="n">—</td><td>전 채널</td></tr>
+          <tr class="tot"><th scope="row">합계</th><td class="n">18,400</td><td class="n">100.0</td><td class="n">7,233</td><td class="n">—</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">자료: 각 사 2025 사업보고서·감사보고서(전자공시), 냉동 CAPA는 공장 등록 현황 및 업계 인터뷰(2026-07~08, 11건) 기준 추정.</p>
+  </div>
+
+  <h3>후발 진입 시 단위 수익 구조</h3>
+  <p>진입 단가 6,980원/kg에서 출발하는 원가 사다리는 다음과 같다. 제조원가 5,050원(72.3%)을 차감한 매출총이익 1,930원(27.7%)에서, 물류·보관 279원(4.0%p), 판관비 440원(6.3%p), OEM 위탁 수수료 880원(12.6%p)을 순차 차감하면 영업이익 331원, 영업이익률 4.8%가 남는다. 상위 3개사가 단가를 5% 인하하면 진입 단가는 6,631원이 되고 영업이익률은 0.9%로 사실상 소멸한다. 이 시나리오는 Exhibit 10 민감도 분석에서 정량화했다.</p>
+</section>
+
+<section id="s4" aria-labelledby="s4h">
+  <p class="kicker">논점 4</p>
+  <h2 id="s4h">세 시나리오 중 OEM 병행안만 NPV 100억원을 넘는다</h2>
+  <p class="lead">진입 방식을 세 가지로 좁혀, 초기 투자·5년 누적 손익·순현재가치·손익분기를 같은 가정 위에서 비교한다.</p>
+  <h3>비교 대상 세 시나리오</h3>
+  <ul class="b">
+    <li><b>A안 — 즉시 자체 증설</b>: 2027년 강릉 3라인(연 6,000톤)을 신설해 전량 자체 생산한다. 초기 투자 268억원(라인 250억 + 포항 개조 18억).</li>
+    <li><b>B안 — 전량 OEM 위탁</b>: 자체 증설 없이 외부 3개사에 위탁하고 영업·브랜드만 담당한다. 초기 투자 34억원(포항 개조 18억 + 금형·물류 16억).</li>
+    <li><b>C안 — OEM 선행 후 자체 전환</b>: 2027~2028년 OEM으로 시장을 확보하고, 2028년 물량이 4,900톤에 도달하는 것을 확인한 뒤 2029년에 강릉 3라인을 축소 사양(연 4,000톤)으로 신설한다. 초기 투자 112억원(포항 개조 18억 + 라인 78억 + 금형·품질 16억).</li>
+  </ul>
+  <p>세 안의 차이는 투자 시점이다. A안은 수요가 확인되기 전에 250억원을 선집행하므로 2027~2028년 감가상각이 이익을 잠식해 2027년 영업손실 18억원을 낸다. B안은 투자 부담이 없지만 OEM 위탁 수수료가 위탁 생산분 매출의 12.6%로 고정되어 물량이 늘어도 마진이 개선되지 않는다. C안은 초기 2년을 OEM으로 버티며 수요를 확인한 뒤 검증된 물량에만 설비를 붙인다.</p>
+
+  <div class="exh">
+    <figure>
+      <div class="exh-h">
+        <span class="exh-n">Exhibit 7</span>
+        <span class="exh-t">C안 5년 누적 손익 구성 (2027~2031)</span>
+        <span class="exh-u">단위: 억원 · 명목 기준</span>
+      </div>
+      <svg viewBox="0 0 760 310" role="img" aria-label="C안의 5년 누적 매출총이익 611억원에서 OEM 수수료 168억원, 물류·보관 82억원, 판관비 130억원을 차감하면 누적 영업이익 231억원이 남는다." aria-labelledby="c7t">
+        <title id="c7t">C안 5년 누적 손익 워터폴 차트</title>
+        <line class="gl" x1="92" y1="268" x2="736" y2="268"/>
+        <line class="gl" x1="92" y1="197.8" x2="736" y2="197.8"/>
+        <line class="gl" x1="92" y1="127.7" x2="736" y2="127.7"/>
+        <line class="gl" x1="92" y1="57.5" x2="736" y2="57.5"/>
+        <g class="ax" font-size="10.5" text-anchor="end">
+          <text x="82" y="272">0</text>
+          <text x="82" y="201.8">200</text>
+          <text x="82" y="131.7">400</text>
+          <text x="82" y="61.5">600</text>
+        </g>
+        <rect class="f1" x="117" y="53.7" width="78" height="214.3"/>
+        <rect class="fneg" x="245.8" y="53.7" width="78" height="58.9"/>
+        <rect class="fneg" x="374.6" y="112.6" width="78" height="28.8"/>
+        <rect class="fneg" x="503.4" y="141.4" width="78" height="45.6"/>
+        <rect class="fi" x="632.2" y="187.0" width="78" height="81.0"/>
+        <line class="conn" x1="195" y1="53.7" x2="245.8" y2="53.7"/>
+        <line class="conn" x1="323.8" y1="112.6" x2="374.6" y2="112.6"/>
+        <line class="conn" x1="452.6" y1="141.4" x2="503.4" y2="141.4"/>
+        <line class="conn" x1="581.4" y1="187.0" x2="632.2" y2="187.0"/>
+        <g class="vl" font-size="11" text-anchor="middle">
+          <text x="156" y="45.7">611</text>
+          <text x="284.8" y="126.6">−168</text>
+          <text x="413.6" y="155.4">−82</text>
+          <text x="542.4" y="201.0">−130</text>
+          <text x="671.2" y="179.0" font-weight="700">231</text>
+        </g>
+        <line class="axis" x1="92" y1="268" x2="736" y2="268"/>
+        <g class="ax" font-size="11" text-anchor="middle">
+          <text x="156" y="288">매출총이익</text>
+          <text x="284.8" y="288">OEM 수수료</text>
+          <text x="413.6" y="288">물류·보관</text>
+          <text x="542.4" y="288">판관비</text>
+          <text x="671.2" y="288">누적 영업이익</text>
+        </g>
+        <text class="ax" x="92" y="304" font-size="11">누적 매출 2,050억원 · 매출총이익률 29.8% · 평균 영업이익률 11.3%</text>
+      </svg>
+      <figcaption>C안 5년 누적 손익에서 <strong>가장 큰 차감 항목은 OEM 수수료 168억원</strong>이며 누적 매출총이익의 27.5%를 차지한다. 2029년 자체 라인 전환으로 이 항목이 2030~2031년에 절반 이하로 줄어드는 것이 C안이 B안을 앞서는 직접 원인이다.</figcaption>
+      <p class="src">자료: 당사 재무 모델 v1.2(2026-08-28). 항목별 비율 가정은 부록 A 가정표.</p>
+    </figure>
+  </div>
+
+  <div class="exh">
+    <div class="exh-h">
+      <span class="exh-n">Exhibit 8</span>
+      <span class="exh-t">세 시나리오 재무 비교 (2027~2031)</span>
+      <span class="exh-u">단위: 억원, %, 개월 · 할인율 9.0%</span>
+    </div>
+    <div class="tw">
+      <table>
+        <caption>투자 회수 기간은 2027-01 사업 개시 이후 누적 영업이익이 초기 투자를 넘어서는 시점. NPV·IRR은 초기 투자를 2026년 말 일시 집행으로 가정하고 산정. 법인세·잔존가치 미반영(EBIT 기준).</caption>
+        <thead>
+          <tr>
+            <th scope="col">항목</th>
+            <th scope="col" class="n">A안 즉시 증설</th>
+            <th scope="col" class="n">B안 전량 OEM</th>
+            <th scope="col" class="n">C안 OEM 병행</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">초기 투자</th><td class="n">268</td><td class="n">34</td><td class="n">112</td></tr>
+          <tr><th scope="row">5년 누적 매출</th><td class="n">2,140</td><td class="n">1,760</td><td class="n">2,050</td></tr>
+          <tr><th scope="row">5년 누적 영업이익</th><td class="n">148</td><td class="n">96</td><td class="n">231</td></tr>
+          <tr><th scope="row">평균 영업이익률</th><td class="n">6.9</td><td class="n">5.5</td><td class="n">11.3</td></tr>
+          <tr class="sub"><th scope="row">5년 NPV</th><td class="n">41</td><td class="n">58</td><td class="n">118</td></tr>
+          <tr><th scope="row">IRR</th><td class="n">11.4</td><td class="n">19.8</td><td class="n">22.6</td></tr>
+          <tr><th scope="row">투자 회수 기간(개월)</th><td class="n">미회수</td><td class="n">35</td><td class="n">42</td></tr>
+          <tr><th scope="row">2031년 자체 생산 비중</th><td class="n">100</td><td class="n">0</td><td class="n">77</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">자료: 당사 재무 모델 v1.2(2026-08-28), 연도별 상세는 부록 A Exhibit 15.</p>
+  </div>
+
+  <p>NPV 기준으로 C안(118억원)은 A안(41억원)의 2.9배, B안(58억원)의 2.0배다. IRR도 22.6%로 가장 높다. A안이 누적 매출은 가장 크지만(2,140억원) NPV가 가장 낮은 이유는, 268억원 투자가 회수되기 전 2년간 영업손익이 마이너스이기 때문이다. B안은 IRR이 19.8%로 나쁘지 않으나 절대 규모(NPV 58억원)가 작아 경영위원회가 요구한 신사업 최소 기여(5년 NPV 100억원 이상)를 충족하지 못한다.</p>
+</section>
+
+<section id="s5" aria-labelledby="s5h">
+  <p class="kicker">논점 5</p>
+  <h2 id="s5h">A안은 5년 내 투자를 회수하지 못한다</h2>
+  <p class="lead">NPV 순위만으로는 부족하다. 세 안이 투자금을 언제 되찾는지, 그때까지 감당해야 할 누적 손실은 얼마인지 확인한다.</p>
+  <p>투자 회수 기간은 2027년 1월 사업 개시 이후 누적 영업이익이 초기 투자를 넘어서는 시점으로 정의했다. B안은 34억원을 35개월 만에, C안은 112억원을 42개월 만에 회수한다. A안은 5년 누적 영업이익이 148억원에 그쳐 초기 투자 268억원의 55.2%만 회수하며, 회수 완료는 2033년 이후로 밀린다.</p>
+  <p>회수 속도만 보면 B안이 가장 빠르지만, 회수 이후 창출하는 규모가 작다. B안의 2031년 누적 영업이익은 96억원으로 C안(231억원)의 41.6% 수준이며, OEM 위탁 수수료가 위탁 생산분 매출의 12.6%로 고정되어 물량이 늘어도 이익률이 개선되지 않는다. 반면 C안은 2029년 자체 라인 가동 이후 연 영업이익이 38억원에서 72억원으로 뛰며, 2030~2031년 2년간 161억원을 벌어들인다.</p>
+
+  <div class="exh">
+    <figure>
+      <div class="exh-h">
+        <span class="exh-n">Exhibit 9</span>
+        <span class="exh-t">시나리오별 누적 영업이익과 투자 회수선</span>
+        <span class="exh-u">단위: 억원 · 점선 = 각 안의 초기 투자 수준</span>
+      </div>
+      <ul class="legend" aria-hidden="true">
+        <li><span class="sw sw1"></span>C안 OEM 병행</li>
+        <li><span class="sw sw2"></span>B안 전량 OEM</li>
+        <li><span class="sw sw3"></span>A안 즉시 증설</li>
+      </ul>
+      <svg viewBox="0 0 760 320" role="img" aria-label="누적 영업이익은 2031년 C안 231억원, A안 148억원, B안 96억원이다. C안은 2030년 중 초기 투자 112억원을 회수하지만 A안은 5년 내 268억원에 도달하지 못한다." aria-labelledby="c9t">
+        <title id="c9t">시나리오별 누적 영업이익 라인 차트</title>
+        <line class="gl" x1="76" y1="242.8" x2="740" y2="242.8"/>
+        <line class="gl" x1="76" y1="197.2" x2="740" y2="197.2"/>
+        <line class="gl" x1="76" y1="151.6" x2="740" y2="151.6"/>
+        <line class="gl" x1="76" y1="106.0" x2="740" y2="106.0"/>
+        <line class="gl" x1="76" y1="60.4" x2="740" y2="60.4"/>
+        <g class="ax" font-size="10.5" text-anchor="end">
+          <text x="66" y="246.8">0</text>
+          <text x="66" y="201.2">60</text>
+          <text x="66" y="155.6">120</text>
+          <text x="66" y="110.0">180</text>
+          <text x="66" y="64.4">240</text>
+        </g>
+        <line class="zero" x1="76" y1="242.8" x2="740" y2="242.8"/>
+        <line class="conn" x1="90" y1="39.1" x2="700" y2="39.1"/>
+        <text class="ax" x="704" y="43" font-size="10.5">A안 투자 268</text>
+        <line class="conn" x1="90" y1="157.7" x2="700" y2="157.7"/>
+        <text class="ax" x="704" y="161.7" font-size="10.5">C안 투자 112</text>
+        <polyline class="l3" points="90,256.5 250,251.9 410,226.1 570,183.5 730,130.3"/>
+        <polyline class="l2" points="90,239.8 250,230.6 410,215.4 570,194.2 730,169.8"/>
+        <polyline class="l1" points="90,236.7 250,218.5 410,189.6 570,134.9 730,67.2"/>
+        <g class="f3"><circle cx="90" cy="256.5" r="3"/><circle cx="250" cy="251.9" r="3"/><circle cx="410" cy="226.1" r="3"/><circle cx="570" cy="183.5" r="3"/><circle cx="730" cy="130.3" r="3"/></g>
+        <g class="f2"><circle cx="90" cy="239.8" r="3"/><circle cx="250" cy="230.6" r="3"/><circle cx="410" cy="215.4" r="3"/><circle cx="570" cy="194.2" r="3"/><circle cx="730" cy="169.8" r="3"/></g>
+        <g class="f1"><circle cx="90" cy="236.7" r="3.6"/><circle cx="250" cy="218.5" r="3.6"/><circle cx="410" cy="189.6" r="3.6"/><circle cx="570" cy="134.9" r="3.6"/><circle cx="730" cy="67.2" r="3.6"/></g>
+        <g class="vl" font-size="11" text-anchor="end">
+          <text x="726" y="57.2" font-weight="700">231</text>
+          <text x="726" y="120.3">148</text>
+          <text x="726" y="185.8">96</text>
+        </g>
+        <g class="vl" font-size="11" text-anchor="middle">
+          <text x="90" y="228.7">8</text>
+          <text x="90" y="270.5">−18</text>
+        </g>
+        <line class="axis" x1="76" y1="272" x2="740" y2="272"/>
+        <g class="ax" font-size="11" text-anchor="middle">
+          <text x="90" y="290">2027</text>
+          <text x="250" y="290">2028</text>
+          <text x="410" y="290">2029</text>
+          <text x="570" y="290">2030</text>
+          <text x="730" y="290">2031</text>
+        </g>
+        <text class="ax" x="76" y="308" font-size="11">누적 영업이익(사업 개시 이후 누계) · 초기 투자 회수 시점은 각 점선과의 교차점</text>
+      </svg>
+      <figcaption>C안 곡선은 2030년 중 <strong>투자선 112억원을 통과</strong>하고 이후 기울기가 가장 가파르다. A안 곡선은 5년 끝에서도 자기 투자선(268억원)의 절반 수준에 머문다 — 즉 A안의 문제는 수익성이 아니라 <strong>회수되지 않는 선투자 규모</strong>다.</figcaption>
+      <p class="src">자료: 당사 재무 모델 v1.2(2026-08-28), 연도별 영업이익 상세는 부록 A Exhibit 15.</p>
+    </figure>
+  </div>
+
+  <div class="note">
+    <p class="nl">통찰</p>
+    <p>세 안의 차이는 "얼마를 버느냐"보다 "언제 돈을 넣느냐"에서 나온다. A안과 C안의 5년 누적 매출 차이는 90억원(4.4%)에 불과하지만, 초기 투자 차이는 156억원이다. <strong>수요가 확인된 뒤 설비를 붙이는 순서</strong>가 NPV 77억원의 차이를 만든다.</p>
+  </div>
+</section>
+
+<section id="s6" aria-labelledby="s6h">
+  <p class="kicker">논점 6</p>
+  <h2 id="s6h">원료 어가와 납품 단가가 수익성 변동의 67%를 만든다</h2>
+  <p class="lead">C안 NPV 118억원이 어떤 조건에서 무너지는지, 네 변수를 각각 ±10% 흔들어 확인한다.</p>
+  <p>민감도 분석 결과 NPV 변동 폭이 가장 큰 변수는 납품 단가(168억원)이고, 원료 어가(84억원)가 그다음이다. 두 변수가 전체 변동 폭 374억원의 67.4%를 차지한다. 판매 물량(92억원)은 세 번째지만 당사가 영업으로 통제 가능한 영역이고, OEM 수수료율(30억원)은 계약으로 고정되므로 실질 위험이 낮다.</p>
+  <p>주목할 점은 하방 시나리오에서도 NPV가 음수가 되지 않는다는 것이다. 최악 조합(원료 +10%, 단가 −5%)에서도 NPV는 34억원으로 양수를 유지하지만, 경영위원회 최소 기여 기준 100억원에는 미달한다. 곧 C안의 리스크는 "손실"이 아니라 <b>"기준 미달"</b>이며, 원료 장기 계약으로 84억원 변동 폭의 상당 부분을 사전에 제거할 수 있다.</p>
+
+  <div class="exh">
+    <div class="exh-h">
+      <span class="exh-n">Exhibit 10</span>
+      <span class="exh-t">C안 5년 NPV 민감도 분석</span>
+      <span class="exh-u">단위: 억원 · 기준 NPV 118억원</span>
+    </div>
+    <div class="tw">
+      <table>
+        <caption>각 변수를 단독으로 ±10% 변동시킨 결과. 원료 어가는 상승이 불리하므로 +10% 열이 하방 시나리오다.</caption>
+        <thead>
+          <tr>
+            <th scope="col">변수</th>
+            <th scope="col" class="n">−10%</th>
+            <th scope="col" class="n">기준</th>
+            <th scope="col" class="n">+10%</th>
+            <th scope="col" class="n">변동 폭</th>
+            <th scope="col" class="n">기여도</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">납품 단가</th><td class="n">34</td><td class="n">118</td><td class="n">202</td><td class="n">168</td><td class="n">44.9</td></tr>
+          <tr><th scope="row">판매 물량</th><td class="n">72</td><td class="n">118</td><td class="n">164</td><td class="n">92</td><td class="n">24.6</td></tr>
+          <tr><th scope="row">원료 어가</th><td class="n">160</td><td class="n">118</td><td class="n">76</td><td class="n">84</td><td class="n">22.5</td></tr>
+          <tr><th scope="row">OEM 수수료율</th><td class="n">133</td><td class="n">118</td><td class="n">103</td><td class="n">30</td><td class="n">8.0</td></tr>
+          <tr class="tot"><th scope="row">합계</th><td class="n">—</td><td class="n">118</td><td class="n">—</td><td class="n">374</td><td class="n">100.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">자료: 당사 재무 모델 v1.2(2026-08-28) 민감도 시트. 원료 어가 변동 범위는 해양수산부 「수산물 가격정보」 2021~2025 명태·연어 도매가 표준편차 기준.</p>
+  </div>
+
+  <div class="exh">
+    <figure>
+      <div class="exh-h">
+        <span class="exh-n">Exhibit 11</span>
+        <span class="exh-t">리스크 매트릭스 — 심각도 × 발생 확률</span>
+        <span class="exh-u">번호는 Exhibit 12 리스크 등록부와 대응</span>
+      </div>
+      <svg viewBox="0 0 620 390" role="img" aria-label="심각도와 발생 확률이 모두 높은 구역에는 상위 3사 단가 인하(R2)가, 심각도 상·확률 중 구역에는 원료 어가 급등(R1)이 위치한다." aria-labelledby="c11t">
+        <title id="c11t">리스크 심각도 대 발생 확률 매트릭스</title>
+        <rect class="cellmd" x="90" y="30" width="150" height="100"/>
+        <rect class="cellhi" x="240" y="30" width="150" height="100"/>
+        <rect class="cellhi" x="390" y="30" width="150" height="100"/>
+        <rect class="celllo" x="90" y="130" width="150" height="100"/>
+        <rect class="cellmd" x="240" y="130" width="150" height="100"/>
+        <rect class="cellhi" x="390" y="130" width="150" height="100"/>
+        <rect class="celllo" x="90" y="230" width="150" height="100"/>
+        <rect class="celllo" x="240" y="230" width="150" height="100"/>
+        <rect class="cellmd" x="390" y="230" width="150" height="100"/>
+        <g class="cellline">
+          <line x1="240" y1="30" x2="240" y2="330"/>
+          <line x1="390" y1="30" x2="390" y2="330"/>
+          <line x1="90" y1="130" x2="540" y2="130"/>
+          <line x1="90" y1="230" x2="540" y2="230"/>
+        </g>
+        <rect class="mtx" x="90" y="30" width="450" height="300"/>
+        <g class="f1">
+          <circle cx="315" cy="80" r="14"/><circle cx="465" cy="80" r="14"/>
+          <circle cx="292" cy="170" r="14"/><circle cx="345" cy="196" r="14"/>
+          <circle cx="165" cy="180" r="14"/><circle cx="315" cy="280" r="14"/>
+        </g>
+        <g class="rlbl" font-size="12" text-anchor="middle">
+          <text x="315" y="85">R1</text><text x="465" y="85">R2</text>
+          <text x="292" y="175">R3</text><text x="345" y="201">R5</text>
+          <text x="165" y="185">R4</text><text x="315" y="285">R6</text>
+        </g>
+        <g class="ax" font-size="11.5" text-anchor="end">
+          <text x="80" y="84">상</text>
+          <text x="80" y="184">중</text>
+          <text x="80" y="284">하</text>
+        </g>
+        <g class="ax" font-size="11.5" text-anchor="middle">
+          <text x="165" y="350">하</text>
+          <text x="315" y="350">중</text>
+          <text x="465" y="350">상</text>
+          <text x="315" y="372" font-size="11">발생 확률</text>
+        </g>
+        <text class="ax" x="30" y="180" font-size="11" text-anchor="middle" transform="rotate(-90 30 180)">심각도</text>
+      </svg>
+      <figcaption>고위험 구역(붉은 음영)에 놓인 것은 <strong>R2 상위 3사 단가 인하</strong> 하나뿐이며, 이 리스크는 회피가 아니라 <strong>계약 구조로 완화</strong>해야 한다 — 급식 2차 벤더 장기계약이 그 수단이다.</figcaption>
+      <p class="src">자료: 2026-08 리스크 워크숍(생산·영업·구매·재무 12명) 합의 등급, 영향액은 당사 재무 모델 v1.2 민감도 시트.</p>
+    </figure>
+  </div>
+
+  <div class="exh">
+    <div class="exh-h">
+      <span class="exh-n">Exhibit 12</span>
+      <span class="exh-t">리스크 등록부와 대응 방안</span>
+      <span class="exh-u">영향액 단위: 억원 (C안 NPV 기준)</span>
+    </div>
+    <div class="tw">
+      <table>
+        <caption>심각도·확률은 색과 문자를 함께 표기한다. 영향액은 해당 리스크가 현실화될 때의 NPV 감소분.</caption>
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">리스크</th>
+            <th scope="col">심각도</th>
+            <th scope="col">확률</th>
+            <th scope="col" class="n">NPV 영향</th>
+            <th scope="col">대응 방안</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">R1</th><td>명태·연어 등 원료 어가 급등</td><td><span class="dot d-hi"></span>상</td><td><span class="dot d-md"></span>중</td><td class="n down">−42</td><td>2년 고정가 장기 구매계약</td></tr>
+          <tr><th scope="row">R2</th><td>상위 3개사 단가 인하 대응</td><td><span class="dot d-hi"></span>상</td><td><span class="dot d-hi"></span>상</td><td class="n down">−42</td><td>급식 2차 벤더 장기계약으로 물량 고정</td></tr>
+          <tr><th scope="row">R3</th><td>OEM 파트너 품질 사고</td><td><span class="dot d-md"></span>중</td><td><span class="dot d-md"></span>중</td><td class="n down">−18</td><td>2개사 이중 소싱 + 월 1회 현장 감사</td></tr>
+          <tr><th scope="row">R4</th><td>HACCP·냉동 물류 인증 지연</td><td><span class="dot d-md"></span>중</td><td><span class="dot d-lo"></span>하</td><td class="n down">−11</td><td>2027-06까지 사전 준비 완료</td></tr>
+          <tr><th scope="row">R5</th><td>2029년 자체 라인 전환 지연</td><td><span class="dot d-md"></span>중</td><td><span class="dot d-md"></span>중</td><td class="n down">−25</td><td>2028-09 전환 게이트 심의 정례화</td></tr>
+          <tr><th scope="row">R6</th><td>급식 단가 입찰 규제 변경</td><td><span class="dot d-lo"></span>하</td><td><span class="dot d-md"></span>중</td><td class="n down">−6</td><td>분기 정책 모니터링, 계약서 조정 조항</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">자료: 2026-08 리스크 워크숍(생산·영업·구매·재무 12명), 영향액은 당사 재무 모델 v1.2 민감도 시트.</p>
+  </div>
+</section>
+
+<section id="s7" aria-labelledby="s7h">
+  <p class="kicker">논점 7</p>
+  <h2 id="s7h">2026년 4분기 실사를 놓치면 진입이 1년 지연된다</h2>
+  <p class="lead">C안이 성립하려면 어떤 순서로 무엇이 언제 끝나야 하는지, 그리고 시한을 놓쳤을 때의 비용을 확인한다.</p>
+  <p>급식 채널의 연간 단가 계약은 매년 4~5월에 체결되고, 신규 벤더 등록에는 HACCP 인증과 3개월 이상의 시범 납품 이력이 요구된다. 2027년 3분기 초도 납품을 맞추려면 역산해 2027년 2분기에 시범 납품이 진행 중이어야 하고, 그러려면 2027년 1분기에 시제품 5종이 나와야 하며, 결국 OEM 파트너 계약은 <b>2026년 12월</b>까지 끝나야 한다.</p>
+  <p>이 시한을 놓치면 다음 계약 주기는 2028년 4월이다. 진입이 1년 밀리면 5년 창출 기간이 뒤로 이동하면서 할인 손실이 발생하고, 그사이 상위 3개사가 급식 신규 물량을 선점해 2031년 목표 물량이 7,800톤에서 6,900톤으로 축소된다. 두 효과를 합산하면 C안 NPV는 118억원에서 74억원으로 <b>44억원(37.3%)</b> 감소해 경영위원회 기준선 100억원 아래로 떨어진다.</p>
+
+  <div class="exh">
+    <figure>
+      <div class="exh-h">
+        <span class="exh-n">Exhibit 13</span>
+        <span class="exh-t">C안 실행 로드맵 (2026 4분기 ~ 2031)</span>
+        <span class="exh-u">◆ = 되돌릴 수 없는 마일스톤</span>
+      </div>
+      <ul class="legend" aria-hidden="true">
+        <li><span class="sw sw1"></span>당사 주관</li>
+        <li><span class="sw sw2"></span>고객사 공동</li>
+        <li><span class="sw swi"></span>설비 투자</li>
+      </ul>
+      <svg viewBox="0 0 760 285" role="img" aria-label="OEM 실사·계약은 2026년 10월부터 12월까지, 시제품과 인증은 2027년 상반기, 초도 양산 납품은 2027년 3분기부터 2028년까지, 강릉 3라인 착공과 가동은 2029년, 자체 생산 전환은 2029년 4분기부터 2031년까지 진행한다." aria-labelledby="c13t">
+        <title id="c13t">C안 실행 로드맵 간트 차트</title>
+        <g class="gl">
+          <line x1="215.6" y1="16" x2="215.6" y2="232"/>
+          <line x1="346.7" y1="16" x2="346.7" y2="232"/>
+          <line x1="477.8" y1="16" x2="477.8" y2="232"/>
+          <line x1="608.9" y1="16" x2="608.9" y2="232"/>
+          <line x1="740" y1="16" x2="740" y2="232"/>
+        </g>
+        <g font-size="12">
+          <text x="0" y="40">OEM 실사·계약</text>
+          <text x="0" y="76">시제품·HACCP 인증</text>
+          <text x="0" y="112">급식 3개사 시범 납품</text>
+          <text x="0" y="148">초도 양산·채널 확대</text>
+          <text x="0" y="184">강릉 3라인 착공·가동</text>
+          <text x="0" y="220">자체 생산 전환</text>
+        </g>
+        <rect class="f1" x="182.8" y="26" width="32.8" height="20"/>
+        <rect class="f1" x="215.6" y="62" width="65.6" height="20"/>
+        <rect class="f2" x="248.4" y="98" width="65.6" height="20"/>
+        <rect class="f1" x="281.2" y="134" width="196.6" height="20"/>
+        <rect class="fi" x="477.8" y="170" width="98.3" height="20"/>
+        <rect class="f1" x="576.1" y="206" width="163.9" height="20"/>
+        <polygon class="fi" points="281.2,128 289.2,136 281.2,144 273.2,136"/>
+        <polygon class="fi" points="576.1,200 584.1,208 576.1,216 568.1,208"/>
+        <g class="vl" font-size="10.5">
+          <text x="221" y="41">2026.10~12</text>
+          <text x="287" y="77">2027.1~6</text>
+          <text x="320" y="113">2027.4~9</text>
+          <text x="484" y="149">2027.7~2028.12</text>
+          <text x="582" y="185">2029.1~9</text>
+          <text x="600" y="221">2029.10~2031.12</text>
+        </g>
+        <line class="axis" x1="150" y1="232" x2="740" y2="232"/>
+        <g class="ax" font-size="11" text-anchor="middle">
+          <text x="215.6" y="250">2027</text>
+          <text x="346.7" y="250">2028</text>
+          <text x="477.8" y="250">2029</text>
+          <text x="608.9" y="250">2030</text>
+          <text x="740" y="250">2031</text>
+        </g>
+        <text class="ax" x="0" y="272" font-size="11">◆ 2027-07 초도 납품 개시 · ◆ 2029-10 자체 라인 가동 — 두 시점은 후속 일정 전체를 결정한다</text>
+      </svg>
+      <figcaption>여섯 단계 중 <strong>가장 짧은 OEM 실사·계약(3개월)이 전체 일정을 결정</strong>한다. 이 구간이 밀리면 뒤의 다섯 단계가 통째로 1년 이동하며, 그 비용은 NPV 44억원이다.</figcaption>
+      <p class="src">자료: 급식 3개사 구매 담당 인터뷰(2026-07, 5건), HACCP 인증 소요기간은 한국식품안전관리인증원 표준 처리기간(2026), 일정은 전략기획팀 역산.</p>
+    </figure>
+  </div>
+
+  <h3>물량·매출 계획과 자체 생산 비중</h3>
+  <p>C안의 물량은 2027년 2,580톤에서 2031년 7,800톤으로 늘어난다. 2028년 4,900톤 도달이 자체 라인 착공의 전제 조건이며, 이 조건이 충족되지 않으면 2029년 착공을 유예하고 B안(전량 OEM)으로 전환한다. 자체 생산 비중은 2029년 0%에서 2030년 55%, 2031년 77%로 올라가며, 이에 따라 OEM 위탁 수수료 부담이 2029년 연 57억원에서 2031년 연 16억원으로 줄어든다.</p>
+
+  <div class="note neg">
+    <p class="nl">되돌릴 수 없는 결정</p>
+    <p>2029년 강릉 3라인 착공(78억원)은 취소 시 설계·토목 선급금 21억원이 매몰된다. 따라서 착공 여부는 2028년 9월 <strong>전환 게이트</strong>에서 그해 물량 실적으로 판단하며, 그 이전 단계(OEM 실사·시제품·시범 납품)는 모두 중단 가능한 가역 투자로 설계했다.</p>
+  </div>
+</section>
+
+<section id="s8" aria-labelledby="s8h">
+  <p class="kicker">권고</p>
+  <h2 id="s8h">경영위원회는 OEM 실사 착수와 예산 30억원을 승인해야 한다</h2>
+  <p class="lead">아래 다섯 건은 C안을 실행 가능 상태로 만드는 최소 집합이며, 각각 시한과 담당을 지정했다.</p>
+  <p>승인 요청 총액 30억원은 2026년 4분기부터 2027년 상반기까지 집행되는 착수 비용과 운전자금이며, C안 초기 투자 112억원과는 별개로 재무 모델에 판관비·보증금으로 반영돼 있다. 권고 4는 예산이 필요 없는 절차 결정이지만, 2029년 78억원 설비 투자의 취소 가능성을 보전하는 장치이므로 함께 승인이 필요하다.</p>
+
+  <div class="exh">
+    <div class="exh-h">
+      <span class="exh-n">Exhibit 14</span>
+      <span class="exh-t">권고 사항과 실행 책임</span>
+      <span class="exh-u">단위: 억원</span>
+    </div>
+    <div class="tw">
+      <table>
+        <caption>필요 자원은 2026년 4분기~2027년 상반기 집행 기준. 권고 4는 예산이 아닌 절차 승인 사항이다.</caption>
+        <thead>
+          <tr>
+            <th scope="col">권고</th>
+            <th scope="col">근거</th>
+            <th scope="col" class="n">필요 자원</th>
+            <th scope="col">시한</th>
+            <th scope="col">담당</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">1. OEM 후보 2개사 실사·계약</th>
+            <td>Exhibit 8 — C안 NPV 118억원, A안의 2.9배</td>
+            <td class="n">4</td><td>2026-12-15</td><td>전략기획팀 김도현 팀장</td>
+          </tr>
+          <tr>
+            <th scope="row">2. 원료 2년 고정가 구매계약</th>
+            <td>Exhibit 10 — 어가 10% 상승 시 NPV 36% 축소</td>
+            <td class="n">12</td><td>2027-02-28</td><td>구매팀 박서윤 팀장</td>
+          </tr>
+          <tr>
+            <th scope="row">3. 급식 3개사 시범 납품 MOU</th>
+            <td>Exhibit 2 — 급식 세그먼트 2030년 1조 280억원</td>
+            <td class="n">6</td><td>2027-03-31</td><td>영업본부 이정훈 상무</td>
+          </tr>
+          <tr>
+            <th scope="row">4. 자체 라인 전환 게이트 신설</th>
+            <td>Exhibit 13 — 착공 취소 시 선급금 21억원 매몰</td>
+            <td class="n">—</td><td>2028-09-30</td><td>경영관리실 최민아 실장</td>
+          </tr>
+          <tr>
+            <th scope="row">5. HACCP·냉동 물류 인증 사전 준비</th>
+            <td>Exhibit 12 — R4 인증 지연 시 NPV −11억원</td>
+            <td class="n">8</td><td>2027-06-30</td><td>품질보증팀 정하늘 팀장</td>
+          </tr>
+          <tr class="tot"><th scope="row">합계</th><td>—</td><td class="n">30</td><td>—</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">자료: 2026-08 사업본부 실행계획 초안, 담당·시한은 2026-08-29 사업본부장 협의 확정.</p>
+  </div>
+
+  <div class="note">
+    <p class="nl">승인 시 즉시 발생하는 일</p>
+    <p>승인 다음 영업일부터 OEM 후보 5개사에 실사 요청서를 발송한다. 2026년 11월 30일까지 2개사로 좁히지 못하면 <strong>2026년 12월 15일 계약 시한을 지킬 수 없고</strong>, 그 시점에 본 건은 자동으로 재검토 대상이 된다(논점 7).</p>
+  </div>
+</section>
+
+<section id="s9" aria-labelledby="s9h">
+  <p class="kicker">부록</p>
+  <h2 id="s9h">모든 수치의 산출 근거는 부록에서 확인할 수 있다</h2>
+  <p class="lead">본문에 실린 모든 수치의 연도별 원자료, 재무 모델 가정, 시장 규모 추정 방법론, 인터뷰 출처를 그대로 수록한다.</p>
+
+  <details>
+    <summary>부록 A — 시나리오별 연도 손익과 재무 모델 가정</summary>
+    <div class="exh">
+      <div class="exh-h">
+        <span class="exh-n">Exhibit 15</span>
+        <span class="exh-t">시나리오별 연도 매출·영업이익 (2027~2031)</span>
+        <span class="exh-u">단위: 억원, 톤</span>
+      </div>
+      <div class="tw">
+        <table>
+          <caption>물량은 C안 기준. A안·B안의 물량 계획은 재무 모델 v1.2 원본 시트에 수록.</caption>
+          <thead>
+            <tr>
+              <th scope="col">연도</th>
+              <th scope="col" class="n">A안 매출</th>
+              <th scope="col" class="n">A안 영업이익</th>
+              <th scope="col" class="n">B안 매출</th>
+              <th scope="col" class="n">B안 영업이익</th>
+              <th scope="col" class="n">C안 매출</th>
+              <th scope="col" class="n">C안 영업이익</th>
+              <th scope="col" class="n">C안 물량</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">2027</th><td class="n">210</td><td class="n down">−18</td><td class="n">200</td><td class="n">4</td><td class="n">180</td><td class="n">8</td><td class="n">2,580</td></tr>
+            <tr><th scope="row">2028</th><td class="n">380</td><td class="n">6</td><td class="n">320</td><td class="n">12</td><td class="n">340</td><td class="n">24</td><td class="n">4,900</td></tr>
+            <tr><th scope="row">2029</th><td class="n">470</td><td class="n">34</td><td class="n">380</td><td class="n">20</td><td class="n">450</td><td class="n">38</td><td class="n">6,400</td></tr>
+            <tr><th scope="row">2030</th><td class="n">520</td><td class="n">56</td><td class="n">420</td><td class="n">28</td><td class="n">520</td><td class="n">72</td><td class="n">7,300</td></tr>
+            <tr><th scope="row">2031</th><td class="n">560</td><td class="n">70</td><td class="n">440</td><td class="n">32</td><td class="n">560</td><td class="n">89</td><td class="n">7,800</td></tr>
+            <tr class="tot"><th scope="row">합계</th><td class="n">2,140</td><td class="n">148</td><td class="n">1,760</td><td class="n">96</td><td class="n">2,050</td><td class="n">231</td><td class="n">28,980</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="src">자료: 당사 재무 모델 v1.2(2026-08-28), 재무팀 검토필(2026-08-30).</p>
+    </div>
+
+    <div class="exh">
+      <div class="exh-h">
+        <span class="exh-n">Exhibit 16</span>
+        <span class="exh-t">재무 모델 주요 가정</span>
+        <span class="exh-u">2026-08-28 기준</span>
+      </div>
+      <div class="tw">
+        <table>
+          <caption>모든 시나리오에 동일하게 적용한 가정. 시나리오별로 달라지는 항목은 비고에 표시했다.</caption>
+          <thead>
+            <tr><th scope="col">항목</th><th scope="col">값</th><th scope="col">근거</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">할인율(WACC)</th><td>9.0%</td><td>재무팀 2026년 산정치</td></tr>
+            <tr><th scope="row">원료 단가 상승률</th><td>연 3.2%</td><td>2021~2025 명태·연어 도매가 CAGR</td></tr>
+            <tr><th scope="row">인건비 상승률</th><td>연 4.5%</td><td>당사 3개년 평균 임금인상률</td></tr>
+            <tr><th scope="row">적용 환율</th><td>1,340원/USD</td><td>2026년 상반기 평균 매매기준율</td></tr>
+            <tr><th scope="row">매출총이익률(5년 평균)</th><td>29.8%</td><td>Exhibit 7 워터폴</td></tr>
+            <tr><th scope="row">물류·보관비</th><td>매출의 4.0%</td><td>냉동 3자물류 3사 견적 평균(2026-07)</td></tr>
+            <tr><th scope="row">판매관리비</th><td>매출의 6.3%</td><td>당사 수산 가공 사업 2025 실적</td></tr>
+            <tr><th scope="row">OEM 위탁 수수료</th><td>위탁 생산분 매출의 12.6%</td><td>OEM 후보 3사 견적 평균(2026-08)</td></tr>
+            <tr><th scope="row">감가상각</th><td>정액 10년</td><td>당사 회계정책</td></tr>
+            <tr><th scope="row">법인세·잔존가치</th><td>미반영</td><td>시나리오 간 EBIT 기준 비교</td></tr>
+            <tr><th scope="row">A안 저가동 고정비</th><td>2027~2028 연 26억원 추가</td><td>가동률 40% 미만 구간 실적(2019 강릉 2라인)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="src">자료: 당사 재무 모델 v1.2 가정 시트(2026-08-28), 각 항목의 원출처는 비고 열에 병기.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>부록 B — 시장 규모 추정 방법론</summary>
+    <div class="exh">
+      <div class="exh-h">
+        <span class="exh-n">Exhibit 17</span>
+        <span class="exh-t">세그먼트별 시장 규모 산정 방식과 검증</span>
+        <span class="exh-u">Exhibit 2 대응</span>
+      </div>
+      <div class="tw">
+        <table>
+          <caption>모든 세그먼트는 1차 통계에서 출발해 업계 인터뷰로 교차 검증했다. 추정 구간은 표에 명시했다.</caption>
+          <thead>
+            <tr><th scope="col">세그먼트</th><th scope="col">산정 방식</th><th scope="col">1차 출처</th><th scope="col">교차 검증</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">급식·단체급식</th><td>위탁급식 시장 규모 × 냉동 간편식 구매 비중(11.4%)</td><td>한국식품산업협회 급식업 통계(2026)</td><td>급식 3개사 구매 담당 인터뷰 5건</td></tr>
+            <tr><th scope="row">외식 프랜차이즈</th><td>가맹점 수 × 점당 연간 냉동 발주액(추정)</td><td>공정거래위원회 가맹사업 정보공개서(2026)</td><td>프랜차이즈 본부 2개사 인터뷰</td></tr>
+            <tr><th scope="row">편의점·리테일 PB</th><td>PB 냉동 카테고리 매출 × B2B 조달 비율</td><td>산업통상자원부 유통업체 매출동향(2026-06)</td><td>리테일 벤더 1개사 인터뷰</td></tr>
+            <tr><th scope="row">온라인 D2C 벤더</th><td>온라인 식품 거래액 × 냉동 비중 × B2B 조달 비율</td><td>통계청 온라인쇼핑동향조사(2026-06)</td><td>D2C 벤더 2개사 인터뷰</td></tr>
+            <tr><th scope="row">기타(수출·군납)</th><td>관세청 수출 실적 + 국방부 급식 조달 공고 집계</td><td>관세청 수출입무역통계(2026)</td><td>미실시(규모 5% 미만)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="src">자료: 각 행 1차 출처 열 참조. 세그먼트 분해·성장률 추정은 당사 전략기획팀(2026-08).</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>부록 C — 조사 출처와 인터뷰 목록</summary>
+    <div class="exh">
+      <div class="exh-h">
+        <span class="exh-n">Exhibit 18</span>
+        <span class="exh-t">1차·2차 조사 출처 전체 목록</span>
+        <span class="exh-u">2026-06 ~ 2026-08</span>
+      </div>
+      <div class="tw">
+        <table>
+          <caption>인터뷰 대상자의 소속·직위는 비공개 조건으로 채널 구분만 표기했다.</caption>
+          <thead>
+            <tr><th scope="col">구분</th><th scope="col">출처</th><th scope="col">일자</th><th scope="col" class="n">건수</th><th scope="col">활용</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">공공 통계</th><td>한국농수산식품유통공사 가공식품 세분시장 현황</td><td>2026-03</td><td class="n">1</td><td>논점 1</td></tr>
+            <tr><th scope="row">공공 통계</th><td>통계청 온라인쇼핑동향조사, 산업통상자원부 유통업체 매출동향</td><td>2026-06</td><td class="n">2</td><td>논점 1, 부록 B</td></tr>
+            <tr><th scope="row">공시</th><td>경쟁 5개사 2025 사업보고서·감사보고서</td><td>2026-04</td><td class="n">5</td><td>논점 3</td></tr>
+            <tr><th scope="row">인터뷰</th><td>급식 위탁운영사 구매 담당</td><td>2026-07</td><td class="n">5</td><td>논점 3, 논점 7</td></tr>
+            <tr><th scope="row">인터뷰</th><td>업계 관계자(생산·물류·유통)</td><td>2026-07~08</td><td class="n">11</td><td>논점 3, 부록 B</td></tr>
+            <tr><th scope="row">견적</th><td>OEM 후보 3사, 냉동 3자물류 3사</td><td>2026-07~08</td><td class="n">6</td><td>논점 4, 부록 A</td></tr>
+            <tr><th scope="row">내부 자료</th><td>생산관리시스템 실적, 영업본부 공급계약 대장, 재무 모델 v1.2</td><td>2026-06~08</td><td class="n">3</td><td>논점 2, 4, 5, 6</td></tr>
+            <tr class="tot"><th scope="row">합계</th><td>—</td><td>—</td><td class="n">33</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="src">자료: 전략기획팀 조사 대장(2026-08-31 마감). 인터뷰 녹취·요약본은 사내 문서관리시스템 DH-STR-2026-014-A 에 보관.</p>
+    </div>
+  </details>
+</section>
+
+<footer>
+  <span>자료 출처 종합 — Exhibit 1~18 각 출처 라인 참조 · 작성 전략기획팀 · 검토 재무팀(2026-08-30)</span>
+  <span>본 문서의 전망치는 2026-08-28 기준 가정에 따른 추정이며 실제 결과와 다를 수 있다.</span>
+  <span class="r">DH-STR-2026-014 · v1.2 · 대외비</span>
+</footer>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement, KEY='dh-str-2026-014-theme', saved=null;
+  try{saved=localStorage.getItem(KEY);}catch(e){}
+  if(saved){root.setAttribute('data-theme',saved);}
+  var btn=document.querySelector('.theme-toggle'), lbl=btn.querySelector('.tt-label');
+  function isDark(){
+    return root.getAttribute('data-theme')==='dark'
+      || (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  function sync(){
+    var d=isDark();
+    btn.setAttribute('aria-pressed', d?'true':'false');
+    lbl.textContent = d ? '라이트 모드' : '다크 모드';
+  }
+  sync();
+  btn.addEventListener('click',function(){
+    var next = isDark() ? 'light' : 'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem(KEY,next);}catch(e){}
+    sync();
+  });
+  var links={};
+  Array.prototype.forEach.call(document.querySelectorAll('.toc a'),function(a){
+    links[a.getAttribute('href').slice(1)]=a;
+  });
+  var secs=Array.prototype.slice.call(document.querySelectorAll('main section[id]'));
+  if('IntersectionObserver' in window && secs.length){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(!en.isIntersecting) return;
+        for(var k in links){ links[k].classList.remove('on'); }
+        if(links[en.target.id]) links[en.target.id].classList.add('on');
+      });
+    },{rootMargin:'-12% 0px -72% 0px', threshold:0});
+    secs.forEach(function(s){ io.observe(s); });
+  }
+})();
+</script>
+</body>
+</html>

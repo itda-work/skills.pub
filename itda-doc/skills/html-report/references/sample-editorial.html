@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>온기재단 2025 연차보고서 — 지역 돌봄 네트워크 5년의 기록 · OG-AR-2025</title>
+<meta name="description" content="온기재단 2025 연차보고서. 24개 지역·116개 파트너·연간 수혜 14,320명·사업비 집행 38.7억원. 5년 누적 35,060명. 사무국 발행, 2026-02-20.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<style>
+/* ── 팔레트: warm-editorial (references/styles/README.md 프리셋 표) ── */
+:root{
+  --bg:#FAF9F5; --paper:#FFFFFF; --tint:#F0EEE6; --ink:#141413;
+  --g500:#6B675F; --accent:#CC785C; --accent-2:#5DB8A6; --line:#E6DFD8;
+  --pos:#5DB872; --neg:#C64545; --warn:#9A6206;
+  --g100:var(--tint); --g300:var(--line);
+  --g700:color-mix(in srgb, var(--ink) 80%, var(--bg));
+  --accent-d:color-mix(in srgb, var(--accent) 85%, #000);
+  --n1:var(--g500);
+  --n2:color-mix(in srgb, var(--g500) 58%, var(--bg));
+  --n3:color-mix(in srgb, var(--g500) 28%, var(--bg));
+  --sans:"Pretendard",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --serif:"Georgia","Noto Serif KR","Apple Myungjo","Nanum Myeongjo","Pretendard",serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+/* ── 다크 짝: warm 계열 (README 파생 규칙) ── */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#1A1915; --paper:#232219; --tint:#26241F; --ink:#E8E6E0;
+    --g500:#A39F95; --line:#35322B;
+    --accent:color-mix(in srgb, #CC785C 65%, #FFF);
+    --accent-2:color-mix(in srgb, #5DB8A6 65%, #FFF);
+    --pos:#4CC38A; --neg:#F0776A; --warn:#E0A030;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1A1915; --paper:#232219; --tint:#26241F; --ink:#E8E6E0;
+  --g500:#A39F95; --line:#35322B;
+  --accent:color-mix(in srgb, #CC785C 65%, #FFF);
+  --accent-2:color-mix(in srgb, #5DB8A6 65%, #FFF);
+  --pos:#4CC38A; --neg:#F0776A; --warn:#E0A030;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+  font-size:16px; line-height:1.8; word-break:keep-all; text-wrap:pretty;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0; line-height:1.25}
+p{margin:0 0 20px}
+a{color:var(--accent-d)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ── 폭 체계: 본문 640 / 브레이크아웃 960 / 풀폭 1200 ── */
+.wrap{max-width:640px; margin:0 auto; padding:0 24px; position:relative}
+.wide{max-width:960px; margin:0 auto; padding:0 24px}
+.full{max-width:1200px; margin:0 auto; padding:0 24px}
+
+/* ── 토글 (보더 없음 — 색면만) ── */
+.theme-toggle{
+  position:fixed; top:16px; right:16px; z-index:60;
+  background:var(--tint); color:var(--g700); font:inherit; font-size:12px;
+  font-weight:600; letter-spacing:.04em; padding:9px 14px; border:0;
+  border-radius:2px; cursor:pointer;
+}
+
+/* ── 히어로 ── */
+header.hero{padding:88px 0 0}
+.eyebrow{font-size:12px; font-weight:600; letter-spacing:.06em; color:var(--g500); text-transform:uppercase; margin:0 0 20px}
+h1{font-family:var(--serif); font-size:clamp(40px,7vw,72px); font-weight:400; line-height:1.1; margin:0 0 24px}
+.deck{font-size:19px; line-height:1.6; color:var(--g700); max-width:48ch; margin:0 0 28px}
+.byline{font-size:13px; color:var(--g500); margin:0 0 32px}
+.byline span{margin-right:18px; white-space:nowrap}
+.mast-rule{max-width:1200px; margin:0 auto; padding:0 24px}
+.mast-rule i{display:block; height:2px; background:var(--ink)}
+
+/* ── 스티키 TOC (보더 없이 텍스트만) ── */
+nav.toc{display:none}
+@media (min-width:1100px){
+  nav.toc{
+    display:block; position:fixed; top:104px; left:24px; width:200px; z-index:40;
+  }
+  nav.toc h2{font-size:11px; font-weight:600; letter-spacing:.08em; color:var(--g500); text-transform:uppercase; margin:0 0 14px}
+  nav.toc ol{list-style:none; margin:0; padding:0}
+  nav.toc li{margin:0 0 9px}
+  nav.toc a{display:block; font-size:13px; line-height:1.4; color:var(--g500); text-decoration:none}
+  nav.toc a:hover{color:var(--ink)}
+  nav.toc a.on{color:var(--accent); font-weight:600}
+}
+
+/* ── 섹션 ── */
+main{display:block}
+section{margin:0 0 96px}
+section:first-of-type{margin-top:72px}
+h2{
+  font-family:var(--serif); font-size:34px; font-weight:600; letter-spacing:0;
+  margin:0 0 18px;
+}
+h2::before{content:""; display:block; width:24px; height:2px; background:var(--accent); margin:0 0 18px}
+.lead{font-size:18px; line-height:1.6; color:var(--g700); margin:0 0 32px}
+h3{font-family:var(--serif); font-size:22px; font-weight:600; margin:40px 0 14px}
+.dropcap::first-letter{
+  float:left; font-family:var(--serif); font-size:76px; line-height:.86;
+  font-weight:400; color:var(--accent); padding:6px 12px 0 0;
+}
+
+/* ── 사이드노트 ── */
+.side{
+  display:block; font-size:13px; line-height:1.6; color:var(--g500);
+  border-top:1px solid var(--line); padding-top:10px; margin:0 0 24px;
+}
+.side b{display:block; font-size:11px; font-weight:600; letter-spacing:.06em; color:var(--accent); text-transform:uppercase; margin-bottom:4px}
+@media (min-width:1100px){
+  .side{position:absolute; left:100%; margin-left:26px; width:184px; border-top:1px solid var(--line)}
+}
+
+/* ── 풀폭 인용 ── */
+blockquote{
+  max-width:1200px; margin:64px auto; padding:36px 24px;
+  border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+}
+blockquote p{
+  font-family:var(--serif); font-size:26px; line-height:1.55; color:var(--ink);
+  max-width:760px; margin:0 auto 14px;
+}
+blockquote cite{display:block; max-width:760px; margin:0 auto; font-style:normal; font-size:13px; color:var(--g500)}
+
+/* ── 풀 블리드 색면 콜아웃 ── */
+.band{background:var(--tint); padding:56px 0; margin:72px 0}
+.band .wrap{padding:0 24px}
+.band-label{font-size:12px; font-weight:600; letter-spacing:.06em; color:var(--accent); text-transform:uppercase; margin:0 0 14px}
+.band h3{margin-top:0; font-size:26px}
+.band p:last-child{margin-bottom:0}
+
+/* ── KPI 숫자 문단 (카드·배경 없음) ── */
+.kpis{display:grid; grid-template-columns:repeat(5,1fr); gap:0; margin:8px 0 40px}
+.kpi{padding:0 18px; border-left:1px solid var(--line)}
+.kpi:first-child{padding-left:0; border-left:0}
+.kpi .k-lbl{font-size:13px; color:var(--g500); margin:0 0 6px}
+.kpi .k-val{font-family:var(--serif); font-size:40px; font-weight:400; line-height:1.05; color:var(--ink); font-variant-numeric:tabular-nums}
+.kpi .k-val small{font-family:var(--sans); font-size:15px; font-weight:400; color:var(--g700); margin-left:3px}
+.kpi .k-dlt{font-size:12px; margin-top:6px; font-variant-numeric:tabular-nums}
+.up{color:var(--pos)} .down{color:var(--neg)} .flat{color:var(--g500)}
+@media (max-width:980px){ .kpis{grid-template-columns:repeat(2,1fr); row-gap:28px} .kpi:nth-child(odd){padding-left:0; border-left:0} }
+@media (max-width:520px){ .kpis{grid-template-columns:1fr} .kpi{padding-left:0; border-left:0} }
+
+/* ── 표 ── */
+.tw{overflow-x:auto; margin:0 0 12px}
+table{width:100%; border-collapse:collapse; font-size:14px; line-height:1.5}
+caption{text-align:left; font-size:13px; font-weight:600; color:var(--g700); padding:0 0 10px}
+thead th{
+  font-size:12px; font-weight:600; letter-spacing:.04em; color:var(--g500);
+  text-align:left; padding:0 12px 8px 0; border-bottom:1px solid var(--ink); background:none;
+}
+tbody th{font-weight:400; text-align:left; padding:9px 12px 9px 0; border-bottom:1px solid var(--line)}
+tbody td{padding:9px 12px 9px 0; border-bottom:1px solid var(--line)}
+tbody tr:last-child > *{border-bottom:1px solid var(--ink)}
+.num{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; padding-right:0}
+th.num{padding-right:0}
+tr.tot > *{font-weight:700; border-bottom:1px solid var(--ink)}
+.tnote{font-size:12px; color:var(--g500); margin:0 0 8px}
+.bar-cell{display:inline-block; height:6px; background:var(--n3); vertical-align:middle; margin-left:8px}
+
+/* ── figure / 차트 ── */
+figure{margin:40px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:24px 0}
+figure svg{display:block; width:100%; height:auto}
+figcaption{font-size:13px; line-height:1.6; color:var(--g700); margin-top:16px}
+figcaption b{font-weight:600; color:var(--ink)}
+.src{display:block; font-size:12px; color:var(--g500); margin-top:6px}
+.cx{fill:var(--g500)} .cv{fill:var(--ink)} .cvw{fill:var(--bg)}
+.cg{stroke:var(--line)} .cax{stroke:var(--g300)}
+.ca{fill:var(--accent)} .cb{fill:var(--accent-2)}
+.cn1{fill:var(--n1)} .cn2{fill:var(--n2)} .cn3{fill:var(--n3)}
+.sa{stroke:var(--accent)} .sb{stroke:var(--accent-2)}
+.sn1{stroke:var(--n1)} .sn2{stroke:var(--n2)} .sn3{stroke:var(--n3)}
+.serif-num{font-family:Georgia,"Times New Roman",serif}
+
+/* ── 연표 ── */
+.era{margin:32px 0 0}
+
+/* ── 부록 ── */
+details{border-top:1px solid var(--line); padding:16px 0}
+details:last-of-type{border-bottom:1px solid var(--line)}
+summary{cursor:pointer; font-size:15px; font-weight:600; list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+ "; color:var(--accent); font-weight:600}
+details[open] summary::before{content:"– "}
+details .dbody{padding-top:18px}
+
+/* ── 푸터 ── */
+footer{border-top:2px solid var(--ink); margin-top:96px; padding:40px 0 72px}
+footer h2{font-family:var(--serif); font-size:22px; font-weight:400; margin:0 0 18px}
+footer h2::before{display:none}
+footer dl{display:grid; grid-template-columns:120px 1fr; gap:6px 16px; font-size:13px; margin:0 0 20px}
+footer dt{color:var(--g500)} footer dd{margin:0}
+footer .disc{font-size:12px; line-height:1.7; color:var(--g500); margin:0}
+
+/* ── 인쇄 ── */
+@page{ size:A4; margin:18mm 16mm; }
+@media print{
+  :root{ color-scheme:light;
+    --bg:#FAF9F5; --paper:#FFFFFF; --tint:#F0EEE6; --ink:#141413;
+    --g500:#6B675F; --accent:#CC785C; --accent-2:#5DB8A6; --line:#E6DFD8;
+    --pos:#5DB872; --neg:#C64545;
+  }
+  body{background:#fff; font-size:10.5pt}
+  nav.toc, .theme-toggle, .no-print{display:none !important}
+  section, figure, table, .kpis, blockquote, .band{break-inside:avoid}
+  h2, h3{break-after:avoid}
+  header.hero{padding-top:0}
+  section{margin-bottom:34pt}
+  .side{position:static !important; width:auto !important; margin:0 0 16pt !important}
+  details{display:block} details > *{display:block}
+  details .dbody{padding-top:8pt}
+  footer{break-before:page}
+  * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" type="button" aria-pressed="false"><span class="tt-label">다크 모드</span></button>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Annual Report 2025 · 온기재단</p>
+    <h1>지역 돌봄 네트워크<br>5년의 기록</h1>
+    <p class="deck">2021년 봄 세 개 동네에서 시작한 방문 돌봄은, 2025년 겨울 스물네 개 지역 116개 기관의 네트워크가 되었습니다. 이 보고서는 그 5년 동안 우리가 만난 35,060명과 쓴 96.7억원에 대한 기록입니다.</p>
+    <p class="byline">
+      <span>발행 · 온기재단 사무국</span>
+      <span>발행일 · 2026-02-20</span>
+      <span>대상 기간 · 2025-01-01 ~ 2025-12-31</span>
+      <span>문서번호 · OG-AR-2025</span>
+    </p>
+  </div>
+  <div class="mast-rule"><i></i></div>
+</header>
+
+<nav class="toc" aria-label="목차">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#s1">문을 두드리는 일</a></li>
+    <li><a href="#s2">2025년, 숫자로</a></li>
+    <li><a href="#s3">스물네 개의 지역</a></li>
+    <li><a href="#s4">네 갈래의 돌봄</a></li>
+    <li><a href="#s5">사람이 만드는 네트워크</a></li>
+    <li><a href="#s6">어디서 와서 어디로 갔나</a></li>
+    <li><a href="#s7">5년의 연표</a></li>
+    <li><a href="#s8">다음 5년</a></li>
+    <li><a href="#apx">부록</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- ══════════ 1 ══════════ -->
+<section id="s1" aria-labelledby="h-s1">
+  <div class="wrap">
+    <h2 id="h-s1">문을 두드리는 일</h2>
+    <p class="lead">우리가 하는 일은 대부분 문 앞에서 일어납니다. 벨을 누르고, 기다리고, 안부를 묻는 일. 2025년 한 해 동안 그 문을 74,600번 두드렸습니다.</p>
+
+    <p class="dropcap">돌봄은 큰 사건이 아니라 반복입니다. 한 사람의 안부를 5.2일에 한 번씩 확인하는 일, 저녁 한 끼가 거르지 않도록 하는 일, 겨울이 오기 전에 창틀 틈을 막는 일. 온기재단이 2021년부터 해 온 일은 그 반복을 감당할 수 있는 구조를 지역마다 만드는 것이었습니다.</p>
+
+    <p>2025년은 그 구조가 처음으로 광역 단위로 확장된 해였습니다. 활동 지역은 18곳에서 24곳으로 늘었고, 파트너 기관은 79곳에서 116곳이 되었습니다. 연간 수혜 인원은 14,320명으로 전년 대비 45.1% 증가했으며, 사업비 집행은 38.7억원으로 46.6% 늘었습니다. 5년 누적으로는 35,060명을 만났고 96.7억원을 썼습니다.</p>
+
+    <aside class="side"><b>수혜 인원 기준</b>연 1회 이상 서비스를 받은 실인원입니다. 같은 사람이 여러 사업에 참여해도 1명으로 셉니다. 연인원(누적 방문 건수)은 2025년 기준 74,600건입니다.</aside>
+
+    <p>동시에 2025년은 확장의 대가를 처음 마주한 해이기도 했습니다. 1인당 지원 단가는 26.7만원에서 27.0만원으로 1.0% 상승했습니다. 강원 영동처럼 이동 거리가 긴 권역이 편입되면서 생긴 구조적 비용이며, 규모가 커질수록 단가가 낮아진다는 5년간의 가정이 처음 흔들린 지점입니다. 우리는 이 숫자를 성과 뒤에 숨기지 않고 5장과 6장에서 따로 다룹니다.</p>
+  </div>
+
+  <div class="band">
+    <div class="wrap">
+      <p class="band-label">2025년 요약</p>
+      <h3>넓힌 해였고, 처음으로 단가가 오른 해였습니다</h3>
+      <p>수혜 인원·지역·파트너·재정 네 지표가 모두 전년 대비 38% 이상 성장했습니다. 반면 1인당 지원 단가는 5년 만에 처음 상승했습니다(26.7만원 → 27.0만원, +1.0%). 확장 속도를 유지하면서 단가를 관리하는 것이 2026년의 유일한 과제입니다.</p>
+    </div>
+  </div>
+
+  <blockquote>
+    <p>“처음 왔을 때는 문을 안 열어 주셨어요. 여섯 번째쯤부터 문 앞에 의자를 내놓아 주시더라고요. 그게 이 일의 속도구나 싶었습니다.”</p>
+    <cite>김OO · 경기 남부 권역 코디네이터, 2021년부터 활동</cite>
+  </blockquote>
+</section>
+
+<!-- ══════════ 2 ══════════ -->
+<section id="s2" aria-labelledby="h-s2">
+  <div class="wrap">
+    <h2 id="h-s2">2025년, 숫자로</h2>
+    <p class="lead">다섯 개의 핵심 지표와 5년 추이입니다. 지역·파트너·정기후원자는 누계가 아니라 연말 기준 현황입니다.</p>
+  </div>
+
+  <div class="wide">
+    <div class="kpis">
+      <div class="kpi">
+        <p class="k-lbl">연간 수혜 인원</p>
+        <div class="k-val">14,320<small>명</small></div>
+        <div class="k-dlt up">▲ 45.1% (전년 9,870명)</div>
+      </div>
+      <div class="kpi">
+        <p class="k-lbl">활동 지역</p>
+        <div class="k-val">24<small>곳</small></div>
+        <div class="k-dlt up">▲ 6곳 (전년 18곳)</div>
+      </div>
+      <div class="kpi">
+        <p class="k-lbl">파트너 기관</p>
+        <div class="k-val">116<small>곳</small></div>
+        <div class="k-dlt up">▲ 37곳 (전년 79곳)</div>
+      </div>
+      <div class="kpi">
+        <p class="k-lbl">사업비 집행</p>
+        <div class="k-val">38.7<small>억원</small></div>
+        <div class="k-dlt up">▲ 46.6% (전년 26.4억원)</div>
+      </div>
+      <div class="kpi">
+        <p class="k-lbl">정기후원자</p>
+        <div class="k-val">11,650<small>명</small></div>
+        <div class="k-dlt up">▲ 38.4% (전년 8,420명)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wide">
+    <div class="tw">
+      <table>
+        <caption>표 1 · 5년 성장 지표 (2021~2025)</caption>
+        <thead>
+          <tr>
+            <th scope="col">연도</th>
+            <th scope="col" class="num">수혜 인원(명)</th>
+            <th scope="col" class="num">활동 지역(곳)</th>
+            <th scope="col" class="num">파트너 기관(곳)</th>
+            <th scope="col" class="num">사업비 집행(억원)</th>
+            <th scope="col" class="num">정기후원자(명)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">2021</th><td class="num">1,240</td><td class="num">3</td><td class="num">11</td><td class="num">4.2</td><td class="num">780</td></tr>
+          <tr><th scope="row">2022</th><td class="num">3,180</td><td class="num">7</td><td class="num">28</td><td class="num">9.8</td><td class="num">2,140</td></tr>
+          <tr><th scope="row">2023</th><td class="num">6,450</td><td class="num">12</td><td class="num">52</td><td class="num">17.6</td><td class="num">4,360</td></tr>
+          <tr><th scope="row">2024</th><td class="num">9,870</td><td class="num">18</td><td class="num">79</td><td class="num">26.4</td><td class="num">8,420</td></tr>
+          <tr><th scope="row">2025</th><td class="num">14,320</td><td class="num">24</td><td class="num">116</td><td class="num">38.7</td><td class="num">11,650</td></tr>
+          <tr class="tot"><th scope="row">누적 · 현황</th><td class="num">35,060</td><td class="num">24</td><td class="num">116</td><td class="num">96.7</td><td class="num">11,650</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote">수혜 인원과 사업비 집행은 5년 누계입니다. 활동 지역·파트너 기관·정기후원자는 누계가 아니라 2025-12-31 기준 현황입니다.</p>
+  </div>
+
+  <div class="wide">
+    <figure>
+      <svg viewBox="0 0 720 320" role="img" aria-labelledby="c1t" aria-label="연도별 수혜 인원 추이. 2021년 1,240명에서 2025년 14,320명으로 5년간 11.5배 증가.">
+        <title id="c1t">연도별 수혜 인원 추이 (2021~2025, 단위 명)</title>
+        <line class="cg" x1="80" y1="260" x2="660" y2="260" stroke-width="1"/>
+        <line class="cg" x1="80" y1="205" x2="660" y2="205" stroke-width="1"/>
+        <line class="cg" x1="80" y1="150" x2="660" y2="150" stroke-width="1"/>
+        <line class="cg" x1="80" y1="95" x2="660" y2="95" stroke-width="1"/>
+        <line class="cg" x1="80" y1="40" x2="660" y2="40" stroke-width="1"/>
+        <text class="cx" x="70" y="264" text-anchor="end" font-size="11" font-family="Pretendard, system-ui, sans-serif">0</text>
+        <text class="cx" x="70" y="209" text-anchor="end" font-size="11" font-family="Pretendard, system-ui, sans-serif">4,000</text>
+        <text class="cx" x="70" y="154" text-anchor="end" font-size="11" font-family="Pretendard, system-ui, sans-serif">8,000</text>
+        <text class="cx" x="70" y="99" text-anchor="end" font-size="11" font-family="Pretendard, system-ui, sans-serif">12,000</text>
+        <text class="cx" x="70" y="44" text-anchor="end" font-size="11" font-family="Pretendard, system-ui, sans-serif">16,000</text>
+        <polyline class="sa" points="80,243 225,216 370,171 515,124 660,63" fill="none" stroke-width="2"/>
+        <circle class="ca" cx="80" cy="243" r="4"/>
+        <circle class="ca" cx="225" cy="216" r="4"/>
+        <circle class="ca" cx="370" cy="171" r="4"/>
+        <circle class="ca" cx="515" cy="124" r="4"/>
+        <circle class="ca" cx="660" cy="63" r="7"/>
+        <text class="cv" x="80" y="230" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">1,240</text>
+        <text class="cv" x="225" y="203" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">3,180</text>
+        <text class="cv" x="370" y="158" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">6,450</text>
+        <text class="cv" x="515" y="111" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">9,870</text>
+        <text class="cv" x="660" y="46" text-anchor="middle" font-size="13" font-weight="700" font-family="Pretendard, system-ui, sans-serif">14,320</text>
+        <text class="cx" x="80" y="284" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">2021</text>
+        <text class="cx" x="225" y="284" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">2022</text>
+        <text class="cx" x="370" y="284" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">2023</text>
+        <text class="cx" x="515" y="284" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">2024</text>
+        <text class="cx" x="660" y="284" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">2025</text>
+        <text class="cx" x="80" y="306" font-size="11" font-family="Pretendard, system-ui, sans-serif">단위 · 명(실인원)</text>
+      </svg>
+      <figcaption><b>성장은 아직 꺾이지 않았습니다.</b> 연간 수혜 인원은 5년 내내 증가했고, 증가폭 자체도 매년 커졌습니다(2022 +1,940명 → 2025 +4,450명). 지역 확장이 멈추지 않는 한 이 곡선은 유지됩니다.<span class="src">자료 · 온기재단 사업관리시스템, 2025-12-31 마감 기준</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ══════════ 3 ══════════ -->
+<section id="s3" aria-labelledby="h-s3">
+  <div class="wrap">
+    <h2 id="h-s3">스물네 개의 지역</h2>
+    <p class="lead">2025년 활동은 7개 권역 24개 기초지자체에서 이뤄졌습니다. 경기 남부 한 권역이 전체 수혜 인원의 26.8%를 담당합니다.</p>
+
+    <p>지역 확장은 균등하지 않습니다. 우리는 파트너 기관이 이미 있는 곳부터 들어갑니다. 지역 복지관이나 보건지소가 명단과 신뢰를 갖고 있기 때문에, 그 위에 얹는 방식이 처음부터 문을 두드리는 방식보다 3~4개월 빠릅니다. 2025년에 새로 편입된 6개 지역 중 5곳이 기존 파트너의 추천으로 시작됐습니다.</p>
+
+    <aside class="side"><b>권역 구분</b>행정 광역시·도가 아니라 코디네이터 1인이 하루 안에 순회 가능한 범위로 묶은 운영 단위입니다. 그래서 강원 영동과 대전·충남처럼 크기가 다릅니다.</aside>
+  </div>
+
+  <div class="wide">
+    <figure>
+      <svg viewBox="0 0 720 350" role="img" aria-labelledby="c2t" aria-label="2025년 권역별 수혜 인원. 경기 남부 3,840명으로 최다, 인천 590명으로 최소.">
+        <title id="c2t">2025년 권역별 수혜 인원 (단위 명)</title>
+        <line class="cg" x1="255" y1="38" x2="255" y2="296" stroke-width="1"/>
+        <line class="cg" x1="380" y1="38" x2="380" y2="296" stroke-width="1"/>
+        <line class="cg" x1="505" y1="38" x2="505" y2="296" stroke-width="1"/>
+        <line class="cax" x1="130" y1="38" x2="130" y2="296" stroke-width="1"/>
+        <rect class="ca" x="130" y="46" width="480" height="26"/>
+        <rect class="cn1" x="130" y="82" width="364" height="26"/>
+        <rect class="cn1" x="130" y="118" width="309" height="26"/>
+        <rect class="cn2" x="130" y="154" width="248" height="26"/>
+        <rect class="cn2" x="130" y="190" width="190" height="26"/>
+        <rect class="cn3" x="130" y="226" width="126" height="26"/>
+        <rect class="cn3" x="130" y="262" width="74" height="26"/>
+        <text class="cv" x="120" y="64" text-anchor="end" font-size="12" font-family="Pretendard, system-ui, sans-serif">경기 남부</text>
+        <text class="cv" x="120" y="100" text-anchor="end" font-size="12" font-family="Pretendard, system-ui, sans-serif">대전·충남</text>
+        <text class="cv" x="120" y="136" text-anchor="end" font-size="12" font-family="Pretendard, system-ui, sans-serif">부산·경남</text>
+        <text class="cv" x="120" y="172" text-anchor="end" font-size="12" font-family="Pretendard, system-ui, sans-serif">광주·전남</text>
+        <text class="cv" x="120" y="208" text-anchor="end" font-size="12" font-family="Pretendard, system-ui, sans-serif">강원 영동</text>
+        <text class="cv" x="120" y="244" text-anchor="end" font-size="12" font-family="Pretendard, system-ui, sans-serif">대구·경북</text>
+        <text class="cv" x="120" y="280" text-anchor="end" font-size="12" font-family="Pretendard, system-ui, sans-serif">인천</text>
+        <text class="cvw" x="600" y="64" text-anchor="end" font-size="12" font-weight="700" font-family="Pretendard, system-ui, sans-serif">3,840</text>
+        <text class="cv" x="504" y="100" font-size="11" font-family="Pretendard, system-ui, sans-serif">2,910</text>
+        <text class="cv" x="449" y="136" font-size="11" font-family="Pretendard, system-ui, sans-serif">2,470</text>
+        <text class="cv" x="388" y="172" font-size="11" font-family="Pretendard, system-ui, sans-serif">1,980</text>
+        <text class="cv" x="330" y="208" font-size="11" font-family="Pretendard, system-ui, sans-serif">1,520</text>
+        <text class="cv" x="266" y="244" font-size="11" font-family="Pretendard, system-ui, sans-serif">1,010</text>
+        <text class="cv" x="214" y="280" font-size="11" font-family="Pretendard, system-ui, sans-serif">590</text>
+        <text class="cx" x="130" y="314" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">0</text>
+        <text class="cx" x="255" y="314" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">1,000</text>
+        <text class="cx" x="380" y="314" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">2,000</text>
+        <text class="cx" x="505" y="314" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">3,000</text>
+        <text class="cx" x="130" y="338" font-size="11" font-family="Pretendard, system-ui, sans-serif">단위 · 명(실인원)</text>
+      </svg>
+      <figcaption><b>수혜 인원은 권역별로 6.5배 차이가 납니다.</b> 상위 3개 권역(경기 남부·대전·충남·부산·경남)이 전체의 64.4%를 차지합니다. 2023년 이전에 진입한 권역일수록 규모가 크며, 이는 지역당 성숙에 최소 2년이 필요하다는 뜻입니다.<span class="src">자료 · 온기재단 사업관리시스템, 2025-12-31 마감 기준</span></figcaption>
+    </figure>
+
+    <div class="tw">
+      <table>
+        <caption>표 2 · 2025년 권역별 활동 현황</caption>
+        <thead>
+          <tr>
+            <th scope="col">권역</th>
+            <th scope="col" class="num">수혜 인원(명)</th>
+            <th scope="col" class="num">지역(곳)</th>
+            <th scope="col" class="num">파트너(곳)</th>
+            <th scope="col" class="num">집행액(억원)</th>
+            <th scope="col" class="num">1인당 단가(만원)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">경기 남부</th><td class="num">3,840</td><td class="num">6</td><td class="num">31</td><td class="num">10.1</td><td class="num">26.3</td></tr>
+          <tr><th scope="row">대전·충남</th><td class="num">2,910</td><td class="num">4</td><td class="num">22</td><td class="num">7.8</td><td class="num">26.8</td></tr>
+          <tr><th scope="row">부산·경남</th><td class="num">2,470</td><td class="num">4</td><td class="num">19</td><td class="num">6.7</td><td class="num">27.1</td></tr>
+          <tr><th scope="row">광주·전남</th><td class="num">1,980</td><td class="num">3</td><td class="num">16</td><td class="num">5.4</td><td class="num">27.3</td></tr>
+          <tr><th scope="row">강원 영동</th><td class="num">1,520</td><td class="num">3</td><td class="num">12</td><td class="num">4.6</td><td class="num">30.3</td></tr>
+          <tr><th scope="row">대구·경북</th><td class="num">1,010</td><td class="num">2</td><td class="num">10</td><td class="num">2.6</td><td class="num">25.7</td></tr>
+          <tr><th scope="row">인천</th><td class="num">590</td><td class="num">2</td><td class="num">6</td><td class="num">1.5</td><td class="num">25.4</td></tr>
+          <tr class="tot"><th scope="row">합계 · 평균</th><td class="num">14,320</td><td class="num">24</td><td class="num">116</td><td class="num">38.7</td><td class="num">27.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote">1인당 단가 = 권역 집행액 ÷ 권역 수혜 인원. 강원 영동의 30.3만원은 도서·산간 이동 비용(차량 유류비·숙박)이 반영된 값으로 전체 평균보다 12.2% 높습니다.</p>
+  </div>
+</section>
+
+<!-- ══════════ 4 ══════════ -->
+<section id="s4" aria-labelledby="h-s4">
+  <div class="wrap">
+    <h2 id="h-s4">네 갈래의 돌봄</h2>
+    <p class="lead">방문 돌봄·식사 지원·주거 안전·정서 지원 네 사업이 있습니다. 집행액의 42.1%가 방문 돌봄에, 5.9%가 운영·관리에 쓰였습니다.</p>
+
+    <p>사업은 한 번에 하나씩 늘렸습니다. 2021년에는 방문 돌봄 하나였고, 2022년에 식사 지원, 2023년에 주거 안전, 2024년에 정서 지원을 더했습니다. 새 사업은 기존 사업의 방문 기록에서 나왔습니다. 방문 중 냉장고가 비어 있다는 기록이 쌓여 한끼나눔이 생겼고, 겨울마다 같은 집에서 감기 기록이 반복돼 집수리 사업이 생겼습니다.</p>
+
+    <aside class="side"><b>중복 참여</b>한 사람이 평균 1.0개 사업에 참여합니다(14,320명 대비 연 참여 14,320건, 중복 조정 후). 사업별 수혜 인원 합계와 전체 수혜 인원이 일치하는 것은 중복을 제거해 배분했기 때문입니다.</aside>
+  </div>
+
+  <div class="wide">
+    <figure>
+      <svg viewBox="0 0 720 300" role="img" aria-labelledby="c3t" aria-label="2025년 사업비 집행 구성비. 이웃살핌 42.1퍼센트, 한끼나눔 24.8퍼센트, 집수리 18.3퍼센트, 말벗전화 8.8퍼센트, 운영관리 5.9퍼센트.">
+        <title id="c3t">2025년 사업비 집행 구성비 (총 38.7억원)</title>
+        <g transform="rotate(-90 160 150)">
+          <circle class="sa" cx="160" cy="150" r="80" fill="none" stroke-width="34" stroke-dasharray="211.6 291.1" stroke-dashoffset="0"/>
+          <circle class="sb" cx="160" cy="150" r="80" fill="none" stroke-width="34" stroke-dasharray="124.7 377.9" stroke-dashoffset="-211.6"/>
+          <circle class="sn1" cx="160" cy="150" r="80" fill="none" stroke-width="34" stroke-dasharray="92.0 410.6" stroke-dashoffset="-336.3"/>
+          <circle class="sn2" cx="160" cy="150" r="80" fill="none" stroke-width="34" stroke-dasharray="44.2 458.4" stroke-dashoffset="-428.3"/>
+          <circle class="sn3" cx="160" cy="150" r="80" fill="none" stroke-width="34" stroke-dasharray="29.7 472.9" stroke-dashoffset="-472.5"/>
+        </g>
+        <text class="cv serif-num" x="160" y="150" text-anchor="middle" font-size="28">38.7</text>
+        <text class="cx" x="160" y="170" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">억원 · 5개 항목</text>
+
+        <rect class="ca" x="320" y="44" width="12" height="12"/>
+        <text class="cv" x="342" y="55" font-size="13" font-family="Pretendard, system-ui, sans-serif">이웃살핌(방문 돌봄)</text>
+        <text class="cv" x="690" y="55" text-anchor="end" font-size="13" font-weight="700" font-family="Pretendard, system-ui, sans-serif">42.1%</text>
+        <text class="cx" x="342" y="72" font-size="11" font-family="Pretendard, system-ui, sans-serif">16.3억원 · 5,120명</text>
+
+        <rect class="cb" x="320" y="94" width="12" height="12"/>
+        <text class="cv" x="342" y="105" font-size="13" font-family="Pretendard, system-ui, sans-serif">한끼나눔(식사 지원)</text>
+        <text class="cv" x="690" y="105" text-anchor="end" font-size="13" font-family="Pretendard, system-ui, sans-serif">24.8%</text>
+        <text class="cx" x="342" y="122" font-size="11" font-family="Pretendard, system-ui, sans-serif">9.6억원 · 4,680명</text>
+
+        <rect class="cn1" x="320" y="144" width="12" height="12"/>
+        <text class="cv" x="342" y="155" font-size="13" font-family="Pretendard, system-ui, sans-serif">집수리(주거 안전)</text>
+        <text class="cv" x="690" y="155" text-anchor="end" font-size="13" font-family="Pretendard, system-ui, sans-serif">18.3%</text>
+        <text class="cx" x="342" y="172" font-size="11" font-family="Pretendard, system-ui, sans-serif">7.1억원 · 1,340명</text>
+
+        <rect class="cn2" x="320" y="194" width="12" height="12"/>
+        <text class="cv" x="342" y="205" font-size="13" font-family="Pretendard, system-ui, sans-serif">말벗전화(정서 지원)</text>
+        <text class="cv" x="690" y="205" text-anchor="end" font-size="13" font-family="Pretendard, system-ui, sans-serif">8.8%</text>
+        <text class="cx" x="342" y="222" font-size="11" font-family="Pretendard, system-ui, sans-serif">3.4억원 · 3,180명</text>
+
+        <rect class="cn3" x="320" y="244" width="12" height="12"/>
+        <text class="cv" x="342" y="255" font-size="13" font-family="Pretendard, system-ui, sans-serif">사업 운영·관리</text>
+        <text class="cv" x="690" y="255" text-anchor="end" font-size="13" font-family="Pretendard, system-ui, sans-serif">5.9%</text>
+        <text class="cx" x="342" y="272" font-size="11" font-family="Pretendard, system-ui, sans-serif">2.3억원</text>
+      </svg>
+      <figcaption><b>운영·관리비 5.9%는 5년 내리 6% 아래를 지켰습니다.</b> 사업 수가 1개에서 4개로 늘고 지역이 8배가 되는 동안 관리 비중을 유지한 것은, 지역 코디네이터가 행정을 겸하는 구조 덕분입니다. 다만 이 구조는 코디네이터 소진 위험과 맞바꾼 것입니다.<span class="src">자료 · 온기재단 2025 결산(외부 회계감사 완료), 반올림으로 비중 합계는 99.9%</span></figcaption>
+    </figure>
+
+    <div class="tw">
+      <table>
+        <caption>표 3 · 2025년 사업별 성과와 집행</caption>
+        <thead>
+          <tr>
+            <th scope="col">사업</th>
+            <th scope="col" class="num">수혜 인원(명)</th>
+            <th scope="col" class="num">집행액(억원)</th>
+            <th scope="col" class="num">비중</th>
+            <th scope="col" class="num">2024 집행(억원)</th>
+            <th scope="col" class="num">증감</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">이웃살핌(방문 돌봄)</th><td class="num">5,120</td><td class="num">16.3</td><td class="num">42.1%</td><td class="num">11.8</td><td class="num up">▲ 38.1%</td></tr>
+          <tr><th scope="row">한끼나눔(식사 지원)</th><td class="num">4,680</td><td class="num">9.6</td><td class="num">24.8%</td><td class="num">6.9</td><td class="num up">▲ 39.1%</td></tr>
+          <tr><th scope="row">집수리(주거 안전)</th><td class="num">1,340</td><td class="num">7.1</td><td class="num">18.3%</td><td class="num">4.4</td><td class="num up">▲ 61.4%</td></tr>
+          <tr><th scope="row">말벗전화(정서 지원)</th><td class="num">3,180</td><td class="num">3.4</td><td class="num">8.8%</td><td class="num">1.6</td><td class="num up">▲ 112.5%</td></tr>
+          <tr><th scope="row">사업 운영·관리</th><td class="num">—</td><td class="num">2.3</td><td class="num">5.9%</td><td class="num">1.7</td><td class="num up">▲ 35.3%</td></tr>
+          <tr class="tot"><th scope="row">합계</th><td class="num">14,320</td><td class="num">38.7</td><td class="num">100.0%</td><td class="num">26.4</td><td class="num up">▲ 46.6%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote">비중은 반올림해 개별 합이 99.9%입니다. 말벗전화의 112.5% 증가는 2024년 5월 개시로 전년이 8개월분이기 때문이며, 월할 환산 시 증가율은 41.7%입니다. 집수리의 1인당 집행액(53.0만원)이 높은 것은 자재비가 포함된 구조입니다.</p>
+  </div>
+
+  <blockquote>
+    <p>“말벗전화는 처음에 반대가 많았습니다. 전화 한 통이 무슨 돌봄이냐고요. 그런데 2025년 응급 상황 조기 발견 214건 중 61건이 전화에서 나왔습니다.”</p>
+    <cite>이OO · 온기재단 사업본부장</cite>
+  </blockquote>
+</section>
+
+<!-- ══════════ 5 ══════════ -->
+<section id="s5" aria-labelledby="h-s5">
+  <div class="wrap">
+    <h2 id="h-s5">사람이 만드는 네트워크</h2>
+    <p class="lead">2025년 말 기준 상근 34명, 지역 코디네이터 63명, 자원활동가 1,842명이 함께했습니다. 인력은 지역보다 빠르게 늘었습니다.</p>
+
+    <p>지역 하나가 자립하려면 코디네이터 2~3명이 필요합니다. 2023년까지는 상근 직원이 여러 지역을 겸했지만, 12개 지역을 넘어서면서 그 방식이 한계에 부딪혔습니다. 2024년부터 반상근 지역 코디네이터 제도를 도입해 지역 밀착도를 높였고, 그 결과 평균 방문 주기가 6.8일에서 5.2일로 짧아졌습니다.</p>
+
+    <aside class="side"><b>자원활동가</b>연 1회 이상 활동한 인원입니다. 이 중 월 1회 이상 정기 활동자는 612명(33.2%)이며, 나머지는 캠페인·집수리 등 단발성 참여입니다.</aside>
+  </div>
+
+  <div class="wide">
+    <figure>
+      <svg viewBox="0 0 720 330" role="img" aria-labelledby="c4t" aria-label="상근 인력과 지역 코디네이터 추이. 상근은 2023년 18명에서 2025년 34명, 코디네이터는 24명에서 63명으로 증가.">
+        <title id="c4t">상근 인력·지역 코디네이터 추이 (2023~2025, 단위 명)</title>
+        <line class="cg" x1="90" y1="250" x2="660" y2="250" stroke-width="1"/>
+        <line class="cg" x1="90" y1="190" x2="660" y2="190" stroke-width="1"/>
+        <line class="cg" x1="90" y1="130" x2="660" y2="130" stroke-width="1"/>
+        <line class="cg" x1="90" y1="70" x2="660" y2="70" stroke-width="1"/>
+        <text class="cx" x="80" y="254" text-anchor="end" font-size="11" font-family="Pretendard, system-ui, sans-serif">0</text>
+        <text class="cx" x="80" y="194" text-anchor="end" font-size="11" font-family="Pretendard, system-ui, sans-serif">20</text>
+        <text class="cx" x="80" y="134" text-anchor="end" font-size="11" font-family="Pretendard, system-ui, sans-serif">40</text>
+        <text class="cx" x="80" y="74" text-anchor="end" font-size="11" font-family="Pretendard, system-ui, sans-serif">60</text>
+
+        <rect class="ca" x="110" y="196" width="46" height="54"/>
+        <rect class="cn1" x="164" y="178" width="46" height="72"/>
+        <rect class="ca" x="300" y="172" width="46" height="78"/>
+        <rect class="cn1" x="354" y="127" width="46" height="123"/>
+        <rect class="ca" x="490" y="148" width="46" height="102"/>
+        <rect class="cn1" x="544" y="61" width="46" height="189"/>
+
+        <text class="cv" x="133" y="190" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">18</text>
+        <text class="cv" x="187" y="172" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">24</text>
+        <text class="cv" x="323" y="166" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">26</text>
+        <text class="cv" x="377" y="121" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">41</text>
+        <text class="cv" x="513" y="142" text-anchor="middle" font-size="11" font-weight="700" font-family="Pretendard, system-ui, sans-serif">34</text>
+        <text class="cv" x="567" y="55" text-anchor="middle" font-size="11" font-weight="700" font-family="Pretendard, system-ui, sans-serif">63</text>
+
+        <text class="cx" x="160" y="272" text-anchor="middle" font-size="12" font-family="Pretendard, system-ui, sans-serif">2023</text>
+        <text class="cx" x="350" y="272" text-anchor="middle" font-size="12" font-family="Pretendard, system-ui, sans-serif">2024</text>
+        <text class="cx" x="540" y="272" text-anchor="middle" font-size="12" font-family="Pretendard, system-ui, sans-serif">2025</text>
+
+        <rect class="ca" x="110" y="296" width="12" height="12"/>
+        <text class="cv" x="130" y="307" font-size="12" font-family="Pretendard, system-ui, sans-serif">상근 인력</text>
+        <rect class="cn1" x="220" y="296" width="12" height="12"/>
+        <text class="cv" x="240" y="307" font-size="12" font-family="Pretendard, system-ui, sans-serif">지역 코디네이터(반상근)</text>
+        <text class="cx" x="470" y="307" font-size="11" font-family="Pretendard, system-ui, sans-serif">단위 · 명(연말 재직 기준)</text>
+      </svg>
+      <figcaption><b>인력 증가의 축은 상근이 아니라 지역 코디네이터입니다.</b> 2023년 대비 상근은 1.9배, 코디네이터는 2.6배 늘었습니다. 지역당 코디네이터는 2.0명에서 2.6명이 되었고, 이 밀도 상승이 방문 주기 단축(6.8일 → 5.2일)의 직접 원인입니다.<span class="src">자료 · 온기재단 인사기록, 각 연도 12-31 재직 기준</span></figcaption>
+    </figure>
+
+    <div class="tw">
+      <table>
+        <caption>표 4 · 서비스 품질 지표 (2024 대비)</caption>
+        <thead>
+          <tr>
+            <th scope="col">지표</th>
+            <th scope="col" class="num">2024</th>
+            <th scope="col" class="num">2025</th>
+            <th scope="col" class="num">증감</th>
+            <th scope="col">해석</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">지속 참여율</th><td class="num">74.1%</td><td class="num">78.4%</td><td class="num up">▲ 4.3%p</td><td>3개월 이상 서비스를 이어 받은 비율</td></tr>
+          <tr><th scope="row">평균 방문 주기</th><td class="num">6.8일</td><td class="num">5.2일</td><td class="num up">▼ 1.6일</td><td>짧을수록 개선 — 코디네이터 밀도 상승 효과</td></tr>
+          <tr><th scope="row">응급 상황 조기 발견</th><td class="num">138건</td><td class="num">214건</td><td class="num up">▲ 76건</td><td>방문·통화 중 발견해 119·보건소로 연계한 건수</td></tr>
+          <tr><th scope="row">이용자 만족도</th><td class="num">4.28</td><td class="num">4.42</td><td class="num up">▲ 0.14</td><td>5점 척도, 연 1회 대면 설문(응답 3,180명)</td></tr>
+          <tr><th scope="row">1인당 지원 단가</th><td class="num">26.7만원</td><td class="num">27.0만원</td><td class="num down">▲ 1.0%</td><td>상승은 부정적 신호 — 이동 비용 증가분</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote">부호와 색은 방향이 아니라 의미를 따릅니다. 방문 주기는 감소(▼)가 개선이라 긍정색, 1인당 단가는 증가(▲)가 비용 상승이라 부정색으로 표기했습니다.</p>
+
+    <aside class="side"><b>만족도 설문</b>대면 설문이라 응답률이 22.2%(3,180/14,320)로 낮습니다. 거동이 어려운 이용자가 응답에서 빠지는 구조적 편향이 있어, 2026년부터 코디네이터 대리 기록 방식을 병행합니다.</aside>
+  </div>
+</section>
+
+<!-- ══════════ 6 ══════════ -->
+<section id="s6" aria-labelledby="h-s6">
+  <div class="wrap">
+    <h2 id="h-s6">어디서 와서 어디로 갔나</h2>
+    <p class="lead">2025년 총수입 41.2억원, 총집행 38.7억원, 차기 이월 2.5억원입니다. 개인 정기후원이 처음으로 3분의 1을 넘었습니다.</p>
+
+    <p>재원 구성은 재단의 독립성과 직결됩니다. 공공 보조금 비중이 높으면 사업 방향이 정책 주기를 따라가고, 기업 파트너십에 치우치면 후원 기업의 관심사에 사업이 끌려갑니다. 2021년 공공 보조금 비중은 48.1%였지만 2025년에는 22.8%로 내려왔습니다. 그 자리를 개인 정기후원(35.9%)이 채웠습니다.</p>
+
+    <aside class="side"><b>집행액과 수입의 차이</b>표 5의 41.2억원은 수입, 표 1~3의 38.7억원은 집행입니다. 차액 2.5억원은 2026년 1분기 사업비로 이월됐으며, 지정 기부금의 사용 시기 제약에 따른 것입니다.</aside>
+  </div>
+
+  <div class="wide">
+    <figure>
+      <svg viewBox="0 0 720 220" role="img" aria-labelledby="c5t" aria-label="2025년 재원 구성. 개인 정기후원 35.9퍼센트, 기업 파트너십 30.6퍼센트, 공공 보조금 22.8퍼센트, 일시 후원 7.8퍼센트, 기타 2.9퍼센트.">
+        <title id="c5t">2025년 재원 구성 (총 41.2억원, 100% 스택)</title>
+        <rect class="ca" x="80" y="60" width="201" height="54"/>
+        <rect class="cb" x="281" y="60" width="171" height="54"/>
+        <rect class="cn1" x="452" y="60" width="128" height="54"/>
+        <rect class="cn2" x="580" y="60" width="44" height="54"/>
+        <rect class="cn3" x="624" y="60" width="16" height="54"/>
+
+        <text class="cvw" x="180" y="93" text-anchor="middle" font-size="14" font-weight="700" font-family="Pretendard, system-ui, sans-serif">35.9%</text>
+        <text class="cvw" x="366" y="93" text-anchor="middle" font-size="14" font-weight="700" font-family="Pretendard, system-ui, sans-serif">30.6%</text>
+        <text class="cvw" x="516" y="93" text-anchor="middle" font-size="13" font-weight="700" font-family="Pretendard, system-ui, sans-serif">22.8%</text>
+        <text class="cv" x="602" y="132" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">7.8%</text>
+        <text class="cv" x="640" y="150" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">2.9%</text>
+        <line class="cax" x1="602" y1="116" x2="602" y2="122" stroke-width="1"/>
+        <line class="cax" x1="632" y1="116" x2="640" y2="140" stroke-width="1"/>
+
+        <text class="cx" x="80" y="50" font-size="11" font-family="Pretendard, system-ui, sans-serif">개인 정기후원 14.8억</text>
+        <text class="cx" x="281" y="50" font-size="11" font-family="Pretendard, system-ui, sans-serif">기업 파트너십 12.6억</text>
+        <text class="cx" x="452" y="50" font-size="11" font-family="Pretendard, system-ui, sans-serif">공공 9.4억</text>
+        <text class="cx" x="80" y="180" font-size="11" font-family="Pretendard, system-ui, sans-serif">일시 후원·캠페인 3.2억원 · 기타(이자·물품 환산) 1.2억원</text>
+        <text class="cx" x="80" y="200" font-size="11" font-family="Pretendard, system-ui, sans-serif">단위 · 억원(총 41.2억원)</text>
+      </svg>
+      <figcaption><b>공공 의존도는 5년 만에 절반 이하로 떨어졌습니다.</b> 2021년 48.1%였던 공공 보조금 비중이 22.8%가 되는 동안 개인 정기후원은 19.0%에서 35.9%로 올랐습니다. 재단이 정책 주기와 무관하게 사업을 유지할 수 있는 기반이 이 전환에 있습니다.<span class="src">자료 · 온기재단 2025 결산서, 외부 회계감사 완료(2026-02-05)</span></figcaption>
+    </figure>
+
+    <div class="tw">
+      <table>
+        <caption>표 5 · 2025년 재원 구성과 전년 대비</caption>
+        <thead>
+          <tr>
+            <th scope="col">재원</th>
+            <th scope="col" class="num">2025(억원)</th>
+            <th scope="col" class="num">비중</th>
+            <th scope="col" class="num">2024(억원)</th>
+            <th scope="col" class="num">증감</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">개인 정기후원</th><td class="num">14.8</td><td class="num">35.9%</td><td class="num">10.1</td><td class="num up">▲ 46.5%</td></tr>
+          <tr><th scope="row">기업 파트너십</th><td class="num">12.6</td><td class="num">30.6%</td><td class="num">8.4</td><td class="num up">▲ 50.0%</td></tr>
+          <tr><th scope="row">공공 보조금</th><td class="num">9.4</td><td class="num">22.8%</td><td class="num">7.2</td><td class="num up">▲ 30.6%</td></tr>
+          <tr><th scope="row">일시 후원·캠페인</th><td class="num">3.2</td><td class="num">7.8%</td><td class="num">2.6</td><td class="num up">▲ 23.1%</td></tr>
+          <tr><th scope="row">기타(이자·물품 환산)</th><td class="num">1.2</td><td class="num">2.9%</td><td class="num">0.9</td><td class="num up">▲ 33.3%</td></tr>
+          <tr class="tot"><th scope="row">총수입</th><td class="num">41.2</td><td class="num">100.0%</td><td class="num">29.2</td><td class="num up">▲ 41.1%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote">정기후원자 1인당 월 평균 후원액은 10,590원으로 전년(10,000원) 대비 5.9% 늘었습니다. 물품 후원은 시장가 기준으로 환산해 기타에 계상했습니다.</p>
+  </div>
+
+  <div class="band">
+    <div class="wrap">
+      <p class="band-label">재정 원칙</p>
+      <h3>단일 후원처가 총수입의 10%를 넘지 않습니다</h3>
+      <p>2025년 최대 단일 후원처는 기업 파트너 1곳으로 총수입의 8.7%(3.6억원)였습니다. 재단은 2022년 이사회 결의로 단일 후원처 상한을 10%로 두고 있으며, 상한을 넘는 제안은 다년 분납으로 조정하거나 반려합니다. 2025년에 이 원칙으로 반려한 제안은 1건(5.2억원 일시 지원)입니다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 7 ══════════ -->
+<section id="s7" aria-labelledby="h-s7">
+  <div class="wrap">
+    <h2 id="h-s7">5년의 연표</h2>
+    <p class="lead">2021년 3월 설립부터 2025년 10월 누적 3만 명까지, 여덟 개의 분기점입니다.</p>
+  </div>
+
+  <div class="wide">
+    <figure class="era">
+      <svg viewBox="0 0 720 210" role="img" aria-labelledby="c6t" aria-label="온기재단 연표. 2021년 3월 설립과 3개 지역 시범, 2021년 11월 첫 파트너 11곳, 2022년 6월 한끼나눔 개시, 2023년 2월 집수리 개시, 2023년 9월 누적 1만 명, 2024년 5월 말벗전화 개시, 2025년 4월 24개 지역 확대, 2025년 10월 누적 3만 명.">
+        <title id="c6t">온기재단 5년 연표 (2021~2025)</title>
+        <line class="cax" x1="60" y1="130" x2="690" y2="130" stroke-width="1"/>
+        <line class="cg" x1="60" y1="124" x2="60" y2="136" stroke-width="1"/>
+        <line class="cg" x1="186" y1="124" x2="186" y2="136" stroke-width="1"/>
+        <line class="cg" x1="312" y1="124" x2="312" y2="136" stroke-width="1"/>
+        <line class="cg" x1="438" y1="124" x2="438" y2="136" stroke-width="1"/>
+        <line class="cg" x1="564" y1="124" x2="564" y2="136" stroke-width="1"/>
+        <text class="cx" x="65" y="119" font-size="11" font-family="Pretendard, system-ui, sans-serif">2021</text>
+        <text class="cx" x="191" y="119" font-size="11" font-family="Pretendard, system-ui, sans-serif">2022</text>
+        <text class="cx" x="317" y="119" font-size="11" font-family="Pretendard, system-ui, sans-serif">2023</text>
+        <text class="cx" x="443" y="119" font-size="11" font-family="Pretendard, system-ui, sans-serif">2024</text>
+        <text class="cx" x="569" y="119" font-size="11" font-family="Pretendard, system-ui, sans-serif">2025</text>
+
+        <line class="sa" x1="81" y1="126" x2="81" y2="102" stroke-width="1"/>
+        <circle class="ca" cx="81" cy="130" r="4"/>
+        <text class="cx" x="81" y="82" text-anchor="middle" font-size="10" font-family="Pretendard, system-ui, sans-serif">2021.03</text>
+        <text class="cv" x="81" y="96" text-anchor="middle" font-size="11" font-weight="600" font-family="Pretendard, system-ui, sans-serif">재단 설립 · 3개 지역</text>
+
+        <line class="sn1" x1="165" y1="134" x2="165" y2="158" stroke-width="1"/>
+        <circle class="cn1" cx="165" cy="130" r="4"/>
+        <text class="cx" x="165" y="172" text-anchor="middle" font-size="10" font-family="Pretendard, system-ui, sans-serif">2021.11</text>
+        <text class="cv" x="165" y="186" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">첫 파트너 협약 11곳</text>
+
+        <line class="sn1" x1="239" y1="126" x2="239" y2="102" stroke-width="1"/>
+        <circle class="cn1" cx="239" cy="130" r="4"/>
+        <text class="cx" x="239" y="82" text-anchor="middle" font-size="10" font-family="Pretendard, system-ui, sans-serif">2022.06</text>
+        <text class="cv" x="239" y="96" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">한끼나눔 개시</text>
+
+        <line class="sn1" x1="323" y1="134" x2="323" y2="158" stroke-width="1"/>
+        <circle class="cn1" cx="323" cy="130" r="4"/>
+        <text class="cx" x="323" y="172" text-anchor="middle" font-size="10" font-family="Pretendard, system-ui, sans-serif">2023.02</text>
+        <text class="cv" x="323" y="186" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">집수리 개시 · 12개 지역</text>
+
+        <line class="sa" x1="396" y1="126" x2="396" y2="102" stroke-width="1"/>
+        <circle class="ca" cx="396" cy="130" r="4"/>
+        <text class="cx" x="396" y="82" text-anchor="middle" font-size="10" font-family="Pretendard, system-ui, sans-serif">2023.09</text>
+        <text class="cv" x="396" y="96" text-anchor="middle" font-size="11" font-weight="600" font-family="Pretendard, system-ui, sans-serif">누적 수혜 1만 명</text>
+
+        <line class="sn1" x1="480" y1="134" x2="480" y2="158" stroke-width="1"/>
+        <circle class="cn1" cx="480" cy="130" r="4"/>
+        <text class="cx" x="480" y="172" text-anchor="middle" font-size="10" font-family="Pretendard, system-ui, sans-serif">2024.05</text>
+        <text class="cv" x="480" y="186" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">말벗전화 개시</text>
+
+        <line class="sb" x1="596" y1="126" x2="596" y2="102" stroke-width="1"/>
+        <circle class="cb" cx="596" cy="130" r="4"/>
+        <text class="cx" x="596" y="82" text-anchor="middle" font-size="10" font-family="Pretendard, system-ui, sans-serif">2025.04</text>
+        <text class="cv" x="596" y="96" text-anchor="middle" font-size="11" font-family="Pretendard, system-ui, sans-serif">24개 지역 · 7권역</text>
+
+        <line class="sa" x1="659" y1="134" x2="659" y2="158" stroke-width="1"/>
+        <circle class="ca" cx="659" cy="130" r="5"/>
+        <text class="cx" x="686" y="172" text-anchor="end" font-size="10" font-family="Pretendard, system-ui, sans-serif">2025.10</text>
+        <text class="cv" x="686" y="186" text-anchor="end" font-size="11" font-weight="600" font-family="Pretendard, system-ui, sans-serif">누적 수혜 3만 명</text>
+      </svg>
+      <figcaption><b>사업 확장과 규모 확장이 번갈아 일어났습니다.</b> 홀수 해에 새 사업(집수리·말벗전화 준비)을, 짝수 해에 지역 확대를 배치하는 리듬이 우연히 만들어졌고 2024년부터는 의도적으로 유지하고 있습니다. 한 해에 둘을 같이 하면 코디네이터가 버티지 못한다는 2022년의 학습입니다.<span class="src">자료 · 온기재단 이사회 회의록 및 사업개시 공고</span></figcaption>
+    </figure>
+  </div>
+
+  <div class="wrap">
+    <aside class="side"><b>2024.12 정기후원자 8천 명</b>연표에는 넣지 않았지만 2024년 12월 정기후원자 8,420명 돌파도 분기점이었습니다. 이 시점부터 공공 보조금 없이도 이웃살핌 단일 사업은 유지 가능해졌습니다.</aside>
+    <p>연표에서 가장 중요한 지점은 2023년 2월입니다. 집수리 사업은 재단이 처음으로 “방문해서 확인하는 일”을 넘어 “고쳐 주는 일”로 넘어간 순간이었고, 그때부터 지역 파트너의 성격도 복지기관 중심에서 지역 건설·설비 업체까지 넓어졌습니다. 2025년 파트너 116곳 중 19곳이 그 경로로 합류한 의료기관·약국이며, 기업 34곳 중 11곳이 지역 설비 업체입니다.</p>
+  </div>
+</section>
+
+<!-- ══════════ 8 ══════════ -->
+<section id="s8" aria-labelledby="h-s8">
+  <div class="wrap">
+    <h2 id="h-s8">다음 5년</h2>
+    <p class="lead">2030년까지 40개 지역, 연 수혜 2.8만 명, 연 사업비 78억원을 목표로 합니다. 2026년 이사회에서 승인된 5개년 계획입니다.</p>
+
+    <p>목표 수치는 지난 5년의 성장률을 그대로 연장한 값이 아닙니다. 우리는 연 45%대의 성장이 지속 가능하지 않다고 판단했고, 연 12~17% 수준으로 속도를 낮춘 계획을 세웠습니다. 지역 하나가 자립하는 데 2년이 걸린다는 사실과, 코디네이터 채용·교육에 6개월이 필요하다는 사실이 그 상한을 정합니다.</p>
+
+    <aside class="side"><b>목표 승인</b>2026-01-22 제18차 이사회 의결. 연도별 목표는 매년 2월 이사회에서 전년 실적을 반영해 조정하며, 조정 폭이 ±15%를 넘으면 계획 자체를 재수립합니다.</aside>
+  </div>
+
+  <div class="wide">
+    <div class="tw">
+      <table>
+        <caption>표 6 · 2026~2030 5개년 목표</caption>
+        <thead>
+          <tr>
+            <th scope="col">연도</th>
+            <th scope="col" class="num">활동 지역(곳)</th>
+            <th scope="col" class="num">연 수혜 인원(명)</th>
+            <th scope="col" class="num">파트너 기관(곳)</th>
+            <th scope="col" class="num">사업비(억원)</th>
+            <th scope="col" class="num">전년 대비 사업비</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">2025 (실적)</th><td class="num">24</td><td class="num">14,320</td><td class="num">116</td><td class="num">38.7</td><td class="num flat">— (기준)</td></tr>
+          <tr><th scope="row">2026</th><td class="num">28</td><td class="num">17,500</td><td class="num">142</td><td class="num">46.0</td><td class="num up">▲ 18.9%</td></tr>
+          <tr><th scope="row">2027</th><td class="num">31</td><td class="num">20,200</td><td class="num">168</td><td class="num">54.0</td><td class="num up">▲ 17.4%</td></tr>
+          <tr><th scope="row">2028</th><td class="num">34</td><td class="num">22,900</td><td class="num">192</td><td class="num">62.0</td><td class="num up">▲ 14.8%</td></tr>
+          <tr><th scope="row">2029</th><td class="num">37</td><td class="num">25,600</td><td class="num">216</td><td class="num">70.0</td><td class="num up">▲ 12.9%</td></tr>
+          <tr class="tot"><th scope="row">2030 (목표)</th><td class="num">40</td><td class="num">28,000</td><td class="num">240</td><td class="num">78.0</td><td class="num up">▲ 11.4%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tnote">2026~2030 수치는 목표이며 실적이 아닙니다. 1인당 지원 단가는 2030년 27.9만원을 상한으로 관리하며, 이를 넘으면 지역 확대를 유예하고 기존 권역의 밀도를 높이는 쪽으로 전환합니다.</p>
+  </div>
+
+  <div class="band">
+    <div class="wrap">
+      <p class="band-label">2026년 세 가지 약속</p>
+      <h3>속도보다 단가를 먼저 봅니다</h3>
+      <p>첫째, 1인당 지원 단가를 27.0만원 이하로 되돌립니다. 강원 영동 권역에 중간 거점을 두어 이동 비용을 줄이는 것이 첫 조치입니다. 둘째, 만족도 설문의 응답률을 22.2%에서 40% 이상으로 올려 거동이 어려운 이용자의 목소리를 회수합니다. 셋째, 코디네이터 1인당 담당 이용자를 227명에서 200명 이하로 낮춥니다.</p>
+    </div>
+  </div>
+
+  <blockquote>
+    <p>“5년 동안 배운 것은 하나입니다. 돌봄은 늘리는 것보다 끊기지 않게 하는 것이 어렵습니다. 다음 5년의 지표를 단가와 지속률로 잡은 이유입니다.”</p>
+    <cite>박OO · 온기재단 이사장, 2026년 신년사</cite>
+  </blockquote>
+</section>
+
+<!-- ══════════ 부록 ══════════ -->
+<section id="apx" aria-labelledby="h-apx">
+  <div class="wide">
+    <h2 id="h-apx">부록</h2>
+    <p class="lead">본문 흐름에서 뺀 상세 데이터와 산출 기준입니다. 인쇄 시에는 자동으로 펼쳐집니다.</p>
+
+    <details>
+      <summary>부록 A · 파트너 기관 116곳의 유형별·권역별 구성</summary>
+      <div class="dbody">
+        <div class="tw">
+          <table>
+            <caption>표 A-1 · 파트너 기관 유형별 구성 (2025-12-31 기준)</caption>
+            <thead>
+              <tr>
+                <th scope="col">유형</th>
+                <th scope="col" class="num">기관 수(곳)</th>
+                <th scope="col" class="num">비중</th>
+                <th scope="col" class="num">2024(곳)</th>
+                <th scope="col">주요 역할</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">지역 복지기관</th><td class="num">41</td><td class="num">35.3%</td><td class="num">31</td><td>대상자 발굴·명단 공유·사례 회의</td></tr>
+              <tr><th scope="row">기업</th><td class="num">34</td><td class="num">29.3%</td><td class="num">21</td><td>재정 후원·물품·임직원 자원활동</td></tr>
+              <tr><th scope="row">지자체·공공</th><td class="num">22</td><td class="num">19.0%</td><td class="num">17</td><td>보조금·공간 지원·응급 연계</td></tr>
+              <tr><th scope="row">의료기관·약국</th><td class="num">19</td><td class="num">16.4%</td><td class="num">10</td><td>건강 상담·복약 확인·응급 이송</td></tr>
+              <tr class="tot"><th scope="row">합계</th><td class="num">116</td><td class="num">100.0%</td><td class="num">79</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="tnote">의료기관·약국이 10곳에서 19곳으로 늘어난 것은 2024년 하반기 복약 확인 프로토콜 도입에 따른 것입니다. 권역별 분포는 표 2의 파트너 열과 같습니다.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>부록 B · 2025년 분기별 집행·신규 등록 추이</summary>
+      <div class="dbody">
+        <div class="tw">
+          <table>
+            <caption>표 B-1 · 2025년 분기별 집행액과 신규 등록 인원</caption>
+            <thead>
+              <tr>
+                <th scope="col">분기</th>
+                <th scope="col" class="num">집행액(억원)</th>
+                <th scope="col" class="num">신규 등록(명)</th>
+                <th scope="col" class="num">누적 수혜(명)</th>
+                <th scope="col">비고</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">1분기</th><td class="num">7.9</td><td class="num">2,410</td><td class="num">2,410</td><td>동절기 집수리 집중 집행</td></tr>
+              <tr><th scope="row">2분기</th><td class="num">9.4</td><td class="num">3,180</td><td class="num">5,590</td><td>4월 신규 6개 지역 개시</td></tr>
+              <tr><th scope="row">3분기</th><td class="num">10.2</td><td class="num">3,940</td><td class="num">9,530</td><td>폭염 대응 방문 주기 단축</td></tr>
+              <tr><th scope="row">4분기</th><td class="num">11.2</td><td class="num">4,790</td><td class="num">14,320</td><td>10월 누적 3만 명 돌파</td></tr>
+              <tr class="tot"><th scope="row">연간</th><td class="num">38.7</td><td class="num">14,320</td><td class="num">14,320</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="tnote">신규 등록은 해당 분기에 처음 서비스를 받은 실인원입니다. 누적 수혜는 연내 누계이며, 5년 누계 35,060명과는 다른 값입니다.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>부록 C · 용어 정의와 산출 기준</summary>
+      <div class="dbody">
+        <div class="tw">
+          <table>
+            <caption>표 C-1 · 본 보고서 지표의 산출 기준</caption>
+            <thead>
+              <tr>
+                <th scope="col">용어</th>
+                <th scope="col">정의</th>
+                <th scope="col">기준일·비고</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">수혜 인원</th><td>연 1회 이상 서비스를 받은 실인원(중복 제거)</td><td>2025-12-31 마감</td></tr>
+              <tr><th scope="row">활동 지역</th><td>연 1회 이상 정기 서비스가 운영된 기초지자체</td><td>연말 기준 현황(누계 아님)</td></tr>
+              <tr><th scope="row">파트너 기관</th><td>협약 체결 후 유효 기간 내인 기관</td><td>연말 기준 현황(누계 아님)</td></tr>
+              <tr><th scope="row">정기후원자</th><td>3개월 이상 연속 자동이체 중인 개인 후원자</td><td>연말 기준 현황(누계 아님)</td></tr>
+              <tr><th scope="row">사업비 집행</th><td>발생주의 기준, 미지급금 포함. 사업비 + 운영·관리비</td><td>외부 회계감사 완료(2026-02-05)</td></tr>
+              <tr><th scope="row">1인당 지원 단가</th><td>집행액 ÷ 수혜 인원</td><td>권역별은 해당 권역 값으로 산출</td></tr>
+              <tr><th scope="row">지속 참여율</th><td>3개월 이상 서비스를 이어 받은 인원 ÷ 전체 수혜 인원</td><td>중도 사망·전출은 분모에서 제외</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="tnote">금액은 백만원 단위에서 반올림해 억원으로 표기했으며, 이에 따라 개별 항목의 합이 합계와 0.1억원 이내에서 다를 수 있습니다.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wide">
+    <h2>Colophon</h2>
+    <dl>
+      <dt>발행</dt><dd>온기재단 사무국 · 2026-02-20</dd>
+      <dt>문서번호</dt><dd>OG-AR-2025 (버전 1.0)</dd>
+      <dt>대상 기간</dt><dd>2025-01-01 ~ 2025-12-31</dd>
+      <dt>데이터 기준일</dt><dd>2025-12-31 (사업관리시스템 마감)</dd>
+      <dt>재무 자료</dt><dd>2025 결산서 · 외부 회계감사 완료 2026-02-05</dd>
+      <dt>편집·조판</dt><dd>온기재단 커뮤니케이션팀</dd>
+      <dt>문의</dt><dd><a href="mailto:report@ongi.example">report@ongi.example</a></dd>
+    </dl>
+    <p class="disc">본 문서는 html-report 스킬의 <b>editorial × warm-editorial</b> 참고 샘플입니다. 온기재단과 본문의 모든 수치·인용·기관명은 스타일 예시를 위해 창작한 가상의 자료이며 실재하는 단체·개인과 무관합니다. 실제 보고서 작성 시에는 원본 데이터의 모든 수치를 손실 없이 옮겨야 하며, 창작 수치를 넣는 것은 품질 계약 위반입니다. 2026~2030 수치는 목표이며 실적이 아닙니다.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root=document.documentElement, KEY='ongi-ar-2025-theme', saved=null;
+  try{saved=localStorage.getItem(KEY);}catch(e){}
+  if(saved){root.setAttribute('data-theme',saved);}
+  var btn=document.querySelector('.theme-toggle'), lbl=btn.querySelector('.tt-label');
+  function isDark(){
+    return root.getAttribute('data-theme')==='dark'
+      || (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  function sync(){
+    var d=isDark();
+    btn.setAttribute('aria-pressed', d?'true':'false');
+    lbl.textContent = d ? '라이트 모드' : '다크 모드';
+  }
+  sync();
+  btn.addEventListener('click',function(){
+    var next = isDark() ? 'light' : 'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem(KEY,next);}catch(e){}
+    sync();
+  });
+  var links={};
+  Array.prototype.forEach.call(document.querySelectorAll('.toc a'),function(a){
+    links[a.getAttribute('href').slice(1)]=a;
+  });
+  var secs=Array.prototype.slice.call(document.querySelectorAll('main section[id]'));
+  if('IntersectionObserver' in window && secs.length){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(!en.isIntersecting) return;
+        for(var k in links){ links[k].classList.remove('on'); }
+        if(links[en.target.id]) links[en.target.id].classList.add('on');
+      });
+    },{rootMargin:'-10% 0px -74% 0px', threshold:0});
+    secs.forEach(function(s){ io.observe(s); });
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+schema_version: 1
+host: hi.co.kr
+domain: insurance
+label: 현대해상
+group: competitor
+locations:
+- location_id: hi-notice
+  item: 공지사항 및 새소식
+  item_kind: notice
+  url: https://www.hi.co.kr/serviceAction.do
+  discovery_path: none
+  repeat_access: L4
+  auth_state: none
+  grade: C
+  note: 루트 → index.jsp → serviceAction.do(JS). 메뉴 goMenu('205205') → webUrladdr bin/KC/PC/HHKCPC010M,
+    목록은 로드 후 doRequest('HHMK0020M05S',{unfiBltbId:'CI8120',pageVO}) → 단일 엔드포인트 ajax.xhi
+    POST(재생 안 함). 정적 GET serviceAction.do?view=bin/KC/PC/HHKCPC010M 은 껍데기(2021년 샘플
+    3건) — freshness 축이 거짓 성공을 막는다
+  l4_sequence:
+  - action: goto
+    url: https://www.hi.co.kr/
+  - action: evaluate
+    js: goMenu('205205')
+  - action: wait
+    ms: 6000
+  - action: records
+    selector: a[onclick^='fn_goNewsDetailView']
+  expected:
+    content_type_prefix: text/html
+    min_records: 10
+    freshness_days: 45
+  evidence:
+    observed_at: '2026-08-30'
+    samples: 1
+    browser: aside
+    note: 브라우저 15건·2026년 vs 정적 3건·2021년
+queries:
+- 현대해상
+tags:
+- 손해보험
+- 경쟁사

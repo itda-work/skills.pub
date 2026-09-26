@@ -1,0 +1,14 @@
+# docx-design 의존성
+#
+# 생성(관문3)은 python-docx 만으로 충분 — 크로스플랫폼, Microsoft Office 불필요.
+python-docx>=1.1.0
+PyYAML>=6.0            # design-core 토큰 로더(형제 스킬) 의존
+
+# 검증·미리보기(관문4) — 렌더 PNG 산출용(없어도 HARD GATE 는 동작, render 의존 검사만 생략)
+PyMuPDF>=1.23.0       # PDF → PNG 래스터(LibreOffice/poppler 불요)
+
+# Windows 옵션 — Word COM 렌더(설치 시 가장 정확한 WYSIWYG). 비Windows 는 LibreOffice(soffice) 사용.
+pywin32>=305 ; platform_system == "Windows"
+
+# 선택 — 모티프/그라디언트 PNG 베이크(표지 한정). 없으면 평면 디자인만.
+Pillow>=10.0.0

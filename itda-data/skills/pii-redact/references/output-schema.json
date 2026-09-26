@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "pii-redact 마스킹 리포트",
+  "type": "object",
+  "required": [
+    "schema_version", "redacted_text", "n_redactions", "by_type",
+    "redactions", "low_confidence_skipped", "policy"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "1.0"},
+    "redacted_text": {"type": "string", "description": "PII가 플레이스홀더로 치환된 텍스트"},
+    "n_redactions": {"type": "integer", "minimum": 0},
+    "by_type": {
+      "type": "object",
+      "description": "PII 유형별 마스킹 건수",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "redactions": {
+      "type": "array",
+      "description": "마스킹 항목. 원문 PII 값은 절대 포함하지 않는다(token만).",
+      "items": {
+        "type": "object",
+        "required": ["type", "token", "confidence", "span"],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["rrn", "phone", "email", "biz_no", "card",
+                     "driver_license", "passport", "account", "address"]
+          },
+          "token": {"type": "string", "description": "플레이스홀더 (예: [전화_1])"},
+          "confidence": {"type": "string", "enum": ["high", "candidate", "low"]},
+          "span": {
+            "type": "array",
+            "items": {"type": "integer", "minimum": 0},
+            "minItems": 2, "maxItems": 2
+          }
+        }
+      }
+    },
+    "low_confidence_skipped": {
+      "type": "array",
+      "description": "구조/문맥 부족으로 마스킹 보류한 항목(투명 기록). 검토 후 수동 처리 권장.",
+      "items": {
+        "type": "object",
+        "required": ["type", "span"],
+        "properties": {
+          "type": {"type": "string"},
+          "span": {"type": "array", "items": {"type": "integer"}},
+          "reason": {"type": "string"}
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "required": ["mask_format", "consistent_pseudonym", "recall_first", "llm_second_pass"],
+      "properties": {
+        "mask_format": {"type": "string", "const": "placeholder"},
+        "consistent_pseudonym": {"type": "boolean"},
+        "recall_first": {"type": "boolean"},
+        "mask_low_confidence": {"type": "boolean"},
+        "llm_second_pass": {"type": "boolean"}
+      }
+    },
+    "residual_risk_note": {"type": "string"}
+  }
+}

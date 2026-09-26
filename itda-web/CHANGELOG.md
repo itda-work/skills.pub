@@ -1,0 +1,37 @@
+# Changelog — itda-web-collect
+
+## [1.2.0] - 2026-09-25
+
+### Changed
+
+- **hyve 안내 정리 (itda-work/itda-hyve#6)** — hyve 앱 폐기로 빠진 스킬(구 itda-hyve 팩의 web-automation)과 hyve `web_browse` 를 가리키던 안내를 Aside 브라우저 경로(`itda-web:aside-browser-mcp`)로 바꾸거나 지웠다.
+  - **web-reader 7.2.0** — `[책임 경계]`·문서·CLI 안내문·WAF 폴백 토큰(`hyve_mcp` → `browser`). 브라우저 경로는 Aside 하나가 아니라 “실제 브라우저 — Aside, 없으면 Claude in Chrome 등”, 차단 통과는 보장하지 않음.
+  - aside-browser-mcp 0.2.1(`references/repl.md` 폼·로그인 절에 “넣은 자격증명을 되돌려 보지 않음·보안 입력 실행당 1회·코드로만 넘길 때는 그 사실과 잔존 실측 결과를 적음” 추가) · blog-reader 0.12.3 · web-search 0.1.8 · web-scout 0.2.1(L4 브라우저 후보에서 hyve 삭제).
+- README 의 #1704 안내 문단을 현행으로.
+
+## [1.1.0] - 2026-09-21
+
+### Removed
+
+- **`web-automation` 이관 → `itda-hyve`(비공개, #1704)** — hyve `web_browse` MCP 가 스킬의 전부인데
+  hyve 앱이 미배포라, 설치해도 쓸 수 없는 스킬이 공개 배포되고 있었다. 로그인·JS 렌더가 필요한
+  페이지의 hyve 없는 경로는 `aside-browser-mcp`(Aside 브라우저)다.
+- `[책임 경계]`·핸드오프 표의 지목을 `itda-web:web-automation` → `itda-hyve:web-automation` 으로 정합
+  (web-reader·blog-reader·web-search·aside-browser-mcp).
+
+## [1.0.0] - 2026-09-20
+
+### Changed
+
+- 팩 개명 `itda-web-collect` → **`itda-web`** (#1703).
+
+## [0.2.0] - 2026-09-20
+
+- **aside-browser-mcp 신설 (#1701)** — Aside(사용자의 로그인 세션·쿠키·메모리를 쥔 AI 브라우저)를 Cowork 에서 MCP 도구(`exec`·`repl`·`memory_search`)로 다루는 규율 정본. `web-automation`(hyve web_browse REPL 정본)과 같은 축의 형제다.
+- 실측 반영: `repl` 도구 description 이 **2,048자에서 잘려** 전달되므로(원문 4,638자 중 56% 유실), 유실 구간의 규칙(탭 붙이기 4줄·`console.log` 로만 반환·`aside` 전역)을 `references/repl.md` 가 싣는다. 도구가 2종만 보이면 커넥터 설정의 Repl 토글이 꺼진 것이다.
+- `web-automation` 라우팅 표에 역방향 경계 행 추가.
+
+## [0.1.0] - 2026-09-05
+
+- **팩 신설 (#1648 2단계)** — 웹에서 정보를 찾고 가져온다. 검색 → 정적 fetch(EUC-KR·WAF 폴백) → 정보원 정찰 → 브라우저 자동화(hyve MCP) 순 사다리. 목적: 가장 싼 경로부터, 실측으로 기억한다.
+- 포함 스킬: blog-reader, web-automation, web-reader, web-scout, web-search.

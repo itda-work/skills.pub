@@ -1,0 +1,207 @@
+{
+ "schema_version": "1.0",
+ "domain": "nursing-hospital",
+ "document": "counsel-record",
+ "title": "상담 기록지",
+ "format": "hwpx",
+ "fields": [
+  {
+   "name": "기록번호",
+   "type": "string",
+   "grade": "식별자",
+   "generator": {
+    "kind": "sequence",
+    "prefix": "C",
+    "start": 1,
+    "width": 4
+   },
+   "desc": ""
+  },
+  {
+   "name": "상담일",
+   "type": "date",
+   "grade": "준식별자",
+   "generator": {
+    "kind": "date",
+    "start": "2025-06-01",
+    "end": "2025-12-20"
+   },
+   "desc": ""
+  },
+  {
+   "name": "환자명",
+   "type": "string",
+   "grade": "식별자",
+   "generator": {
+    "kind": "person_name",
+    "dup_ratio": 0.06
+   },
+   "desc": ""
+  },
+  {
+   "name": "병실",
+   "type": "string",
+   "grade": "준식별자",
+   "generator": {
+    "kind": "choice",
+    "values": [
+     "301",
+     "302",
+     "303",
+     "304",
+     "305",
+     "306",
+     "307",
+     "308",
+     "401",
+     "402",
+     "403",
+     "404",
+     "405",
+     "406",
+     "407",
+     "408",
+     "501",
+     "502",
+     "503",
+     "504",
+     "505",
+     "506",
+     "507",
+     "508"
+    ]
+   },
+   "desc": ""
+  },
+  {
+   "name": "보호자관계",
+   "type": "string",
+   "grade": "준식별자",
+   "generator": {
+    "kind": "choice",
+    "values": [
+     "배우자",
+     "자녀",
+     "형제자매",
+     "기타"
+    ]
+   },
+   "desc": ""
+  },
+  {
+   "name": "보호자연락처",
+   "type": "string",
+   "grade": "식별자",
+   "generator": {
+    "kind": "phone"
+   },
+   "desc": ""
+  },
+  {
+   "name": "상담유형",
+   "type": "string",
+   "grade": "민감정보",
+   "generator": {
+    "kind": "choice",
+    "values": [
+     "입원상담",
+     "퇴원계획",
+     "치료방침",
+     "비용안내",
+     "민원"
+    ]
+   },
+   "desc": ""
+  },
+  {
+   "name": "상담내용",
+   "type": "text",
+   "grade": "민감정보",
+   "generator": {
+    "kind": "free_text"
+   },
+   "desc": "AI 가상 문장(실제 문장은 예시로도 받지 않음)",
+   "free_text": true
+  },
+  {
+   "name": "조치사항",
+   "type": "text",
+   "grade": "민감정보",
+   "generator": {
+    "kind": "free_text"
+   },
+   "desc": "",
+   "free_text": true
+  },
+  {
+   "name": "상담자",
+   "type": "string",
+   "grade": "식별자",
+   "generator": {
+    "kind": "person_name",
+    "dup_ratio": 0.0
+   },
+   "desc": ""
+  }
+ ],
+ "rules": [
+  {
+   "id": "R1",
+   "kind": "unique",
+   "field": "기록번호",
+   "desc": "기록번호 중복 없음"
+  },
+  {
+   "id": "R2",
+   "kind": "in_set",
+   "field": "상담유형",
+   "values": [
+    "입원상담",
+    "퇴원계획",
+    "치료방침",
+    "비용안내",
+    "민원"
+   ],
+   "desc": "상담유형 5종"
+  }
+ ],
+ "reid_keys": [
+  "병실",
+  "상담일",
+  "보호자관계"
+ ],
+ "legal": [
+  {
+   "law": "의료법",
+   "article": "제19조 제1항",
+   "note": "의료기관 종사자의 정보 누설 금지(행정직 포함)",
+   "status": "확인"
+  },
+  {
+   "law": "의료법",
+   "article": "제21조 제2항",
+   "note": "환자 아닌 사람에게 기록 열람 금지",
+   "status": "확인"
+  },
+  {
+   "law": "의료법",
+   "article": "제23조 제3항",
+   "note": "전자의무기록 개인정보 탐지·누출·변조 금지",
+   "status": "확인"
+  },
+  {
+   "law": "개인정보 보호법",
+   "article": "제23조 제1항",
+   "note": "건강 정보는 민감정보 — 처리 원칙 금지",
+   "status": "확인"
+  },
+  {
+   "law": "개인정보 보호법",
+   "article": "제28조의8 제1항",
+   "note": "국외 이전 원칙 금지(해외 서버 조회 포함)",
+   "status": "확인"
+  }
+ ],
+ "seed_examples": [],
+ "preset_notice": "이 프리셋의 항목·규칙은 해당 업무의 문서 구조를 예측해 만든 것일 뿐 정확하지 않습니다. 실제 업무의 데이터 구조(항목 이름·규칙·서식)를 알려주시면 그에 맞춰 생성할 수 있습니다."
+}

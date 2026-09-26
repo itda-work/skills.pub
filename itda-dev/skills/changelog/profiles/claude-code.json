@@ -1,0 +1,33 @@
+{
+  "product": "claude-code",
+  "display_name": "Claude Code",
+  "repo": "anthropics/claude-code",
+  "version_cmd": ["claude", "--version"],
+  "default_window_days": 3,
+  "_parser_comment": "릴리즈 본문이 conventional commit 이 아니라 산문형 불릿(- Added/Fixed/Improved …)이다. 선두 동사를 kind 로, 선두 [VSCode] 류 브래킷을 scope 로 해석한다 (2026-08-10 실측).",
+  "parser": {
+    "style": "prose",
+    "verb_kinds": {
+      "added": "feat",
+      "fixed": "fix",
+      "improved": "improvement",
+      "removed": "removed",
+      "reverted": "revert",
+      "changed": "change",
+      "updated": "change",
+      "deprecated": "deprecation"
+    }
+  },
+  "excluded_scopes": [],
+  "scope_labels": {
+    "feat": "추가",
+    "fix": "수정",
+    "improvement": "개선",
+    "removed": "제거",
+    "revert": "되돌림",
+    "change": "변경",
+    "deprecation": "폐기 예고",
+    "vscode": "VS Code",
+    "ide": "IDE"
+  }
+}

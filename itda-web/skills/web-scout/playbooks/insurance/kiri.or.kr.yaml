@@ -1,0 +1,42 @@
+schema_version: 1
+host: kiri.or.kr
+domain: insurance
+label: 보험연구원
+group: institution
+locations:
+- location_id: kiri-press
+  item: 보도자료
+  item_kind: press
+  url: https://kiri.or.kr/community/materialList.do
+  discovery_path: static_list
+  repeat_access: L2
+  auth_state: none
+  grade: B
+  note: ⚠ 미지 경로 전부 index.do 로 302(catch-all) — 존재 판정은 status 가 아니라 최종 URL·본문 hash
+    로
+  expected:
+    content_type_prefix: text/html
+    min_records: 5
+    freshness_days: 45
+  evidence:
+    observed_at: '2026-08-30'
+    samples: 1
+    browser: n/a
+  export_eligible: true
+- location_id: kiri-ceo-brief
+  item: CEO Brief
+  item_kind: report
+  url: https://kiri.or.kr/report/reportList.do?catId=8
+  discovery_path: static_list
+  repeat_access: L2
+  auth_state: none
+  grade: B
+  expected:
+    content_type_prefix: text/html
+    min_records: 5
+    freshness_days: 30
+  evidence:
+    observed_at: '2026-08-30'
+    samples: 1
+    browser: n/a
+  export_eligible: true

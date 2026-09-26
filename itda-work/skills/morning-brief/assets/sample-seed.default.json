@@ -1,0 +1,96 @@
+{
+  "_comment": "morning-brief 기본 샘플 시나리오 — 세무사 사무실. 실존 인물·회사가 아니며 주소는 전부 예약 도메인(example.com)이다. 에이전트가 청중에 맞춰 자기 시드를 쓰면 이 파일은 쓰이지 않는다.",
+  "persona": {
+    "name": "김세무",
+    "role": "세무사 사무실 실장",
+    "email": "silhang@office.sample.example.com"
+  },
+  "today": [
+    {
+      "summary": "사무실 아침 미팅",
+      "start": "09:00", "end": "09:30", "all_day": false,
+      "organizer": "silhang@office.sample.example.com",
+      "status": "CONFIRMED", "calendar": "업무"
+    },
+    {
+      "summary": "부가세 신고 자료 검토",
+      "start": "11:00", "end": "12:00", "all_day": false,
+      "organizer": "", "status": "CONFIRMED", "calendar": "업무"
+    },
+    {
+      "summary": "고객사 결산 통화",
+      "start": "11:30", "end": "12:30", "all_day": false,
+      "organizer": "daepyo@a-corp.sample.example.com",
+      "status": "CONFIRMED", "calendar": "업무"
+    },
+    {
+      "summary": "전자신고 실무 교육",
+      "start": "15:00", "end": "15:30", "all_day": false,
+      "organizer": "edu@academy.sample.example.com",
+      "status": "CANCELLED", "calendar": "업무"
+    }
+  ],
+  "tomorrow": [
+    {
+      "summary": "월간 마감 회의",
+      "start": "10:00", "end": "11:00", "all_day": false,
+      "organizer": "silhang@office.sample.example.com",
+      "status": "CONFIRMED", "calendar": "업무"
+    },
+    {
+      "summary": "세무조사 대응 브리핑",
+      "start": "14:00", "end": "15:00", "all_day": false,
+      "organizer": "daepyo@b-mulsan.sample.example.com",
+      "status": "CONFIRMED", "calendar": "업무"
+    }
+  ],
+  "mails": [
+    {
+      "from": "이지훈 <jihoon@b-mulsan.sample.example.com>",
+      "subject": "3분기 부가세 신고 자료 요청",
+      "date": "어제 17:40", "verdict": "unreplied",
+      "body": "지난번에 말씀하신 매입 세금계산서 누락분 정리해서 보내드립니다. 신고 전에 한 번 봐주실 수 있을까요."
+    },
+    {
+      "from": "박서연 <seoyeon@c-tech.sample.example.com>",
+      "subject": "법인세 중간예납 금액 문의",
+      "date": "어제 19:05", "verdict": "unreplied",
+      "body": "중간예납 고지서를 받았는데 작년보다 많이 나와서요. 계산 근거를 알 수 있을까요."
+    },
+    {
+      "from": "최민호 <minho@d-food.sample.example.com>",
+      "subject": "원천세 신고분 정정 요청",
+      "date": "오늘 07:15", "verdict": "unreplied",
+      "body": "8월 급여에서 한 명이 빠졌습니다. 수정 신고가 필요할 것 같은데 절차를 알려주세요."
+    },
+    {
+      "from": "정하늘 <haneul@e-design.sample.example.com>",
+      "subject": "자료 잘 받았습니다",
+      "date": "어제 21:30", "verdict": "replied_then_new",
+      "body": "보내주신 정리본 확인했습니다. 이대로 진행 부탁드립니다."
+    },
+    {
+      "from": "강도윤 <doyun@f-logis.sample.example.com>",
+      "subject": "말씀하신 서류 첨부드립니다",
+      "date": "어제 22:10", "verdict": "replied_then_new",
+      "body": "요청하신 사업자등록증과 통장 사본입니다."
+    },
+    {
+      "from": "세무 뉴스레터 <news@taxletter.sample.example.com>",
+      "subject": "이번 주 세법 개정 소식",
+      "date": "오늘 06:00", "verdict": "bulk",
+      "body": "이번 주 개정 사항을 정리했습니다."
+    },
+    {
+      "from": "사무실 공지 <all@office.sample.example.com>",
+      "subject": "[전체] 9월 사무실 일정 안내",
+      "date": "어제 15:00", "verdict": "group",
+      "body": "9월 워크숍 일정과 휴무일 안내입니다."
+    }
+  ],
+  "sections": {
+    "날씨": "대전 · 흐림 · 22도 (체감 23도)",
+    "환율": "USD 매매기준율 1,341.20원"
+  },
+  "notes": "세무사 사무실의 신고 시즌 아침입니다. 미회신 세 건은 전부 고객사의 신고 관련 요청이고, 오전에는 회의가 겹칩니다."
+}

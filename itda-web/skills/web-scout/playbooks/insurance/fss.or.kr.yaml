@@ -1,0 +1,44 @@
+schema_version: 1
+host: fss.or.kr
+domain: insurance
+label: 금융감독원
+group: institution
+locations:
+- location_id: fss-press
+  item: 보도자료
+  item_kind: press
+  url: https://www.fss.or.kr/fss/bbs/B0000188/list.do?menuNo=200218
+  discovery_path: static_list
+  repeat_access: L2
+  auth_state: none
+  grade: B
+  note: 표형 목록, 항목 링크 view.do?nttId= GET. 페이지네이션은 pageIndex 파라미터(값은 응답의 다음 링크에서 파생)
+  expected:
+    content_type_prefix: text/html
+    min_records: 5
+    freshness_days: 7
+  evidence:
+    observed_at: '2026-08-30'
+    samples: 1
+    browser: n/a
+    note: 가시 51,648자, extract_records 10행
+  export_eligible: true
+- location_id: fss-consumer-alert
+  item: 소비자경보
+  item_kind: notice
+  url: https://www.fss.or.kr/fss/bbs/B0000203/list.do?menuNo=200720
+  discovery_path: static_list
+  repeat_access: L2
+  auth_state: none
+  grade: B
+  expected:
+    content_type_prefix: text/html
+    min_records: 3
+    freshness_days: null
+  evidence:
+    observed_at: '2026-08-30'
+    samples: 2
+    browser: n/a
+  export_eligible: true
+  note: 발행 주기 불규칙 — 1회차(2026-08-30) 관측 최신 2026-04-10(7부작 시리즈 8건)+2023-10-06. 초안의 freshness_days
+    60 은 추측이라 폐기; 표본 3회 이상 쌓이면 재설정

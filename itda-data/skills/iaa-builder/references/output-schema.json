@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "iaa-builder IAA 리포트",
+  "type": "object",
+  "required": [
+    "schema_version", "method", "n_items", "n_annotators",
+    "overall_kappa", "interpretation", "graduation"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "1.0"},
+    "method": {"type": "string", "enum": ["cohen_kappa", "fleiss_kappa"]},
+    "n_items": {"type": "integer", "minimum": 0},
+    "n_annotators": {"type": "integer", "minimum": 2},
+    "threshold": {"type": "number", "minimum": 0, "maximum": 1},
+    "overall_kappa": {"type": ["number", "null"]},
+    "interpretation": {
+      "type": ["string", "null"],
+      "enum": ["poor", "slight", "fair", "moderate", "substantial", "almost perfect", null]
+    },
+    "po": {"type": ["number", "null"], "description": "관측 일치율 (Cohen)"},
+    "pe": {"type": ["number", "null"], "description": "우연 기대 일치율"},
+    "p_bar": {"type": ["number", "null"], "description": "평균 item 일치 (Fleiss)"},
+    "per_category_kappa": {
+      "type": "object",
+      "description": "카테고리별 one-vs-rest κ (Cohen 2인 한정)",
+      "additionalProperties": {"type": ["number", "null"]}
+    },
+    "ambiguous_categories": {
+      "type": "array",
+      "description": "κ < threshold 인 카테고리 — 정의 보강 후보",
+      "items": {"type": "string"}
+    },
+    "disagreements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item_id", "labels"],
+        "properties": {
+          "item_id": {"type": "string"},
+          "labels": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "graduation": {
+      "type": "object",
+      "required": ["threshold", "passed", "note"],
+      "properties": {
+        "threshold": {"type": "number"},
+        "passed": {"type": "boolean"},
+        "note": {"type": "string"}
+      }
+    },
+    "source": {"type": "string"},
+    "annotator_columns": {"type": "array", "items": {"type": "string"}},
+    "skipped_incomplete_rows": {"type": "integer", "minimum": 0}
+  }
+}

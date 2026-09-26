@@ -1,0 +1,121 @@
+{
+ "schema": 1,
+ "issue": 1658,
+ "generated_by": "skills/scripts/render_guide_images.py — 손으로 고치지 마라(check 가 RED)",
+ "renderer": {
+  "tool": "rhwp",
+  "version": "v0.8.6",
+  "backend": "export-pdf"
+ },
+ "raster": {
+  "dpi": 150,
+  "palette_colors": 32,
+  "format": "png"
+ },
+ "entries": [
+  {
+   "name": "ai-report",
+   "caption": "AI 친화적 보고서",
+   "source": "itda-doc/skills/hwpx/report/examples/cases/v13-samples/01-ai-outline-roman.md",
+   "source_sha256": "a9444fd84123695a3e0183b79f3816f34532ca48c4a15be739ae9c5c4d8bc88f",
+   "layout": "ai-report",
+   "template": "ai-report",
+   "extra_inputs": {
+    "itda-doc/skills/hwpx/report/examples/cases/v13-samples/chart.png": "803dc9396517385ea67ad2622f40d9db1f5d7bb8742fdb402cd88e4a79678b92"
+   },
+   "hwpx_sha256": "4ea7dbe96f6fd7ae2cc2f39947d64a180221fec46871a041dff15f69578cd517",
+   "pages": [
+    {
+     "page": 1,
+     "file": "ai-report-p1.png",
+     "sha256": "00b30a63b439d6422e11744a139545343c3e08421c4f5670522f63fc4b7a89af",
+     "bytes": 79512
+    },
+    {
+     "page": 2,
+     "file": "ai-report-p2.png",
+     "sha256": "f226cd3d8738b68e600ccc207becee2585b25ec0114072bc00c99bca94e9ddc2",
+     "bytes": 39518
+    }
+   ]
+  },
+  {
+   "name": "official-letter",
+   "caption": "기안문(공문)",
+   "source": "itda-doc/skills/hwpx/report/examples/cases/v13-samples/04-letter-external-full.md",
+   "source_sha256": "efeeadcb0eff020f5fa2dd2dfc9f5063dc0d6e223151a1e1ff3e16585571b8f6",
+   "layout": "official-letter",
+   "template": "official-letter",
+   "extra_inputs": {},
+   "hwpx_sha256": "49239ed0b2f44873cd399e59f2599e13bec6e8dc7c68b4af2927c303ca3d2edb",
+   "pages": [
+    {
+     "page": 1,
+     "file": "official-letter-p1.png",
+     "sha256": "c375bb2655d55380940cb68ac7151152566b26119249d1068cc08e5f74be9038",
+     "bytes": 63052
+    }
+   ]
+  },
+  {
+   "name": "press-release",
+   "caption": "보도자료",
+   "source": "itda-doc/skills/hwpx/report/examples/cases/v13-samples/06-press-release-table.md",
+   "source_sha256": "03a37b77658e3f4a2c3799127f6a93783ec931150ca5084911fb413890f82e63",
+   "layout": "press-release",
+   "template": "press-release",
+   "extra_inputs": {},
+   "hwpx_sha256": "2798ea5d35e5d567c2e6fcb288bafec2e308be49d84e598b8cc328bcc45839af",
+   "pages": [
+    {
+     "page": 1,
+     "file": "press-release-p1.png",
+     "sha256": "05839cfe1174423c4305a0548d744953774a1b3de98bf00314845f9ca7a0a2c6",
+     "bytes": 79646
+    }
+   ]
+  },
+  {
+   "name": "gov-report",
+   "caption": "구 정부 개조식",
+   "source": "itda-doc/skills/hwpx/report/examples/cases/v13-samples/08-gov-report-legacy.md",
+   "source_sha256": "bf04d9104a424d99282c29c73d5475aa83d421101292dcbe3e0e5155dec47eae",
+   "layout": "report",
+   "template": "gov-report",
+   "extra_inputs": {},
+   "hwpx_sha256": "3831fc308f415ae81470135c89890559a3328c0fda0dae72302fe4f0acc40e05",
+   "pages": [
+    {
+     "page": 1,
+     "file": "gov-report-p1.png",
+     "sha256": "c6a38046d438f722d1d70223b77ebc678bc435ad8937606b541dc4cf1ce6b5b1",
+     "bytes": 54817
+    }
+   ]
+  },
+  {
+   "name": "briefing",
+   "caption": "표지목차형",
+   "source": "itda-doc/skills/hwpx/report/examples/cases/v13-samples/07-briefing-attachments.md",
+   "source_sha256": "6753f28081b72ea30564b54da8caa4509f38d6e3b61b45fdccc9b91a3781ac6e",
+   "layout": "briefing",
+   "template": "briefing",
+   "extra_inputs": {},
+   "hwpx_sha256": "2c602ba1826e2b4bfc908ba0ac0cd1340a4d459e3887401503f1aac277e5195c",
+   "pages": [
+    {
+     "page": 1,
+     "file": "briefing-p1.png",
+     "sha256": "b0c1b29516f933b8232e86bba753fd18aebd9e095ca2c8bb9bafe7e6021eada6",
+     "bytes": 12192
+    },
+    {
+     "page": 3,
+     "file": "briefing-p3.png",
+     "sha256": "8f001660edc3260de443d59c51dd6b1b7cf943d3f07487292a07021da2558340",
+     "bytes": 57391
+    }
+   ]
+  }
+ ]
+}

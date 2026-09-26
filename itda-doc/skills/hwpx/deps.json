@@ -1,0 +1,48 @@
+{
+ "schema": 1,
+ "skill": "itda-doc/hwpx",
+ "issue": 1630,
+ "generated_by": "skills/scripts/deps_manifest.py gen-specs — 손으로 고치지 마라(validate ⑧ 이 RED)",
+ "declares_no_deps": false,
+ "no_deps_rationale": "",
+ "pep723": null,
+ "rows": [
+  {
+   "dist": "Pillow",
+   "specifier": ">=12.2.0",
+   "marker": "",
+   "necessity": "feature_required",
+   "scope": "runtime",
+   "provisioning": "direct",
+   "owner": "self",
+   "import_names": [
+    "PIL"
+   ]
+  },
+  {
+   "dist": "olefile",
+   "specifier": "",
+   "marker": "",
+   "necessity": "feature_required",
+   "scope": "runtime",
+   "provisioning": "direct",
+   "owner": "self",
+   "import_names": [
+    "olefile"
+   ]
+  },
+  {
+   "dist": "tiktoken",
+   "specifier": "",
+   "marker": "",
+   "necessity": "optional_enhancement",
+   "scope": "evals",
+   "provisioning": "direct",
+   "owner": "self",
+   "import_names": [
+    "tiktoken"
+   ]
+  }
+ ],
+ "non_pip": []
+}

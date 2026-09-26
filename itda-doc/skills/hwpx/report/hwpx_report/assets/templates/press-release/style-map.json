@@ -1,0 +1,13 @@
+{
+  "heading": {"charPrIDRef": "10", "paraPrIDRef": "2"},
+  "heading_spacer": {"charPrIDRef": "12", "paraPrIDRef": "2"},
+  "body_box": {"charPrIDRef": "25", "paraPrIDRef": "22"},
+  "note": {"charPrIDRef": "20", "paraPrIDRef": "21"},
+  "blank": {"charPrIDRef": "13", "paraPrIDRef": "2"},
+  "title_spacer": {"charPrIDRef": "9", "paraPrIDRef": "14"},
+  "table_header": {"charPrIDRef": "26", "paraPrIDRef": "18", "borderFillIDRef": "9"},
+  "table_body": {"charPrIDRef": "27", "paraPrIDRef": "18", "borderFillIDRef": "10"},
+  "table_body_justify": {"charPrIDRef": "27", "paraPrIDRef": "22", "borderFillIDRef": "10"},
+  "table_total": {"charPrIDRef": "26", "paraPrIDRef": "18", "borderFillIDRef": "9"},
+  "table_container": {"borderFillIDRef": "4"}
+}

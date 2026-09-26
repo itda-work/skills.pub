@@ -1,0 +1,28 @@
+schema_version: 1
+host: kidi.or.kr
+domain: insurance
+label: 보험개발원
+group: institution
+locations:
+- location_id: kidi-press
+  item: 보도자료
+  item_kind: press
+  url: https://www.kidi.or.kr/user/nd11592.do
+  discovery_path: static_list
+  repeat_access: L2
+  auth_state: none
+  grade: B
+  note: 목록 항목 링크가 javascript:goBoardView(POST form). 상세는 GET `?View&boardNo=<id>`
+    변환 패턴 성립(실측) — 값이 아니라 패턴만 박제
+  expected:
+    content_type_prefix: text/html
+    min_records: 5
+    freshness_days: 30
+  evidence:
+    observed_at: '2026-08-30'
+    samples: 1
+    browser: n/a
+    note: 첫 추정 URL 400 → 루트 메뉴 링크 발견으로 교정
+  export_eligible: true
+  js_link: goBoardView\('([^']+)','View','([^']+)'\)
+  js_link_template: '{1}?View&boardNo={2}'

@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026년 스마트 교통 안전 사업 추진 현황 보고(상반기) · 스마트도시과-2026-1187</title>
+<meta name="description" content="○○시 스마트 교통 안전 사업 2026년 상반기 추진 현황 — 예산 집행률 68.0%, 설치 실적 121개소(달성률 67.2%), 설치 구간 교통사고 26.5% 감소. ○○시청 스마트도시과 작성.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<style>
+/* ─────────────────────────────────────────────────────────
+   가족: public-kr (공공기관 보고서형) · 팔레트: gov-mono
+   ───────────────────────────────────────────────────────── */
+:root{
+  --bg:#FFFFFF; --paper:#FFFFFF; --tint:#F2F2F2; --ink:#111111;
+  --g500:#5A5A5A; --accent:#1C3F95; --accent-2:#1C3F95; --line:#BEBEBE;
+  --pos:#1B6E3A; --neg:#B3261E; --warn:#9A6206;
+  --g100:var(--tint); --g300:var(--line);
+  --g700:color-mix(in srgb, var(--ink) 80%, var(--bg));
+  --accent-d:color-mix(in srgb, var(--accent) 85%, #000);
+  --sans:"Pretendard",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --serif:"Noto Serif KR","Apple Myungjo","AppleMyungjo","Nanum Myeongjo","NanumMyeongjo","Batang",serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1218; --paper:#171B24; --tint:#1E2430; --ink:#E7EAF0;
+    --g500:#98A2B3; --line:#2A3140;
+    --accent:color-mix(in srgb, #1C3F95 65%, #FFF);
+    --accent-2:color-mix(in srgb, #1C3F95 65%, #FFF);
+    --pos:#4CC38A; --neg:#F0776A; --warn:#E0A030;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1218; --paper:#171B24; --tint:#1E2430; --ink:#E7EAF0;
+  --g500:#98A2B3; --line:#2A3140;
+  --accent:color-mix(in srgb, #1C3F95 65%, #FFF);
+  --accent-2:color-mix(in srgb, #1C3F95 65%, #FFF);
+  --pos:#4CC38A; --neg:#F0776A; --warn:#E0A030;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+  font-size:15px; line-height:1.75; word-break:keep-all; text-wrap:pretty;
+  font-variant-numeric:tabular-nums; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{margin:0; line-height:1.35; letter-spacing:0}
+p{margin:0 0 12px}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+
+/* ── 테마 토글(유일한 radius·shadow 예외) ── */
+.theme-toggle{
+  position:fixed; top:14px; right:14px; z-index:60;
+  background:var(--paper); color:var(--ink); border:1px solid var(--ink);
+  border-radius:2px; padding:6px 12px; font:inherit; font-size:12px; cursor:pointer;
+}
+.theme-toggle:hover{border-color:var(--accent); color:var(--accent)}
+
+/* ── 골격: 본문 720px 고정, 브레이크아웃 없음 ── */
+.wrap{max-width:720px; margin:0 auto; padding:0 20px}
+.shell{max-width:720px; margin:0 auto; padding:0 20px}
+@media (min-width:1100px){
+  .shell{
+    max-width:1032px; display:grid;
+    grid-template-columns:220px minmax(0,720px); gap:52px;
+    justify-content:center; padding:0 20px;
+  }
+}
+nav.toc{display:none}
+@media (min-width:1100px){
+  nav.toc{display:block; position:sticky; top:0; align-self:start; max-height:100vh; overflow-y:auto; padding:56px 0 40px}
+  .toc-t{font-size:12px; font-weight:600; letter-spacing:.04em; color:var(--g500); margin:0 0 10px}
+  .toc ol{list-style:none; margin:0; padding:0}
+  .toc a{display:block; padding:5px 0; color:var(--g500); text-decoration:none; font-size:13px; line-height:1.5}
+  .toc a:hover{color:var(--ink)}
+  .toc a.on{color:var(--accent); font-weight:700}
+  .toc .rn{display:inline-block; min-width:22px; font-family:var(--serif)}
+}
+main{padding:0 0 8px; min-width:0}
+
+/* ── 표지 ── */
+.cover{border-top:2px solid var(--ink); border-bottom:2px solid var(--ink); padding:20px 0 44px; margin:56px 0 40px}
+.cover-meta{display:flex; justify-content:space-between; gap:16px; font-size:12px; color:var(--g700); padding-bottom:44px}
+.cover-meta span{display:block}
+.cover-c{text-align:center}
+.cover .eyebrow{font-size:14px; letter-spacing:.04em; color:var(--g700); margin:0 0 18px}
+h1{font-family:var(--serif); font-size:36px; font-weight:700; line-height:1.4; letter-spacing:0}
+.cover .sub{font-size:18px; color:var(--g700); margin:16px 0 0}
+.cover-foot{text-align:center; margin-top:56px}
+.cover-foot .d{font-size:16px; color:var(--g700); margin:0 0 10px}
+.cover-foot .org{font-size:20px; font-weight:700; margin:0}
+
+/* ── 개요 박스 ── */
+.outline{border:1px solid var(--ink); padding:18px 20px; margin:0 0 40px}
+.outline .ot{font-size:16px; font-weight:700; margin:0 0 10px}
+
+/* ── 섹션·헤딩 ── */
+section{margin:0 0 64px; scroll-margin-top:20px}
+h2{font-family:var(--serif); font-size:22px; font-weight:700; margin:0 0 6px}
+.lead{color:var(--g700); font-size:14.5px; margin:0 0 20px}
+h3{font-size:17px; font-weight:700; margin:32px 0 10px}
+h4{font-size:15px; font-weight:700; margin:20px 0 8px}
+.pn{margin:16px 0 8px; font-weight:600}
+
+/* ── 개조식 불릿 ── */
+ul.ko{list-style:none; margin:0 0 12px; padding:0}
+ul.ko li{padding-left:18px; text-indent:-18px; margin:0 0 4px}
+ul.ko.l2{padding-left:16px}
+ul.ko.l3{padding-left:32px}
+ul.ko.l4{padding-left:48px}
+
+/* ── 격자 표 ── */
+.cap{font-size:13px; font-weight:700; margin:28px 0 8px}
+.tw{overflow-x:auto}
+table{width:100%; border-collapse:collapse; border:1.5px solid var(--ink); font-size:13px; line-height:1.55}
+th,td{border:1px solid var(--line); padding:7px 8px; vertical-align:middle}
+thead th{background:var(--tint); text-align:center; font-weight:700; color:var(--ink)}
+tbody th{background:var(--tint); text-align:center; font-weight:700; width:120px}
+td.n{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+td.c,th.c{text-align:center}
+td.l{text-align:left}
+tr.tot > *{background:var(--tint); font-weight:700; border-top:1.5px solid var(--ink)}
+.src{font-size:11px; color:var(--g500); margin:6px 0 0}
+.pos{color:var(--pos)} .neg{color:var(--neg)}
+
+/* ── 차트 ── */
+figure{margin:28px 0 0}
+figcaption{font-size:13px; font-weight:700; margin:0 0 8px}
+figure svg{display:block; width:100%; height:auto}
+.fnote{font-size:11px; color:var(--g500); margin:6px 0 0}
+
+/* ── 콜아웃 ── */
+.note{font-size:11.5px; color:var(--g700); margin:10px 0 0; padding-left:16px; text-indent:-16px}
+.box{border:1px solid var(--ink); padding:16px 18px; margin:24px 0}
+.box .bt{font-weight:700; font-size:14px; margin:0 0 8px}
+
+/* ── 붙임 ── */
+.attach{margin:8px 0 0}
+details{border:1px solid var(--line); margin:12px 0 0}
+summary{padding:10px 14px; font-size:13.5px; font-weight:600; cursor:pointer; background:var(--tint)}
+.det-b{padding:14px}
+.endmark{margin:32px 0 0; text-align:right; font-weight:700}
+
+/* ── 푸터 ── */
+footer{border-top:1px solid var(--ink); margin:56px 0 0; padding:14px 0 48px; font-size:12px; color:var(--g700)}
+footer p{margin:0 0 3px}
+
+/* ── 인쇄 ── */
+@page{ size:A4; margin:20mm 18mm; }
+@page{ @bottom-center{ content:"- " counter(page) " -"; font-family:"Pretendard",sans-serif; font-size:9pt; } }
+@media print{
+  :root{
+    color-scheme:light;
+    --bg:#FFFFFF; --paper:#FFFFFF; --tint:#F2F2F2; --ink:#111111;
+    --g500:#4A4A4A; --accent:#1C3F95; --accent-2:#1C3F95; --line:#9A9A9A;
+    --pos:#1B6E3A; --neg:#B3261E; --warn:#9A6206;
+  }
+  body{background:#fff; font-size:10.5pt; line-height:1.6}
+  nav.toc,.theme-toggle,.no-print{display:none !important}
+  .shell{display:block; max-width:none; padding:0}
+  .cover{break-after:page; margin:0 0 24pt; padding:12pt 0 24pt}
+  .cover-foot{margin-top:36pt}
+  section{margin-bottom:24pt}
+  section,figure,table,.box,.outline,details{break-inside:avoid}
+  h2,h3,h4,.cap,figcaption{break-after:avoid}
+  .tw{overflow:visible}
+  details{display:block; border:1px solid var(--line)}
+  details > *{display:block}
+  details .det-b{display:block !important}
+  summary{list-style:none}
+  a{color:inherit; text-decoration:none}
+  *{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<button class="theme-toggle no-print" type="button" aria-pressed="false" aria-label="색상 테마 전환">
+  <span class="tt-label">다크 모드</span>
+</button>
+
+<header class="wrap">
+  <div class="cover">
+    <div class="cover-meta">
+      <span>스마트도시과-2026-1187 · 2026. 7. 15.</span>
+      <span>대외주의 · 시장, 부시장, 관련 부서</span>
+    </div>
+    <div class="cover-c">
+      <p class="eyebrow">2026년 주요 사업 추진 현황 보고</p>
+      <h1>스마트 교통 안전 사업<br>추진 현황 보고(상반기)</h1>
+      <p class="sub">2026년 상반기 예산 집행 및 설치 실적 · 사업 효과 분석</p>
+    </div>
+    <div class="cover-foot">
+      <p class="d">2026. 7.</p>
+      <p class="org">○○시청 스마트도시과</p>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+
+<nav class="toc no-print" aria-label="목차">
+  <p class="toc-t">목 차</p>
+  <ol>
+    <li><a href="#s1"><span class="rn">Ⅰ.</span>사업 개요</a></li>
+    <li><a href="#s2"><span class="rn">Ⅱ.</span>예산 집행 현황</a></li>
+    <li><a href="#s3"><span class="rn">Ⅲ.</span>권역별 설치 실적</a></li>
+    <li><a href="#s4"><span class="rn">Ⅳ.</span>사업 효과 분석</a></li>
+    <li><a href="#s5"><span class="rn">Ⅴ.</span>문제점 및 개선 방안</a></li>
+    <li><a href="#s6"><span class="rn">Ⅵ.</span>향후 추진 계획</a></li>
+  </ol>
+</nav>
+
+<main>
+
+  <div class="outline">
+    <p class="ot">□ 개  요</p>
+    <ul class="ko">
+      <li>□ 보고 목적: 2026년 스마트 교통 안전 사업의 상반기 추진 실적 보고 및 하반기 중점 추진 사항 결재</li>
+    </ul>
+    <ul class="ko l2">
+      <li>○ 예산 집행: 6,840백만원 중 4,650백만원 집행(집행률 68.0%)</li>
+      <li>○ 설치 실적: 연간 목표 180개소 중 121개소 설치 완료(달성률 67.2%)</li>
+      <li>○ 사업 효과: 설치 구간 교통사고 230건 → 169건(61건, 26.5% 감소)</li>
+      <li>○ 주민 만족도: 긍정 응답률 65.0%(목표 70.0% 대비 5.0%p 미달)</li>
+    </ul>
+    <ul class="ko l3">
+      <li>- 동부권역 지장물 이설 지연으로 설치 달성률 50.0% 정체, 별도 협의체 구성 필요</li>
+    </ul>
+  </div>
+
+  <!-- ══════════ Ⅰ ══════════ -->
+  <section id="s1" aria-labelledby="s1h">
+    <h2 id="s1h">Ⅰ. 사업 개요</h2>
+    <p class="lead">보행자 사고 다발 구간을 대상으로 스마트 횡단보도·지능형 CCTV·보행자 알림 시스템을 단계 구축하는 3개년 사업으로, 2026년은 2차 연도에 해당함.</p>
+
+    <h3>1. 사업 내용</h3>
+    <p class="cap">&lt;표 1&gt; 사업 개요</p>
+    <div class="tw">
+      <table>
+        <colgroup><col style="width:22%"><col></colgroup>
+        <tbody>
+          <tr><th scope="row">사 업 명</th><td class="l">○○시 스마트 교통 안전 사업</td></tr>
+          <tr><th scope="row">사업기간</th><td class="l">2025. 3. ~ 2027. 12.(34개월, 3개년)</td></tr>
+          <tr><th scope="row">총사업비</th><td class="l">18,400백만원(국비 9,200 · 시비 7,360 · 민자 1,840)</td></tr>
+          <tr><th scope="row">2026년 예산</th><td class="l">6,840백만원(총사업비의 37.2%)</td></tr>
+          <tr><th scope="row">사업대상</th><td class="l">5개 권역 180개소(스마트 횡단보도 80 · 지능형 CCTV 60 · 보행자 알림 40)</td></tr>
+          <tr><th scope="row">추진체계</th><td class="l">스마트도시과(주관) / 안전총괄과 · 정보통신과 · ○○시설공단(협업) / ○○경찰서(협조)</td></tr>
+          <tr><th scope="row">근    거</th><td class="l">「국가통합교통체계효율화법」 제73조, 「○○시 교통안전 증진 조례」 제12조</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">※ 자료: 스마트도시과 사업 기본계획(2025. 2.) 및 2026년 세출예산서</p>
+
+    <h3>2. 추진 경과</h3>
+    <ul class="ko">
+      <li>□ 2025년(1차 연도) 실적</li>
+    </ul>
+    <ul class="ko l2">
+      <li>○ 기본·실시설계 완료 및 중앙권역 시범 구간 24개소 설치</li>
+      <li>○ 사업비 4,120백만원 집행(집행률 96.4%), 이월액 154백만원</li>
+    </ul>
+    <ul class="ko">
+      <li>□ 2026년(2차 연도) 상반기</li>
+    </ul>
+    <ul class="ko l2">
+      <li>○ 5개 권역 동시 착공, 상반기 누계 121개소 설치 완료</li>
+      <li>○ 교통정보 통합 플랫폼 1단계 구축 착수(2026. 4.)</li>
+    </ul>
+    <ul class="ko l3">
+      <li>- 국토교통부 연계 규격(안) 확정 지연으로 API 연동 일정 2개월 순연</li>
+    </ul>
+    <p class="note">※ 2025년 이월액 154백만원은 2026년 예산에 편입되지 않은 별도 계상액으로, 본 보고서의 집행률 산정에서 제외함.</p>
+  </section>
+
+  <!-- ══════════ Ⅱ ══════════ -->
+  <section id="s2" aria-labelledby="s2h">
+    <h2 id="s2h">Ⅱ. 예산 집행 현황</h2>
+    <p class="lead">2026년 예산 6,840백만원 중 4,650백만원을 집행하여 상반기 집행률 68.0%를 기록, 시 평균 집행률(61.4%) 대비 6.6%p 상회함.</p>
+
+    <h3>1. 세부 사업별 집행 현황</h3>
+    <p class="cap">&lt;표 2&gt; 2026년 상반기 예산 집행 현황 (단위: 백만원, %)</p>
+    <div class="tw">
+      <table>
+        <colgroup><col style="width:30%"><col><col><col><col></colgroup>
+        <thead>
+          <tr>
+            <th scope="col">세부 사업</th>
+            <th scope="col">예산액</th>
+            <th scope="col">집행액</th>
+            <th scope="col">잔  액</th>
+            <th scope="col">집행률</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">스마트 횡단보도</th><td class="n">2,180</td><td class="n">1,635</td><td class="n">545</td><td class="n">75.0</td></tr>
+          <tr><th scope="row">지능형 CCTV</th><td class="n">1,640</td><td class="n">1,148</td><td class="n">492</td><td class="n">70.0</td></tr>
+          <tr><th scope="row">보행자 알림 시스템</th><td class="n">1,120</td><td class="n">728</td><td class="n">392</td><td class="n">65.0</td></tr>
+          <tr><th scope="row">교통정보 통합 플랫폼</th><td class="n">980</td><td class="n">588</td><td class="n">392</td><td class="n">60.0</td></tr>
+          <tr><th scope="row">사업 관리 · 감리</th><td class="n">600</td><td class="n">375</td><td class="n">225</td><td class="n">62.5</td></tr>
+          <tr><th scope="row">홍보 · 주민 교육</th><td class="n">320</td><td class="n">176</td><td class="n">144</td><td class="n">55.0</td></tr>
+          <tr class="tot"><th scope="row">합  계</th><td class="n">6,840</td><td class="n">4,650</td><td class="n">2,190</td><td class="n">68.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">※ 자료: 지방재정관리시스템(e-호조) 2026. 6. 30. 마감 기준. 집행률 = 집행액 ÷ 예산액 × 100</p>
+    <p class="note">※ 집행액은 지출원인행위액이 아닌 실지출액 기준이며, 6월 말 계약 체결분(약 340백만원)은 하반기 집행으로 계상됨.</p>
+
+    <h3>2. 총사업비 재원 구성</h3>
+    <figure>
+      <figcaption>&lt;그림 1&gt; 총사업비 재원별 구성 (단위: 백만원)</figcaption>
+      <svg viewBox="0 0 720 280" role="img" aria-label="총사업비 18,400백만원의 재원 구성. 국비 9,200백만원 50.0퍼센트, 시비 7,360백만원 40.0퍼센트, 민자 1,840백만원 10.0퍼센트.">
+        <title>총사업비 재원별 구성 도넛 차트</title>
+        <defs>
+          <pattern id="p-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="8" height="8" fill="var(--paper)"></rect>
+            <line x1="0" y1="0" x2="0" y2="8" stroke="var(--ink)" stroke-width="3.4"></line>
+          </pattern>
+          <pattern id="p-dot" width="8" height="8" patternUnits="userSpaceOnUse">
+            <rect width="8" height="8" fill="var(--paper)"></rect>
+            <circle cx="4" cy="4" r="1.9" fill="var(--ink)"></circle>
+          </pattern>
+        </defs>
+        <g stroke="var(--paper)" stroke-width="2">
+          <path d="M 190 34 A 92 92 0 0 1 190 218 L 190 178 A 52 52 0 0 0 190 74 Z" fill="var(--ink)"></path>
+          <path d="M 190 218 A 92 92 0 0 1 135.92 51.57 L 159.43 83.93 A 52 52 0 0 0 190 178 Z" fill="url(#p-hatch)"></path>
+          <path d="M 135.92 51.57 A 92 92 0 0 1 190 34 L 190 74 A 52 52 0 0 0 159.43 83.93 Z" fill="url(#p-dot)"></path>
+        </g>
+        <text x="190" y="118" text-anchor="middle" font-family="Pretendard, system-ui, sans-serif" font-size="12" fill="var(--g500)">총사업비</text>
+        <text x="190" y="144" text-anchor="middle" font-family="Pretendard, system-ui, sans-serif" font-size="21" font-weight="700" fill="var(--ink)">18,400</text>
+        <text x="190" y="164" text-anchor="middle" font-family="Pretendard, system-ui, sans-serif" font-size="11" fill="var(--g500)">백만원</text>
+
+        <g font-family="Pretendard, system-ui, sans-serif" font-size="13" fill="var(--ink)">
+          <rect x="360" y="52" width="20" height="20" fill="var(--ink)" stroke="var(--ink)"></rect>
+          <text x="392" y="67">국  비   9,200 (50.0%)</text>
+          <rect x="360" y="92" width="20" height="20" fill="url(#p-hatch)" stroke="var(--ink)"></rect>
+          <text x="392" y="107">시  비   7,360 (40.0%)</text>
+          <rect x="360" y="132" width="20" height="20" fill="url(#p-dot)" stroke="var(--ink)"></rect>
+          <text x="392" y="147">민  자   1,840 (10.0%)</text>
+          <line x1="360" y1="172" x2="690" y2="172" stroke="var(--line)" stroke-width="1"></line>
+          <text x="392" y="196" font-weight="700">합  계  18,400 (100.0%)</text>
+        </g>
+      </svg>
+      <p class="fnote">※ 자료: 사업 기본계획(2025. 2.) 재원분담 협약서. 민자는 시설공단 부담분임.</p>
+    </figure>
+  </section>
+
+  <!-- ══════════ Ⅲ ══════════ -->
+  <section id="s3" aria-labelledby="s3h">
+    <h2 id="s3h">Ⅲ. 권역별 설치 실적</h2>
+    <p class="lead">연간 목표 180개소 중 121개소 설치를 완료하여 달성률 67.2%를 기록하였으나, 동부권역은 지장물 이설 지연으로 50.0%에 머물러 권역 간 편차가 25.0%p 발생함.</p>
+
+    <h3>1. 권역별 실적</h3>
+    <p class="cap">&lt;표 3&gt; 권역별 설치 실적 (단위: 개소, %)</p>
+    <div class="tw">
+      <table>
+        <colgroup><col style="width:22%"><col><col><col><col></colgroup>
+        <thead>
+          <tr>
+            <th scope="col">권  역</th>
+            <th scope="col">연간 목표</th>
+            <th scope="col">상반기 설치</th>
+            <th scope="col">잔  여</th>
+            <th scope="col">달성률</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">중앙권역</th><td class="n">48</td><td class="n">36</td><td class="n">12</td><td class="n">75.0</td></tr>
+          <tr><th scope="row">북부권역</th><td class="n">40</td><td class="n">26</td><td class="n">14</td><td class="n">65.0</td></tr>
+          <tr><th scope="row">서부권역</th><td class="n">36</td><td class="n">27</td><td class="n">9</td><td class="n">75.0</td></tr>
+          <tr><th scope="row">남부권역</th><td class="n">32</td><td class="n">20</td><td class="n">12</td><td class="n">62.5</td></tr>
+          <tr><th scope="row">동부권역</th><td class="n">24</td><td class="n">12</td><td class="n">12</td><td class="n">50.0</td></tr>
+          <tr class="tot"><th scope="row">합  계</th><td class="n">180</td><td class="n">121</td><td class="n">59</td><td class="n">67.2</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">※ 자료: 스마트도시과 시공 검수 대장(2026. 6. 30. 기준). 달성률 = 설치 ÷ 목표 × 100</p>
+
+    <figure>
+      <figcaption>&lt;그림 2&gt; 권역별 연간 목표 대비 상반기 설치 실적 (단위: 개소)</figcaption>
+      <svg viewBox="0 0 720 320" role="img" aria-label="권역별 연간 목표 대비 상반기 설치 실적. 중앙권역 목표 48개소 설치 36개소, 북부권역 40개소 26개소, 서부권역 36개소 27개소, 남부권역 32개소 20개소, 동부권역 24개소 12개소.">
+        <title>권역별 목표 대비 설치 실적 그룹 막대 차트</title>
+        <g stroke="var(--line)" stroke-width="1">
+          <line x1="60" y1="240" x2="700" y2="240"></line>
+          <line x1="60" y1="198" x2="700" y2="198"></line>
+          <line x1="60" y1="156" x2="700" y2="156"></line>
+          <line x1="60" y1="114" x2="700" y2="114"></line>
+          <line x1="60" y1="72" x2="700" y2="72"></line>
+          <line x1="60" y1="30" x2="700" y2="30"></line>
+        </g>
+        <g font-family="Pretendard, system-ui, sans-serif" font-size="11" fill="var(--g500)" text-anchor="end">
+          <text x="50" y="244">0</text>
+          <text x="50" y="202">10</text>
+          <text x="50" y="160">20</text>
+          <text x="50" y="118">30</text>
+          <text x="50" y="76">40</text>
+          <text x="50" y="34">50</text>
+        </g>
+        <g fill="var(--g500)">
+          <rect x="80" y="38.4" width="40" height="201.6"></rect>
+          <rect x="208" y="72" width="40" height="168"></rect>
+          <rect x="336" y="88.8" width="40" height="151.2"></rect>
+          <rect x="464" y="105.6" width="40" height="134.4"></rect>
+          <rect x="592" y="139.2" width="40" height="100.8"></rect>
+        </g>
+        <g fill="var(--ink)">
+          <rect x="128" y="88.8" width="40" height="151.2"></rect>
+          <rect x="256" y="130.8" width="40" height="109.2"></rect>
+          <rect x="384" y="126.6" width="40" height="113.4"></rect>
+          <rect x="512" y="156" width="40" height="84"></rect>
+          <rect x="640" y="189.6" width="40" height="50.4"></rect>
+        </g>
+        <g font-family="Pretendard, system-ui, sans-serif" font-size="11" text-anchor="middle" fill="var(--g500)">
+          <text x="100" y="32">48</text>
+          <text x="228" y="65">40</text>
+          <text x="356" y="82">36</text>
+          <text x="484" y="99">32</text>
+          <text x="612" y="132">24</text>
+        </g>
+        <g font-family="Pretendard, system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle" fill="var(--ink)">
+          <text x="148" y="82">36</text>
+          <text x="276" y="124">26</text>
+          <text x="404" y="120">27</text>
+          <text x="532" y="149">20</text>
+          <text x="660" y="183">12</text>
+        </g>
+        <g font-family="Pretendard, system-ui, sans-serif" font-size="12" text-anchor="middle" fill="var(--ink)">
+          <text x="124" y="260">중앙권역</text>
+          <text x="252" y="260">북부권역</text>
+          <text x="380" y="260">서부권역</text>
+          <text x="508" y="260">남부권역</text>
+          <text x="636" y="260">동부권역</text>
+        </g>
+        <g font-family="Pretendard, system-ui, sans-serif" font-size="12" fill="var(--ink)">
+          <rect x="230" y="288" width="16" height="16" fill="var(--g500)"></rect>
+          <text x="254" y="301">연간 목표</text>
+          <rect x="352" y="288" width="16" height="16" fill="var(--ink)"></rect>
+          <text x="376" y="301">상반기 설치</text>
+        </g>
+      </svg>
+      <p class="fnote">※ 자료: &lt;표 3&gt;과 동일. 단위 개소.</p>
+    </figure>
+
+    <h3>2. 동부권역 지연 사유</h3>
+    <ul class="ko">
+      <li>□ 지장물 이설 협의 장기화</li>
+    </ul>
+    <ul class="ko l2">
+      <li>○ 대상 12개소 중 9개소가 한전 전주 · 통신 관로와 중첩</li>
+      <li>○ 이설 협의 착수(2026. 3.) 후 4개월간 3개소만 완료</li>
+    </ul>
+    <ul class="ko l3">
+      <li>- 기관별 개별 협의 방식으로 진행되어 일정 조정 불가</li>
+      <li>- 이설 비용 분담 기준 미합의(추정 소요 180백만원)</li>
+    </ul>
+    <ul class="ko">
+      <li>□ 재개발 구역 중복 지정</li>
+    </ul>
+    <ul class="ko l2">
+      <li>○ 3개소가 ○○2구역 정비사업 예정지에 포함되어 설치 보류</li>
+    </ul>
+    <ul class="ko l3">
+      <li>- 도시정비과 협의 결과 2027년 착공 예정으로, 위치 변경 검토 필요</li>
+    </ul>
+  </section>
+
+  <!-- ══════════ Ⅳ ══════════ -->
+  <section id="s4" aria-labelledby="s4h">
+    <h2 id="s4h">Ⅳ. 사업 효과 분석</h2>
+    <p class="lead">설치 완료 구간의 교통사고가 전년 동기 대비 26.5% 감소하였고 감소 폭이 월별로 확대되고 있으나, 주민 만족도는 목표 70.0%에 5.0%p 미달함.</p>
+
+    <h3>1. 교통사고 감소 효과</h3>
+    <p class="cap">&lt;표 4&gt; 월별 교통사고 발생 건수 (설치 완료 구간, 단위: 건, %)</p>
+    <div class="tw">
+      <table>
+        <colgroup><col style="width:16%"><col><col><col><col></colgroup>
+        <thead>
+          <tr>
+            <th scope="col">구  분</th>
+            <th scope="col">2025년</th>
+            <th scope="col">2026년</th>
+            <th scope="col">증  감</th>
+            <th scope="col">증감률</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">1월</th><td class="n">34</td><td class="n">29</td><td class="n pos">▼ 5</td><td class="n pos">▼ 14.7</td></tr>
+          <tr><th scope="row">2월</th><td class="n">31</td><td class="n">25</td><td class="n pos">▼ 6</td><td class="n pos">▼ 19.4</td></tr>
+          <tr><th scope="row">3월</th><td class="n">38</td><td class="n">28</td><td class="n pos">▼ 10</td><td class="n pos">▼ 26.3</td></tr>
+          <tr><th scope="row">4월</th><td class="n">42</td><td class="n">30</td><td class="n pos">▼ 12</td><td class="n pos">▼ 28.6</td></tr>
+          <tr><th scope="row">5월</th><td class="n">45</td><td class="n">31</td><td class="n pos">▼ 14</td><td class="n pos">▼ 31.1</td></tr>
+          <tr><th scope="row">6월</th><td class="n">40</td><td class="n">26</td><td class="n pos">▼ 14</td><td class="n pos">▼ 35.0</td></tr>
+          <tr class="tot"><th scope="row">합  계</th><td class="n">230</td><td class="n">169</td><td class="n pos">▼ 61</td><td class="n pos">▼ 26.5</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">※ 자료: ○○경찰서 교통사고 통계(2026. 7. 3. 제공). ▼는 감소를 의미하며 사고 감소는 긍정 지표임.</p>
+    <p class="note">※ 집계 대상은 설치 완료 121개소 인근 반경 100m 이내에서 발생한 보행자 관련 사고에 한하며, 물피 단독 사고는 제외함.</p>
+
+    <figure>
+      <figcaption>&lt;그림 3&gt; 월별 교통사고 발생 건수 추이 (단위: 건)</figcaption>
+      <svg viewBox="0 0 720 320" role="img" aria-label="월별 교통사고 발생 건수 추이. 2025년은 1월 34건에서 5월 45건까지 증가 후 6월 40건. 2026년은 1월 29건에서 6월 26건으로, 전 기간 목표선 32건 이하를 유지하지 못한 달은 없음.">
+        <title>월별 교통사고 발생 건수 추이 라인 차트</title>
+        <g stroke="var(--line)" stroke-width="1">
+          <line x1="60" y1="240" x2="700" y2="240"></line>
+          <line x1="60" y1="198" x2="700" y2="198"></line>
+          <line x1="60" y1="156" x2="700" y2="156"></line>
+          <line x1="60" y1="114" x2="700" y2="114"></line>
+          <line x1="60" y1="72" x2="700" y2="72"></line>
+          <line x1="60" y1="30" x2="700" y2="30"></line>
+        </g>
+        <g font-family="Pretendard, system-ui, sans-serif" font-size="11" fill="var(--g500)" text-anchor="end">
+          <text x="50" y="244">0</text>
+          <text x="50" y="202">10</text>
+          <text x="50" y="160">20</text>
+          <text x="50" y="118">30</text>
+          <text x="50" y="76">40</text>
+          <text x="50" y="34">50</text>
+        </g>
+
+        <line x1="60" y1="105.6" x2="700" y2="105.6" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="7 5"></line>
+        <text x="700" y="99" text-anchor="end" font-family="Pretendard, system-ui, sans-serif" font-size="11" font-weight="700" fill="var(--accent)">2026년 관리 목표 32건</text>
+
+        <polyline points="76,97.2 192,109.8 308,80.4 424,63.6 540,51 656,72" fill="none" stroke="var(--g500)" stroke-width="2" stroke-dasharray="6 4"></polyline>
+        <g fill="var(--g500)">
+          <circle cx="76" cy="97.2" r="3.5"></circle>
+          <circle cx="192" cy="109.8" r="3.5"></circle>
+          <circle cx="308" cy="80.4" r="3.5"></circle>
+          <circle cx="424" cy="63.6" r="3.5"></circle>
+          <circle cx="540" cy="51" r="3.5"></circle>
+          <circle cx="656" cy="72" r="3.5"></circle>
+        </g>
+        <g font-family="Pretendard, system-ui, sans-serif" font-size="11" text-anchor="middle" fill="var(--g500)">
+          <text x="76" y="87">34</text>
+          <text x="192" y="100">31</text>
+          <text x="308" y="70">38</text>
+          <text x="424" y="53">42</text>
+          <text x="540" y="41">45</text>
+          <text x="656" y="62">40</text>
+        </g>
+
+        <polyline points="76,118.2 192,135 308,122.4 424,114 540,109.8 656,130.8" fill="none" stroke="var(--ink)" stroke-width="2.6"></polyline>
+        <g fill="var(--ink)">
+          <circle cx="76" cy="118.2" r="4.2"></circle>
+          <circle cx="192" cy="135" r="4.2"></circle>
+          <circle cx="308" cy="122.4" r="4.2"></circle>
+          <circle cx="424" cy="114" r="4.2"></circle>
+          <circle cx="540" cy="109.8" r="4.2"></circle>
+          <circle cx="656" cy="130.8" r="4.2"></circle>
+        </g>
+        <g font-family="Pretendard, system-ui, sans-serif" font-size="11" font-weight="700" text-anchor="middle" fill="var(--ink)">
+          <text x="76" y="138">29</text>
+          <text x="192" y="155">25</text>
+          <text x="308" y="142">28</text>
+          <text x="424" y="134">30</text>
+          <text x="540" y="130">31</text>
+          <text x="656" y="151">26</text>
+        </g>
+
+        <g font-family="Pretendard, system-ui, sans-serif" font-size="12" text-anchor="middle" fill="var(--ink)">
+          <text x="76" y="262">1월</text>
+          <text x="192" y="262">2월</text>
+          <text x="308" y="262">3월</text>
+          <text x="424" y="262">4월</text>
+          <text x="540" y="262">5월</text>
+          <text x="656" y="262">6월</text>
+        </g>
+        <g font-family="Pretendard, system-ui, sans-serif" font-size="12" fill="var(--ink)">
+          <line x1="212" y1="296" x2="248" y2="296" stroke="var(--g500)" stroke-width="2" stroke-dasharray="6 4"></line>
+          <text x="256" y="300">2025년</text>
+          <line x1="352" y1="296" x2="388" y2="296" stroke="var(--ink)" stroke-width="2.6"></line>
+          <text x="396" y="300">2026년</text>
+        </g>
+      </svg>
+      <p class="fnote">※ 자료: &lt;표 4&gt;와 동일. 2026년 월평균 28.2건으로 관리 목표(32건) 이내 유지.</p>
+    </figure>
+
+    <h3>2. 주민 만족도 조사</h3>
+    <p class="cap">&lt;표 5&gt; 항목별 주민 만족도 조사 결과 (n=1,240, 단위: %)</p>
+    <div class="tw">
+      <table>
+        <colgroup><col style="width:26%"><col><col><col><col><col></colgroup>
+        <thead>
+          <tr>
+            <th scope="col">조사 항목</th>
+            <th scope="col">매우 만족</th>
+            <th scope="col">만  족</th>
+            <th scope="col">보  통</th>
+            <th scope="col">불만족</th>
+            <th scope="col">긍정 응답</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">보행 안전 체감</th><td class="n">31.4</td><td class="n">42.2</td><td class="n">19.8</td><td class="n">6.6</td><td class="n">73.6</td></tr>
+          <tr><th scope="row">야간 시인성</th><td class="n">28.2</td><td class="n">40.3</td><td class="n">22.6</td><td class="n">8.9</td><td class="n">68.5</td></tr>
+          <tr><th scope="row">시설 관리 상태</th><td class="n">24.6</td><td class="n">38.8</td><td class="n">26.0</td><td class="n">10.6</td><td class="n">63.4</td></tr>
+          <tr><th scope="row">교통정보 정확도</th><td class="n">19.4</td><td class="n">35.1</td><td class="n">31.2</td><td class="n">14.3</td><td class="n">54.5</td></tr>
+          <tr class="tot"><th scope="row">전체 평균</th><td class="n">25.9</td><td class="n">39.1</td><td class="n">24.9</td><td class="n">10.1</td><td class="n">65.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">※ 자료: 2026년 상반기 주민 만족도 조사(2026. 6. 8. ~ 6. 19., 표본오차 ±2.78%p, 95% 신뢰수준). 긍정 응답 = 매우 만족 + 만족</p>
+
+    <figure>
+      <figcaption>&lt;그림 4&gt; 조사 항목별 긍정 응답률 (단위: %)</figcaption>
+      <svg viewBox="0 0 720 300" role="img" aria-label="조사 항목별 긍정 응답률. 보행 안전 체감 73.6퍼센트, 야간 시인성 68.5퍼센트, 시설 관리 상태 63.4퍼센트, 교통정보 정확도 54.5퍼센트, 전체 평균 65.0퍼센트로 목표 70퍼센트를 5퍼센트포인트 하회.">
+        <title>조사 항목별 긍정 응답률 수평 막대 차트</title>
+        <defs>
+          <pattern id="p-hatch2" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="8" height="8" fill="var(--paper)"></rect>
+            <line x1="0" y1="0" x2="0" y2="8" stroke="var(--ink)" stroke-width="3.4"></line>
+          </pattern>
+        </defs>
+        <g stroke="var(--line)" stroke-width="1">
+          <line x1="210" y1="24" x2="210" y2="262"></line>
+          <line x1="320" y1="24" x2="320" y2="262"></line>
+          <line x1="430" y1="24" x2="430" y2="262"></line>
+          <line x1="540" y1="24" x2="540" y2="262"></line>
+          <line x1="650" y1="24" x2="650" y2="262"></line>
+        </g>
+        <g fill="var(--ink)">
+          <rect x="210" y="30" width="323.84" height="28"></rect>
+          <rect x="210" y="78" width="301.4" height="28"></rect>
+          <rect x="210" y="126" width="278.96" height="28"></rect>
+          <rect x="210" y="174" width="239.8" height="28"></rect>
+        </g>
+        <rect x="210" y="222" width="286" height="28" fill="url(#p-hatch2)" stroke="var(--ink)" stroke-width="1"></rect>
+
+        <line x1="518" y1="20" x2="518" y2="266" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="7 5"></line>
+        <text x="518" y="14" text-anchor="middle" font-family="Pretendard, system-ui, sans-serif" font-size="11" font-weight="700" fill="var(--accent)">목표 70.0</text>
+
+        <g font-family="Pretendard, system-ui, sans-serif" font-size="12.5" text-anchor="end" fill="var(--ink)">
+          <text x="200" y="49">보행 안전 체감</text>
+          <text x="200" y="97">야간 시인성</text>
+          <text x="200" y="145">시설 관리 상태</text>
+          <text x="200" y="193">교통정보 정확도</text>
+          <text x="200" y="241" font-weight="700">전체 평균</text>
+        </g>
+        <g font-family="Pretendard, system-ui, sans-serif" font-size="11.5" font-weight="700" fill="var(--ink)">
+          <text x="541.84" y="49">73.6</text>
+          <text x="519.4" y="97">68.5</text>
+          <text x="496.96" y="145">63.4</text>
+          <text x="457.8" y="193">54.5</text>
+          <text x="504" y="241">65.0</text>
+        </g>
+        <g font-family="Pretendard, system-ui, sans-serif" font-size="11" fill="var(--g500)" text-anchor="middle">
+          <text x="210" y="280">0</text>
+          <text x="320" y="280">25</text>
+          <text x="430" y="280">50</text>
+          <text x="540" y="280">75</text>
+          <text x="650" y="280">100</text>
+        </g>
+      </svg>
+      <p class="fnote">※ 자료: &lt;표 5&gt;와 동일. 빗금 막대는 전체 평균이며, 점선은 2026년 관리 목표 70.0%임.</p>
+    </figure>
+
+    <div class="box">
+      <p class="bt">【 분석 결과 요약 】</p>
+      <ul class="ko">
+        <li>□ 사고 감소 폭이 1월 14.7%에서 6월 35.0%로 확대되어 설치 효과가 누적 발현되는 것으로 판단</li>
+        <li>□ 다만 교통정보 정확도(54.5%)가 유일하게 60% 미만으로, 플랫폼 연계 지연이 체감 만족도를 직접 제약</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ══════════ Ⅴ ══════════ -->
+  <section id="s5" aria-labelledby="s5h">
+    <h2 id="s5h">Ⅴ. 문제점 및 개선 방안</h2>
+    <p class="lead">하반기 목표 달성을 저해할 위험요인 5건을 식별하였으며, 이 중 영향도와 발생 가능성이 모두 '상'인 지장물 이설 지연 1건은 즉시 조치가 필요함.</p>
+
+    <h3>1. 위험요인 및 대응 방안</h3>
+    <p class="cap">&lt;표 6&gt; 주요 위험요인 및 대응 방안</p>
+    <div class="tw">
+      <table>
+        <colgroup><col style="width:7%"><col style="width:27%"><col style="width:11%"><col style="width:13%"><col></colgroup>
+        <thead>
+          <tr>
+            <th scope="col">연번</th>
+            <th scope="col">위험요인</th>
+            <th scope="col">영향도</th>
+            <th scope="col">발생 가능성</th>
+            <th scope="col">대응 방안</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">1</th>
+            <td class="l">동부권역 지장물 이설 협의 지연</td>
+            <td class="c">상 ●</td><td class="c">상 ●</td>
+            <td class="l">한전 · 통신사 합동 협의체 7월 구성, 이설 완료 구간 우선 착공</td>
+          </tr>
+          <tr>
+            <th scope="row">2</th>
+            <td class="l">교통정보 플랫폼 연계 규격 미확정</td>
+            <td class="c">중 ◐</td><td class="c">상 ●</td>
+            <td class="l">국토교통부 표준(안) 준용, 9월까지 연계 규격 자체 확정 후 사후 정합</td>
+          </tr>
+          <tr>
+            <th scope="row">3</th>
+            <td class="l">하반기 자재 단가 상승</td>
+            <td class="c">중 ◐</td><td class="c">중 ◐</td>
+            <td class="l">연간 단가계약 전환, 예비비 300백만원 확보 요청</td>
+          </tr>
+          <tr>
+            <th scope="row">4</th>
+            <td class="l">야간 시인성 만족도 정체</td>
+            <td class="c">중 ◐</td><td class="c">중 ◐</td>
+            <td class="l">조도 기준 상향(30lx → 60lx) 시범 적용 후 확대 검토</td>
+          </tr>
+          <tr>
+            <th scope="row">5</th>
+            <td class="l">영상정보 개인정보 보호 민원</td>
+            <td class="c">상 ●</td><td class="c">하 ○</td>
+            <td class="l">영상정보 처리기기 운영 지침 개정, 안내판 전 지점 부착</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">※ 자료: 스마트도시과 사업 위험관리 대장(2026. 7. 10. 갱신). 등급 표기 ● 상 · ◐ 중 · ○ 하</p>
+    <p class="note">※ 영향도는 사업 일정 · 예산에 미치는 정도를, 발생 가능성은 하반기 중 현실화될 확률을 각각 3단계로 평가한 것으로 색이 아닌 기호와 문자로 병기함.</p>
+
+    <h3>2. 개선 방안</h3>
+
+    <h4>가. 지장물 이설 절차 단축</h4>
+    <p class="pn">1) 협의 방식 전환</p>
+    <ul class="ko">
+      <li>□ 기관별 개별 협의 → 합동 협의체 일괄 협의로 전환</li>
+    </ul>
+    <ul class="ko l2">
+      <li>○ 참여 기관: 스마트도시과 · 한전 ○○지사 · 통신 3사 · ○○시설공단</li>
+      <li>○ 운영 주기: 월 2회 정례(7월 첫 회의 개최 예정)</li>
+    </ul>
+    <ul class="ko l3">
+      <li>- 시 대표는 스마트도시과장, 간사는 스마트교통팀장으로 지정</li>
+    </ul>
+    <p class="pn">2) 비용 분담 기준 확정</p>
+    <ul class="ko">
+      <li>□ 「지장물 이설 비용 부담 협약」 개정으로 8월 중 확정 추진</li>
+    </ul>
+    <ul class="ko l2">
+      <li>○ 추정 소요액 180백만원, 시 부담 비율 60% 이내 목표</li>
+    </ul>
+    <ul class="ko l3">
+      <li>- 타 지자체 4개 사례 조사 결과 시 부담 55 ~ 70% 수준</li>
+    </ul>
+    <ul class="ko l4">
+      <li>· 조사 대상: ○○시 · △△시 · □□시 · ◇◇군(2024 ~ 2025년 준공 사업)</li>
+    </ul>
+
+    <h4>나. 재개발 중복 구역 위치 조정</h4>
+    <ul class="ko">
+      <li>□ ○○2구역 3개소는 인접 통학로로 위치 변경</li>
+    </ul>
+    <ul class="ko l2">
+      <li>○ 도시정비과 협의 완료(2026. 7. 8.), 설계 변경 8월 착수</li>
+      <li>○ 변경 위치는 ○○초 · ○○중 통학로 3개 지점으로 확정</li>
+    </ul>
+
+    <h4>다. 만족도 취약 항목 집중 개선</h4>
+    <p class="pn">1) 교통정보 정확도(54.5%)</p>
+    <ul class="ko">
+      <li>□ 플랫폼 연계 전까지 기존 도시교통정보센터 데이터 임시 연동</li>
+    </ul>
+    <ul class="ko l2">
+      <li>○ 정보 갱신 주기 15분 → 5분 단축(9월 적용 목표)</li>
+    </ul>
+    <p class="pn">2) 야간 시인성(68.5%)</p>
+    <ul class="ko">
+      <li>□ 중앙권역 6개소 조도 상향(30lx → 60lx) 시범 적용</li>
+    </ul>
+    <ul class="ko l2">
+      <li>○ 9월 효과 측정 후 전 권역 확대 여부 결정</li>
+    </ul>
+    <ul class="ko l3">
+      <li>- 소요 예산은 유지관리비 내 조정으로 추가 편성 불요</li>
+    </ul>
+
+    <div class="box">
+      <p class="bt">【 결재 요청 사항 】</p>
+      <ul class="ko">
+        <li>□ 지장물 이설 합동 협의체 구성 및 시 대표 지정(스마트도시과장) 승인</li>
+        <li>□ 자재 단가 상승 대비 예비비 300백만원 확보 요청(예산담당관 협의) 승인</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ══════════ Ⅵ ══════════ -->
+  <section id="s6" aria-labelledby="s6h">
+    <h2 id="s6h">Ⅵ. 향후 추진 계획</h2>
+    <p class="lead">하반기 중 잔여 59개소 설치를 완료하고 교통정보 통합 플랫폼 연계를 마무리하여, 연말 기준 연간 목표 180개소 100% 달성을 추진함.</p>
+
+    <p class="cap">&lt;표 7&gt; 하반기 추진 일정</p>
+    <div class="tw">
+      <table>
+        <colgroup><col style="width:12%"><col><col style="width:22%"><col style="width:24%"></colgroup>
+        <thead>
+          <tr>
+            <th scope="col">구  분</th>
+            <th scope="col">추진 내용</th>
+            <th scope="col">기  간</th>
+            <th scope="col">담  당</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">설  계</th><td class="l">동부권역 지장물 이설 설계 변경</td><td class="c">2026. 7. ~ 8.</td><td class="c">스마트도시과</td></tr>
+          <tr><th scope="row">공  사</th><td class="l">잔여 59개소 설치 공사 시행</td><td class="c">2026. 8. ~ 11.</td><td class="c">스마트도시과 · 시설공단</td></tr>
+          <tr><th scope="row">연  계</th><td class="l">교통정보 통합 플랫폼 API 연동</td><td class="c">2026. 9. ~ 10.</td><td class="c">정보통신과</td></tr>
+          <tr><th scope="row">점  검</th><td class="l">준공 전 관계기관 합동 점검</td><td class="c">2026. 11.</td><td class="c">안전총괄과 · ○○경찰서</td></tr>
+          <tr><th scope="row">평  가</th><td class="l">하반기 만족도 조사 및 성과 평가</td><td class="c">2026. 12.</td><td class="c">스마트도시과</td></tr>
+          <tr><th scope="row">보  고</th><td class="l">2026년 사업 완료 보고(시장 결재)</td><td class="c">2026. 12.</td><td class="c">스마트도시과</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src">※ 자료: 2026년 하반기 사업 추진계획(2026. 7. 10. 내부 확정)</p>
+
+    <h3>1. 하반기 목표</h3>
+    <ul class="ko">
+      <li>□ 설치 실적: 121개소 → 180개소(달성률 100%)</li>
+      <li>□ 예산 집행: 4,650백만원 → 6,840백만원(집행률 100%)</li>
+      <li>□ 주민 만족도: 65.0% → 70.0% 이상</li>
+      <li>□ 교통사고: 설치 구간 연간 340건 이하 유지(전년 452건 대비 24.8% 감소)</li>
+    </ul>
+    <p class="note">※ 연간 사고 목표 340건은 상반기 169건에 하반기 관리 목표 월 28.5건(6개월 171건)을 합산한 값이며, 2025년 연간 실적은 452건임.</p>
+
+    <div class="attach">
+      <h3>붙임</h3>
+      <ul class="ko">
+        <li>□ 붙임 1. 권역별 · 유형별 설치 실적 상세 1부.</li>
+        <li>□ 붙임 2. 주민 만족도 조사 개요 1부.</li>
+      </ul>
+
+      <details>
+        <summary>붙임 1. 권역별 · 유형별 설치 실적 상세</summary>
+        <div class="det-b">
+          <p class="cap" style="margin-top:0">&lt;표 8&gt; 권역별 · 유형별 상반기 설치 실적 (단위: 개소)</p>
+          <div class="tw">
+            <table>
+              <colgroup><col style="width:20%"><col><col><col><col></colgroup>
+              <thead>
+                <tr>
+                  <th scope="col">권  역</th>
+                  <th scope="col">스마트 횡단보도</th>
+                  <th scope="col">지능형 CCTV</th>
+                  <th scope="col">보행자 알림</th>
+                  <th scope="col">소  계</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><th scope="row">중앙권역</th><td class="n">16</td><td class="n">12</td><td class="n">8</td><td class="n">36</td></tr>
+                <tr><th scope="row">북부권역</th><td class="n">12</td><td class="n">8</td><td class="n">6</td><td class="n">26</td></tr>
+                <tr><th scope="row">서부권역</th><td class="n">12</td><td class="n">9</td><td class="n">6</td><td class="n">27</td></tr>
+                <tr><th scope="row">남부권역</th><td class="n">9</td><td class="n">7</td><td class="n">4</td><td class="n">20</td></tr>
+                <tr><th scope="row">동부권역</th><td class="n">6</td><td class="n">4</td><td class="n">2</td><td class="n">12</td></tr>
+                <tr class="tot"><th scope="row">합  계</th><td class="n">55</td><td class="n">40</td><td class="n">26</td><td class="n">121</td></tr>
+                <tr class="tot"><th scope="row">연간 목표</th><td class="n">80</td><td class="n">60</td><td class="n">40</td><td class="n">180</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="src">※ 자료: 스마트도시과 시공 검수 대장(2026. 6. 30. 기준). 소계는 &lt;표 3&gt; 권역별 설치 실적과 일치함.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>붙임 2. 주민 만족도 조사 개요</summary>
+        <div class="det-b">
+          <p class="cap" style="margin-top:0">&lt;표 9&gt; 2026년 상반기 주민 만족도 조사 개요</p>
+          <div class="tw">
+            <table>
+              <colgroup><col style="width:24%"><col></colgroup>
+              <tbody>
+                <tr><th scope="row">조사 기간</th><td class="l">2026. 6. 8.(월) ~ 6. 19.(금), 12일간</td></tr>
+                <tr><th scope="row">조사 대상</th><td class="l">설치 완료 구간 반경 500m 이내 거주 만 19세 이상 시민</td></tr>
+                <tr><th scope="row">표 본 수</th><td class="l">1,240명(권역별 인구 비례 할당)</td></tr>
+                <tr><th scope="row">조사 방법</th><td class="l">대면 면접(744명, 60.0%) 및 온라인 조사(496명, 40.0%) 병행</td></tr>
+                <tr><th scope="row">표본 오차</th><td class="l">±2.78%p(95% 신뢰수준)</td></tr>
+                <tr><th scope="row">조사 문항</th><td class="l">4개 항목 4점 척도(매우 만족 · 만족 · 보통 · 불만족) 및 주관식 1문항</td></tr>
+                <tr><th scope="row">수행 기관</th><td class="l">○○시 자치행정과 여론조사팀(자체 수행)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="src">※ 자료: 2026년 상반기 주민 만족도 조사 결과보고서(2026. 6. 30.)</p>
+          <p class="note">※ 항목별 응답 비율은 소수점 둘째 자리에서 반올림하여 합계가 100.0%와 다르게 보일 수 있음.</p>
+        </div>
+      </details>
+    </div>
+
+    <p class="endmark">끝.</p>
+  </section>
+
+  <footer>
+    <p>○○시청 스마트도시과 · 스마트교통팀</p>
+    <p>문서번호 스마트도시과-2026-1187 · 작성일 2026. 7. 15. · 문서 버전 v1.0</p>
+    <p>자료 출처: e-호조 지방재정관리시스템, ○○경찰서 교통사고 통계, 시공 검수 대장, 주민 만족도 조사 결과보고서</p>
+    <p>본 문서는 내부 결재용으로 작성되었으며, 확정되지 않은 계획 수치가 포함되어 있어 외부 인용 시 소관 부서 확인이 필요함.</p>
+  </footer>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement, KEY='smart-traffic-2026h1-theme', saved=null;
+  try{saved=localStorage.getItem(KEY);}catch(e){}
+  if(saved){root.setAttribute('data-theme',saved);}
+  var btn=document.querySelector('.theme-toggle'), lbl=btn.querySelector('.tt-label');
+  function isDark(){
+    return root.getAttribute('data-theme')==='dark'
+      || (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  function sync(){
+    var d=isDark();
+    btn.setAttribute('aria-pressed', d?'true':'false');
+    lbl.textContent = d ? '라이트 모드' : '다크 모드';
+  }
+  sync();
+  btn.addEventListener('click',function(){
+    var next = isDark() ? 'light' : 'dark';
+    root.setAttribute('data-theme',next);
+    try{localStorage.setItem(KEY,next);}catch(e){}
+    sync();
+  });
+  var links={};
+  Array.prototype.forEach.call(document.querySelectorAll('.toc a'),function(a){
+    links[a.getAttribute('href').slice(1)]=a;
+  });
+  var secs=Array.prototype.slice.call(document.querySelectorAll('main section[id]'));
+  if('IntersectionObserver' in window && secs.length){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(!en.isIntersecting) return;
+        for(var k in links){ links[k].classList.remove('on'); }
+        if(links[en.target.id]) links[en.target.id].classList.add('on');
+      });
+    },{rootMargin:'-10% 0px -74% 0px', threshold:0});
+    secs.forEach(function(s){ io.observe(s); });
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "id": "gov-report",
+  "name": "공공기관 보고서",
+  "source": "kist-aix/hwpx MIT (c) 2026 Minsoo Kim",
+  "placeholders": [
+    {"token": "YY", "kind": "year2"},
+    {"token": "보고자료 제목", "kind": "title"},
+    {"token": ". MM. DD., 부서명)", "kind": "date-dept"}
+  ],
+  "bodyRegion": {"after": "titleShape"},
+  "tables": ["basic", "status", "budget", "schedule", "checklist"]
+}

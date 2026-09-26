@@ -1,0 +1,49 @@
+{
+ "schema": 1,
+ "skill": "itda-data/data-ask",
+ "issue": 1630,
+ "generated_by": "skills/scripts/deps_manifest.py gen-specs — 손으로 고치지 마라(validate ⑧ 이 RED)",
+ "declares_no_deps": false,
+ "no_deps_rationale": "",
+ "pep723": null,
+ "rows": [
+  {
+   "dist": "duckdb",
+   "specifier": ">=1.3",
+   "marker": "",
+   "necessity": "feature_required",
+   "scope": "runtime",
+   "provisioning": "direct",
+   "owner": "self",
+   "import_names": [
+    "duckdb"
+   ]
+  },
+  {
+   "dist": "statsmodels",
+   "specifier": "",
+   "marker": "",
+   "necessity": "optional_enhancement",
+   "scope": "runtime",
+   "provisioning": "direct",
+   "owner": "self",
+   "import_names": [
+    "statsmodels"
+   ]
+  },
+  {
+   "dist": "numpy",
+   "specifier": "",
+   "marker": "",
+   "necessity": "optional_enhancement",
+   "scope": "runtime",
+   "provisioning": "transitive",
+   "owner": "self",
+   "import_names": [
+    "numpy"
+   ],
+   "keep_in_install_target": false
+  }
+ ],
+ "non_pip": []
+}

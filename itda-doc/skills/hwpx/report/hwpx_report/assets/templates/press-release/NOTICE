@@ -1,0 +1,8 @@
+press-release (보도자료) template
+
+Derived from kist-aix/hwpx (MIT) Copyright (c) 2026 Minsoo Kim.
+
+header.xml, section0-derived skeleton XML are based on kist-aix/hwpx and
+restyled (title band color, title/heading text colors) for the press-release
+(보도자료) report template. Same fill contract as kist-report (placeholder
+tokens + style-map names), distinct visual assets.

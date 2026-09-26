@@ -1,0 +1,7 @@
+# 재생성 가능한 산출물·스크래치 (gen.py / verify.py 가 만듦)
+__pycache__/
+*.pyc
+_verify/
+examples/*/_verify/
+examples/*/assets/
+examples/*/deck.pptx

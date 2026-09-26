@@ -1,0 +1,179 @@
+{
+ "schema_version": "1.0",
+ "domain": "nursing-hospital",
+ "document": "patient-class-summary",
+ "title": "환자분류군 집계",
+ "format": "xlsx",
+ "fields": [
+  {
+   "name": "기준월",
+   "type": "string",
+   "grade": "비개인정보",
+   "generator": {
+    "kind": "choice",
+    "values": [
+     "2025-07",
+     "2025-08",
+     "2025-09",
+     "2025-10",
+     "2025-11",
+     "2025-12"
+    ]
+   },
+   "desc": ""
+  },
+  {
+   "name": "병동",
+   "type": "string",
+   "grade": "비개인정보",
+   "generator": {
+    "kind": "choice",
+    "values": [
+     "3병동",
+     "4병동",
+     "5병동"
+    ]
+   },
+   "desc": ""
+  },
+  {
+   "name": "의료최고도",
+   "type": "int",
+   "grade": "비개인정보",
+   "generator": {
+    "kind": "int",
+    "min": 0,
+    "max": 8
+   },
+   "desc": ""
+  },
+  {
+   "name": "의료고도",
+   "type": "int",
+   "grade": "비개인정보",
+   "generator": {
+    "kind": "int",
+    "min": 2,
+    "max": 15
+   },
+   "desc": ""
+  },
+  {
+   "name": "의료중도",
+   "type": "int",
+   "grade": "비개인정보",
+   "generator": {
+    "kind": "int",
+    "min": 5,
+    "max": 20
+   },
+   "desc": ""
+  },
+  {
+   "name": "의료경도",
+   "type": "int",
+   "grade": "비개인정보",
+   "generator": {
+    "kind": "int",
+    "min": 2,
+    "max": 12
+   },
+   "desc": ""
+  },
+  {
+   "name": "선택입원군",
+   "type": "int",
+   "grade": "비개인정보",
+   "generator": {
+    "kind": "int",
+    "min": 0,
+    "max": 6
+   },
+   "desc": ""
+  },
+  {
+   "name": "합계",
+   "type": "int",
+   "grade": "비개인정보",
+   "generator": {
+    "kind": "derive",
+    "fn": "sum",
+    "args": [
+     "의료최고도",
+     "의료고도",
+     "의료중도",
+     "의료경도",
+     "선택입원군"
+    ]
+   },
+   "desc": ""
+  },
+  {
+   "name": "집계자",
+   "type": "string",
+   "grade": "식별자",
+   "generator": {
+    "kind": "person_name",
+    "dup_ratio": 0.0
+   },
+   "desc": ""
+  }
+ ],
+ "rules": [
+  {
+   "id": "R1",
+   "kind": "derived",
+   "field": "합계",
+   "fn": "sum",
+   "args": [
+    "의료최고도",
+    "의료고도",
+    "의료중도",
+    "의료경도",
+    "선택입원군"
+   ],
+   "desc": "합계 = 분류군 합"
+  },
+  {
+   "id": "R2",
+   "kind": "not_empty",
+   "field": "기준월",
+   "desc": "기준월 필수"
+  }
+ ],
+ "reid_keys": [],
+ "legal": [
+  {
+   "law": "의료법",
+   "article": "제19조 제1항",
+   "note": "의료기관 종사자의 정보 누설 금지(행정직 포함)",
+   "status": "확인"
+  },
+  {
+   "law": "의료법",
+   "article": "제21조 제2항",
+   "note": "환자 아닌 사람에게 기록 열람 금지",
+   "status": "확인"
+  },
+  {
+   "law": "의료법",
+   "article": "제23조 제3항",
+   "note": "전자의무기록 개인정보 탐지·누출·변조 금지",
+   "status": "확인"
+  },
+  {
+   "law": "개인정보 보호법",
+   "article": "제23조 제1항",
+   "note": "건강 정보는 민감정보 — 처리 원칙 금지",
+   "status": "확인"
+  },
+  {
+   "law": "개인정보 보호법",
+   "article": "제28조의8 제1항",
+   "note": "국외 이전 원칙 금지(해외 서버 조회 포함)",
+   "status": "확인"
+  }
+ ],
+ "seed_examples": [],
+ "preset_notice": "이 프리셋의 항목·규칙은 해당 업무의 문서 구조를 예측해 만든 것일 뿐 정확하지 않습니다. 실제 업무의 데이터 구조(항목 이름·규칙·서식)를 알려주시면 그에 맞춰 생성할 수 있습니다."
+}

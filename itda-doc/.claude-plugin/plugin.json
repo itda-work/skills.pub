@@ -1,0 +1,25 @@
+{
+  "name": "itda-doc",
+  "description": "문서를 만들고 고친다 — Word·PPT·Excel·한글·HTML 렌더, 초안 작성과 AI 흔적 제거, 브랜드 디자인 토큰, 이미지 가공, 용량 축소, PDF 정제.",
+  "version": "11.0.0",
+  "author": {
+    "name": "스킬.잇다",
+    "url": "https://github.com/itda-work"
+  },
+  "homepage": "https://github.com/itda-work/skills.pub",
+  "repository": "https://github.com/itda-work/skills.pub",
+  "license": "MIT",
+  "keywords": [
+    "문서",
+    "보고서",
+    "document",
+    "docx",
+    "pptx",
+    "xlsx",
+    "hwpx",
+    "html",
+    "image",
+    "design",
+    "콘텐츠"
+  ]
+}

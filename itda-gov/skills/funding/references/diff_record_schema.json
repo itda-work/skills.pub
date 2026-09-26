@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skills.pub/itda-gov/funding/references/diff_record_schema.json",
+  "title": "funding 회차 diff 레코드 (v1)",
+  "description": "survey_diff.py 출력(jsonl 한 줄)의 계약. kind 와 diff_status 는 항상 같은 값이어야 한다(JSON Schema 로 표현 불가 — 소비자 테스트에서 별도 검증). ir-search (https://github.com/djfksjd/ir-search, MIT) 의 공통 diff 레코드 스키마에서 파생.",
+  "type": "object",
+  "required": ["kind", "diff_status", "changed_fields", "record"],
+  "properties": {
+    "kind": {
+      "enum": ["NEW", "CHANGED", "NEEDS_REHASH", "GONE", "UNCHANGED"]
+    },
+    "diff_status": {
+      "description": "kind 의 별칭(신규 소비자용) — 항상 kind 와 동일해야 한다.",
+      "enum": ["NEW", "CHANGED", "NEEDS_REHASH", "GONE", "UNCHANGED"]
+    },
+    "changed_fields": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "record": {
+      "type": "object",
+      "required": ["source", "source_id", "title"],
+      "properties": {
+        "source": { "type": "string", "minLength": 1 },
+        "source_id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "url": { "type": ["string", "null"] },
+        "canonical_url": { "type": ["string", "null"] },
+        "agency": { "type": ["string", "null"] },
+        "apply_start": { "type": ["string", "null"] },
+        "apply_end": { "type": ["string", "null"] },
+        "status": { "type": ["string", "null"] },
+        "primary_type": { "type": ["string", "null"] },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "content_hash": { "type": ["string", "null"] },
+        "hash_version": { "type": ["integer", "null"] },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["url"],
+            "properties": {
+              "url": { "type": "string", "minLength": 1 },
+              "filename": { "type": ["string", "null"] },
+              "download_status": {
+                "enum": ["ok", "failed", "blocked_redirect", "skipped_robots", "skipped_unverified", null]
+              },
+              "download_reason": { "type": ["string", "null"] },
+              "sha256": { "type": ["string", "null"] },
+              "local_path": { "type": ["string", "null"] },
+              "text_path": { "type": ["string", "null"] },
+              "extract_status": { "type": ["string", "null"] },
+              "extract_reason": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "attachments_complete": { "type": ["boolean", "null"] },
+        "crawled_at": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

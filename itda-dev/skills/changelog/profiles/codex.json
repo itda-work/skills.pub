@@ -1,0 +1,29 @@
+{
+  "product": "codex",
+  "display_name": "Codex CLI",
+  "repo": "openai/codex",
+  "version_cmd": ["codex", "--version"],
+  "_window_comment": "정식(rust-v*) 릴리즈는 주 1회쯤이다. 알파는 prerelease 라 수집에서 걸러진다 (2026-08-10 실측).",
+  "default_window_days": 14,
+  "_parser_comment": "본문이 큐레이션 섹션(New Features/Bug Fixes/…, 끝에 (#PR, #PR) 참조) + 말미 '## Changelog' PR 전량 덤프(릴리즈당 200건+)다. 섹션명을 kind 로 해석하고, 덤프는 detail 항목으로 분리 보존한다 (2026-08-10 실측).",
+  "parser": {
+    "style": "sections",
+    "section_kinds": {
+      "new features": "feat",
+      "bug fixes": "fix",
+      "documentation": "docs",
+      "chores": "chore",
+      "breaking changes": "breaking"
+    },
+    "dump_sections": ["changelog"]
+  },
+  "excluded_scopes": [],
+  "scope_labels": {
+    "feat": "새 기능",
+    "fix": "버그 수정",
+    "docs": "문서",
+    "chore": "기타",
+    "breaking": "호환성 파괴",
+    "revert": "되돌림"
+  }
+}

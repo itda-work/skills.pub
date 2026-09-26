@@ -1,0 +1,2 @@
+# synthetic-data 의존성 — 표·규칙·검증은 stdlib. xlsx 산출(새 통합문서·양식 채우기)에만 openpyxl.
+openpyxl>=3.1.0

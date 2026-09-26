@@ -1,0 +1,32 @@
+{
+  "product": "herdr",
+  "display_name": "herdr",
+  "repo": "herdrdev/herdr",
+  "version_cmd": ["herdr", "--version"],
+  "_window_comment": "안정판 31개의 간격 실측(2026-09-01): 최근 15·13일, 그 앞은 4~13일. 14일로 잡으면 자주 0건이 되어 window_widened 가 뜬다. 21일이면 안정판 2개쯤 잡힌다. preview-* 는 prerelease 라 수집에서 걸러진다.",
+  "default_window_days": 21,
+  "_parser_comment": "본문이 keep-a-changelog 섹션이다. 실측(2026-09-01, 안정판 8개)에서 나온 헤딩은 Added / Fixed / Changed / Breaking Changes 뿐이고, 항목 끝에 (#PR, thanks @user) 가 붙는다. 덤프 절은 없다.",
+  "parser": {
+    "style": "sections",
+    "section_kinds": {
+      "added": "feat",
+      "fixed": "fix",
+      "changed": "change",
+      "removed": "removed",
+      "deprecated": "deprecated",
+      "security": "security",
+      "breaking changes": "breaking"
+    }
+  },
+  "excluded_scopes": [],
+  "scope_labels": {
+    "feat": "새 기능",
+    "fix": "버그 수정",
+    "change": "동작 변경",
+    "removed": "제거",
+    "deprecated": "폐기 예정",
+    "security": "보안",
+    "breaking": "호환성 파괴",
+    "revert": "되돌림"
+  }
+}

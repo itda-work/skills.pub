@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "cs-intent 출력 계약 (v1.0)",
+  "description": "doc 1건당 출력 1개. CS 문의 인텐트 분류. aspect-sentiment(측면-감정)와 직교.",
+  "type": "object",
+  "required": ["doc_id", "language", "primary_intent", "evidence", "flags"],
+  "additionalProperties": false,
+  "properties": {
+    "doc_id": { "type": "string" },
+    "language": { "type": "string", "default": "ko" },
+    "taxonomy_version": { "type": "string", "default": "cs-intent-1.0", "description": "인텐트 체계 버전. 시계열 연속성." },
+    "domain": { "enum": ["cs"] },
+    "primary_intent": { "type": "string", "description": "intent-taxonomy.ko.yaml 의 확정 인텐트군 ∪ {기타}. 가장 핵심 문의 의도." },
+    "secondary_intents": {
+      "type": "array",
+      "description": "부수 의도(있을 때만). 비어있어도 됨.",
+      "items": { "type": "string" }
+    },
+    "evidence": { "type": "string", "description": "원문 인용(추적성)." },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "flags": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "multi_intent": { "type": "boolean", "description": "의도가 복수일 때." },
+        "low_confidence": { "type": "boolean" }
+      }
+    }
+  }
+}

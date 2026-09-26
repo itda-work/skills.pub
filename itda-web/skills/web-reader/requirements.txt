@@ -1,0 +1,10 @@
+# itda-web-reader requirements
+curl_cffi>=0.11
+PyYAML>=6.0
+beautifulsoup4>=4.12
+markdownify>=0.13
+
+# YouTube transcript extraction was removed in v4.0.0 (SPEC-WEBREADER-YOUTUBE-REMOVE-001).
+# Use yt-dlp directly: yt-dlp --write-auto-sub --sub-lang ko --skip-download <URL>
+#
+# JavaScript-rendered pages: use a browser route (itda-web:aside-browser-mcp).

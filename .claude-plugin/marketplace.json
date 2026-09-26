@@ -1,0 +1,59 @@
+{
+  "name": "itda-skills-pub",
+  "owner": {
+    "name": "스킬.잇다",
+    "email": "allieuslee@gmail.com"
+  },
+  "metadata": {
+    "description": "대한민국 직장인·공공업무·투자자를 위한 Claude Code 스킬 마켓플레이스",
+    "version": "11.0.0",
+    "language": "ko"
+  },
+  "plugins": [
+    {
+      "name": "itda-doc",
+      "source": "./itda-doc",
+      "description": "문서를 만들고 고친다 — Word·PPT·Excel·한글·HTML 렌더, 초안 작성과 AI 흔적 제거, 브랜드 디자인 토큰, 이미지 가공, 용량 축소, PDF 정제."
+    },
+    {
+      "name": "itda-data",
+      "source": "./itda-data",
+      "description": "표·CSV·텍스트 데이터를 정리·계산·검산하고 비식별한다 — 눈대중 금지·계산은 코드가. 엑셀 수식 감사·재계산, CS 상담 텍스트 분석(감정·인텐트·일치도), 외부 AI 반입 전 마스킹 게이트."
+    },
+    {
+      "name": "itda-gov",
+      "source": "./itda-gov",
+      "description": "공공·정부 공식 데이터를 수집한다 — DART 공시·한국은행 ECOS·KOSIS 통계·나라장터·국세법령·지원사업 공고, 부동산 실거래·가격지수·공급·전세가율·법원경매."
+    },
+    {
+      "name": "itda-work",
+      "source": "./itda-work",
+      "description": "매일 쓰는 업무 도구와 업무 구조화 — 메일·일정·아침 브리핑·환율·날씨, 그리고 내 업무를 4분면으로 재설계해 계획·제안서·파일럿·미니스킬로 굳히는 코칭 여정."
+    },
+    {
+      "name": "itda-research",
+      "source": "./itda-research",
+      "description": "근거를 검증하고 조사하고 업무DB로 쌓는다 — 1차 출처 강제 인용, 경쟁 가설 반증, 시장조사, 회의 기록 신뢰성 검수, 사내 비정형 문서 무더기의 업무DB 구축·검수·증분 적재."
+    },
+    {
+      "name": "itda-dev",
+      "source": "./itda-dev",
+      "description": "개발 환경을 돕는다 — Cloudflare Tunnel 노출, 에이전트·스킬 하네스 설계, 개발도구 릴리즈 요약, Orca 활용 코칭, Windows 랩(Parallels 클론), Claude·Codex 사용량 조회."
+    },
+    {
+      "name": "itda-web",
+      "source": "./itda-web",
+      "description": "웹에서 찾고 가져온다 — 다중 엔진 검색, EUC-KR·WAF 정적 fetch, 정보원 정찰, Aside 브라우저 MCP, 네이버 블로그 읽기. 가장 싼 경로부터."
+    },
+    {
+      "name": "itda-travel",
+      "source": "./itda-travel",
+      "description": "여행을 계획한다 — 고속열차 검색·예약(2026-09-01 SRT의 KTX 통합 반영), 항공권 최저가 비교, 숙소 요금 비교, 카카오맵 근처 장소, 여행지 유행 맛집 탐지."
+    },
+    {
+      "name": "itda-org-mmaa",
+      "source": "./itda-org-mmaa",
+      "description": "군인공제회 전용 스킬팩 — 복지포털 스냅샷 Q&A(mmaa-welfare): 복지부조·회원콘도·유익한 정보를 출처 URL·수집일과 함께 답한다. 조직 전용 팩(itda-org-*) 첫 사례."
+    }
+  ]
+}

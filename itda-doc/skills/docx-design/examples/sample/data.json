@@ -1,0 +1,38 @@
+{
+  "_note": "NovaTech Inc. FY2025 — 디자인 테스트용 가상 데이터(실재 기업 아님). docx-design 생성·재측정 입력 SSoT.",
+  "company": "NovaTech Inc.",
+  "fiscal_year": "FY2025",
+  "as_of": "2026.03",
+  "headline_kpis": [
+    {"value": "$4.82B", "label": "연간 매출", "sub": "전년比 +23%"},
+    {"value": "28.4%", "label": "영업이익률", "sub": "+3.1%p"},
+    {"value": "$0.98B", "label": "순이익", "sub": "+19%"},
+    {"value": "12,400", "label": "임직원", "sub": "+1,800명"}
+  ],
+  "quarterly": {
+    "labels": ["Q1", "Q2", "Q3", "Q4"],
+    "revenue_bn": [1.05, 1.16, 1.28, 1.33],
+    "op_profit_bn": [0.27, 0.31, 0.37, 0.42],
+    "op_margin_pct": [25.7, 26.7, 28.9, 31.6]
+  },
+  "segments": [
+    {"name": "Cloud Platform", "revenue_bn": 2.41, "yoy_pct": 31.0, "margin_pct": 34.2, "note": "AI 추론 워크로드가 성장 견인"},
+    {"name": "Devices", "revenue_bn": 1.38, "yoy_pct": 9.0, "margin_pct": 18.6, "note": "프리미엄 라인업 믹스 개선"},
+    {"name": "Services", "revenue_bn": 1.03, "yoy_pct": 18.0, "margin_pct": 41.5, "note": "구독 ARR 비중 확대"}
+  ],
+  "regions": [
+    {"name": "Americas", "share_pct": 52},
+    {"name": "EMEA", "share_pct": 27},
+    {"name": "APAC", "share_pct": 21}
+  ],
+  "rnd_bn": 0.74,
+  "rnd_pct_of_rev": 15.4,
+  "outlook_fy2026": {"revenue_low_bn": 5.7, "revenue_high_bn": 6.0, "margin_target_pct": 29.0},
+  "risks": [
+    {"title": "환율 변동", "desc": "해외 매출 비중 48% — 달러 강세 시 환산 손실 노출."},
+    {"title": "공급망 집중", "desc": "핵심 부품 단일 공급사 의존도가 여전히 높음."},
+    {"title": "경쟁 심화", "desc": "클라우드 AI 인프라 가격 경쟁이 마진을 압박."},
+    {"title": "규제 리스크", "desc": "데이터·AI 규제 강화로 컴플라이언스 비용 증가 가능."}
+  ],
+  "summary": "FY2025 는 Cloud Platform 의 AI 수요가 전사 성장을 견인하며 매출 $4.82B, 영업이익률 28.4% 를 기록했다. 구독 기반 Services 의 고마진 ARR 확대와 Devices 믹스 개선이 수익성을 뒷받침했다."
+}

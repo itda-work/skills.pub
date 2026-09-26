@@ -1,0 +1,2 @@
+# no external deps — 표준 라이브러리만 사용
+# HTTP 페치는 itda-web/skills/web-reader/scripts/fetch_html.py subprocess 경유

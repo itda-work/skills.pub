@@ -1,0 +1,3 @@
+# design-core — 매체 중립 디자인 토큰 코어 (SPEC-DESIGN-CORE-001)
+# 매체 중립 원칙: python-pptx 등 매체별 의존성은 각 어댑터(pptx-design 등)가 보유.
+PyYAML>=6.0

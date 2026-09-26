@@ -1,0 +1,116 @@
+{
+  "_preset": {
+    "theme": "가계 아카이브 — 한 가정의 예산·지출·고지서·보험 기록",
+    "how": "이 파일은 동작하는 씨앗 원장이다. 에이전트가 documents/traps/baits 를 늘려 완성한다.",
+    "entities_hint": "가상 가구(가족 구성원 가명) + 가상 은행/카드/보험/관리사무소. 실존 상호·인명 금지.",
+    "recommended_traps": [
+      "contradiction — 월 예산 vs 실지출 초과",
+      "time-warp — 가계부 메모 날짜가 참조 사건보다 이름",
+      "stale-rule — 관리비 요율표 구/신 공존",
+      "lock-file — ~$ 잠금 임시파일",
+      "untitled — 제목없음.txt 인데 중요 지출 메모"
+    ],
+    "recommended_baits": [
+      "duplicate — 같은 지출의 카드명세/가계부 중복 기재는 모순 아님",
+      "scope — 월 관리비 vs 분기 정산 범위 차이"
+    ],
+    "expand": "documents 를 12~20개(가계부·고지서·명세·증권·메모)로, traps 4~6종으로 늘리고 consistency 로 예산 합계·지출 합계를 묶어라."
+  },
+  "schema_version": "1",
+  "profile": {
+    "company": "가상 가계 — 한빛 가정 아카이브",
+    "description": "한 가정의 재무 아카이브(예산·지출·고지서)",
+    "headcount": 4
+  },
+  "entities": {
+    "suppliers": [
+      {"name": "가상관리사무소"},
+      {"name": "가상카드(주)"},
+      {"name": "가상생명"}
+    ]
+  },
+  "canon": {"monthly_budget": 4500000},
+  "documents": [
+    {
+      "path": "가계부/2026-05_가계부.xlsx",
+      "type": "xlsx",
+      "internal_date": "2026-06-01 09:00",
+      "sheets": {
+        "지출": [
+          ["항목", "예산(원)", "실지출(원)"],
+          ["생활비", 1500000, 1680000],
+          ["교육비", 1200000, 1200000],
+          ["주거/관리", 900000, 940000],
+          ["여가", 400000, 520000],
+          ["합계", 4000000, 4340000]
+        ]
+      }
+    },
+    {
+      "path": "고지서/2026-05_관리비.pdf",
+      "type": "pdf",
+      "internal_date": "2026-05-25 10:00",
+      "title": "관리비 고지서 (2026년 5월)",
+      "lines": ["가상관리사무소", "당월 관리비 합계 940,000원", "납기 2026-06-05"]
+    },
+    {
+      "path": "메모/제목없음.txt",
+      "type": "txt",
+      "internal_date": "2026-05-18 21:00",
+      "content": "여가 지출 급증 원인: 5월 가족 여행 경비 선결제. 다음 달 예산 재배분 필요."
+    },
+    {
+      "path": "임시/~$가계부.xlsx",
+      "type": "lock",
+      "internal_date": "2026-06-01 08:58",
+      "note": "가계주"
+    }
+  ],
+  "consistency": [
+    {
+      "id": "C1",
+      "desc": "5월 실지출 합계",
+      "op": "sum",
+      "operands": [1680000, 1200000, 940000, 520000],
+      "expected": 4340000,
+      "expected_in": "가계부/2026-05_가계부.xlsx"
+    }
+  ],
+  "traps": [
+    {
+      "id": "T1",
+      "type": "contradiction",
+      "title": "예산 초과 지출",
+      "targets": ["가계부/2026-05_가계부.xlsx"],
+      "canon": "예산 합계 4,000,000 vs 실지출 4,340,000",
+      "detection": "5월 실지출이 예산을 340,000원 초과 — 여가·생활비 초과가 원인",
+      "markers": [{"path": "가계부/2026-05_가계부.xlsx", "value": 4340000}]
+    },
+    {
+      "id": "T6",
+      "type": "lock-file",
+      "title": "가계부 잠금 임시파일",
+      "targets": ["임시/~$가계부.xlsx"],
+      "detection": "~$ 임시파일 — 문서 아님, 문제파일.md 기록",
+      "markers": [{"path": "임시/~$가계부.xlsx", "name_prefix": "~$"}]
+    },
+    {
+      "id": "T8",
+      "type": "untitled",
+      "title": "제목없음 메모가 중요 지출 사유",
+      "targets": ["메모/제목없음.txt"],
+      "detection": "파일명은 무의미하나 내용(여가 초과 사유)이 중요 — 내용 기준 분류 필요",
+      "markers": [{"path": "메모/제목없음.txt", "text": "가족 여행"}]
+    }
+  ],
+  "baits": [
+    {
+      "id": "B1",
+      "type": "scope",
+      "title": "월 관리비 vs 고지서 합계",
+      "targets": ["가계부/2026-05_가계부.xlsx", "고지서/2026-05_관리비.pdf"],
+      "detection": "가계부 주거/관리 940,000 = 관리비 고지서 940,000 — 동일 근거이므로 모순 아님(정합 확인)",
+      "markers": [{"path": "고지서/2026-05_관리비.pdf", "value": 940000}]
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>design-core web 데모 — 토큰 기반 페이지</title>
+<!--
+  design-core 토큰이 web 으로 흐르는 경로(pptx 의 deckkit 같은 무거운 어댑터 불필요):
+  브랜드를 바꾸려면 아래 link 한 줄만 kari.tokens.css 로 교체하면 페이지 전체가 전환됩니다.
+  ⚠️ 수치·로고는 디자인 PoC용 예시입니다.
+-->
+<link rel="stylesheet" href="samsung-sds.tokens.css" id="tok">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: 1.6; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  header { display: flex; justify-content: space-between; align-items: center;
+           padding: 20px 0; border-bottom: 1px solid var(--border); }
+  .logo { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--primary); }
+  nav a { color: var(--muted); text-decoration: none; margin-left: 24px; font-size: 14px; }
+  .hero { padding: 80px 0 64px; }
+  .kicker { font-family: var(--font-display); font-size: 12px; letter-spacing: 0.14em;
+            color: var(--accent); text-transform: uppercase; }
+  .hero h1 { font-family: var(--font-display); font-size: 44px; font-weight: 700;
+             letter-spacing: -0.02em; max-width: 16ch; margin-top: 12px; }
+  .hero p { color: var(--muted); font-size: 18px; margin-top: 16px; max-width: 54ch; }
+  .btn { display: inline-block; margin-top: 28px; background: var(--primary); color: #fff;
+         padding: 12px 24px; border-radius: var(--radius); font-weight: 600; text-decoration: none; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding-bottom: 72px; }
+  .card { background: var(--surface); border: 1px solid var(--border);
+          border-radius: var(--radius); padding: 28px; }
+  .card .num { font-family: var(--font-display); font-size: 34px; font-weight: 700; color: var(--primary); }
+  .card .lab { font-size: 14px; margin-top: 8px; }
+  .card .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .delta { color: var(--success); }
+  footer { border-top: 1px solid var(--border); padding: 24px 0; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+  <div style="position:fixed; top:14px; right:14px; display:flex; gap:8px; z-index:99; font-family:sans-serif; font-size:13px">
+    <button onclick="setBrand('samsung-sds')" style="padding:6px 12px; border:1px solid var(--border); background:var(--surface); color:var(--fg); border-radius:6px; cursor:pointer">samsung-sds</button>
+    <button onclick="setBrand('kari')" style="padding:6px 12px; border:1px solid var(--border); background:var(--surface); color:var(--fg); border-radius:6px; cursor:pointer">kari</button>
+  </div>
+  <div class="wrap">
+    <header>
+      <div class="logo">ACME Cloud</div>
+      <nav><a href="#">제품</a><a href="#">고객사례</a><a href="#">문의</a></nav>
+    </header>
+    <section class="hero">
+      <div class="kicker">Corporate IT · Design PoC</div>
+      <h1>데이터와 AI로 일하는 방식을 바꾼다</h1>
+      <p>클라우드·생성형 AI·물류 플랫폼을 하나로. 같은 페이지가 design-core 토큰(<code>link</code> 한 줄) 교체만으로 다른 브랜드로 즉시 전환됩니다.</p>
+      <a class="btn" href="#">도입 상담</a>
+    </section>
+    <section class="kpis">
+      <div class="card"><div class="num">₩13.8조</div><div class="lab">연간 매출(예시)</div><div class="sub"><span class="delta">+5%</span> YoY</div></div>
+      <div class="card"><div class="num">32%</div><div class="lab">클라우드 비중</div><div class="sub"><span class="delta">+6%p</span></div></div>
+      <div class="card"><div class="num">18%</div><div class="lab">R&D 투자율</div><div class="sub">견조</div></div>
+    </section>
+    <footer>※ 수치·로고는 디자인 PoC용 예시입니다 · design-core 토큰(samsung-sds) 적용 · 브랜드 전환 = <code>link</code> 한 줄 교체(kari.tokens.css)</footer>
+  </div>
+  <script>
+    // design-core 토큰 교체 = link 한 줄. pptx 의 무거운 렌더 어댑터와 대조되는 web 의 가벼움.
+    function setBrand(name) { document.getElementById('tok').href = name + '.tokens.css'; }
+  </script>
+</body>
+</html>

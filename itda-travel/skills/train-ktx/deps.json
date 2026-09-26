@@ -1,0 +1,38 @@
+{
+ "schema": 1,
+ "skill": "itda-travel/train-ktx",
+ "issue": 1630,
+ "generated_by": "skills/scripts/deps_manifest.py gen-specs — 손으로 고치지 마라(validate ⑧ 이 RED)",
+ "declares_no_deps": false,
+ "no_deps_rationale": "",
+ "pep723": null,
+ "rows": [
+  {
+   "dist": "korail2-ncard",
+   "specifier": ">=0.1.0",
+   "marker": "",
+   "necessity": "feature_required",
+   "scope": "runtime",
+   "provisioning": "direct",
+   "owner": "self",
+   "import_names": [
+    "korail2"
+   ]
+  },
+  {
+   "dist": "pycryptodome",
+   "specifier": ">=3.20.0",
+   "marker": "",
+   "necessity": "feature_required",
+   "scope": "runtime",
+   "provisioning": "transitive",
+   "owner": "self",
+   "import_names": [
+    "Crypto"
+   ],
+   "keep_in_install_target": true,
+   "feature": "korail2-ncard 어댑터 로드(load_korail_module — 예약·조회 전부)"
+  }
+ ],
+ "non_pip": []
+}
