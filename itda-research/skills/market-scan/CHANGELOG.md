@@ -2,6 +2,12 @@
 
 본 스킬의 변경 이력. [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/) 형식을 따른다.
 
+## [0.2.4] — 2026-09-27
+
+### Changed
+
+- 주제 연관 전문 스킬 라우팅(본문 원칙·데이터 소스 표·GUIDE)에서 공개 배포에 없는 주식 스킬 추천을 빼고, 공개 스킬로 바꿨다 — 상장사·업종 재무는 `itda-gov:dart`, 금리·환율 등 거시 지표는 `itda-gov:ecos`. 설치할 수 없는 스킬을 데이터 소스 보기에 올리지 않는다.
+
 ## [0.2.3] — 2026-09-25 (itda-work/itda-hyve#6)
 
 ### Changed

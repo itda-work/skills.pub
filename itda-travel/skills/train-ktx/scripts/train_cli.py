@@ -2,8 +2,7 @@
 """train-ktx/train-srt CLI 공통 코어 — 검증기·파서 조각·출력·예외 엔벨로프.
 
 정본: skills/itda-travel/shared/train_cli.py (#736). 각 train-* 스킬 scripts/ 에
-byte-identical 로 벤더링된다(소스트리 standalone·테스트 경로 — itda-stocks
-kis_client 동형). publish 주입(SPEC-SHARED-INJECT-001)과 test_shared_copy_sync
+byte-identical 로 벤더링된다(소스트리 standalone·테스트 경로). publish 주입(SPEC-SHARED-INJECT-001)과 test_shared_copy_sync
 플러그인-로컬 가드가 동기화를 강제한다. 수정은 정본에서 하고 사본에 복제한다.
 
 도메인 발산(어댑터 connect·좌석 옵션 코드·역명 데이터·format 속성 매핑·결제

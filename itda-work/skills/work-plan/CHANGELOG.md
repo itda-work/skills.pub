@@ -1,5 +1,11 @@
 # Changelog — work-plan
 
+## [0.13.4] — 2026-09-27
+
+### Changed
+
+- 발급 안내 표(`references/ground-check-rules.md`)와 `ground_check.py` 의 알려진 환경변수 목록에서 증권사 키 3종(`KIS_APP_KEY`·`KIS_APP_SECRET`·`KIS_ACCOUNT_NO`)을 뺐다. 공개 팩 스킬 중 이 키를 쓰는 스킬이 없어, 계획에 넣으면 설치할 수 없는 스킬의 발급 안내가 나가던 상태였다. 이제 이 키는 "알려진 목록에 없음" 으로 확인을 요청한다. 회귀: `tests/test_acceptance.py::TestEnvVarsFromCatalog::test_private_pack_keys_not_known`.
+
 ## [0.13.3] — 2026-09-27
 
 ### Changed

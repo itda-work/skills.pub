@@ -64,7 +64,7 @@
 
 시장 주제에 맞으면 아래처럼 도메인 전문 스킬도 데이터 소스로 제안합니다(설치/가용 시에만).
 - 부동산 시장 → `itda-gov:*`(실거래·가격지수·전월세전환율)
-- 주식·ETF·섹터 → `itda-stocks:surge-data` 등(시장 스냅샷·매크로 지표)
+- 상장사·업종 → `itda-gov:dart`(공시·재무제표), 금리·환율 등 거시 지표 → `itda-gov:ecos`
 - 외식·F&B 트렌드 → `itda-travel:eatery-trend`(검색량 surge로 뜨는 메뉴 탐지)
 - 창업 상권·로컬 → `place-finder`(장소)
 

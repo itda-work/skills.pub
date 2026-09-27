@@ -2,7 +2,7 @@
 
 개발 환경 지원 스킬팩 — Cloudflare Tunnel 노출(cloudflare-tunnel), 에이전트·스킬 하네스 설계(harness), 개발도구 릴리즈 요약(changelog), Orca 활용 코칭(orca-coach), Parallels Windows 랩 제어(windows-parallels-lab).
 
-> 개발자 대상 지원 스킬만 둡니다(#1648 재편 때 개인 도구 u-library·music-dl·hangul-pron 은 `itda-egg` 로 갔습니다).
+> 개발자 대상 지원 스킬만 둡니다.
 
 ## 포함 스킬
 

@@ -53,9 +53,6 @@ DP-3 원칙: 검증 실패 시 abort(중단)가 아닌 downgrade(경고 표시)�
 | KOSIS_API_KEY | kosis, realty-supply | KOSIS 통계청(kosis.kr) → 개발자 센터 → API 키 발급 |
 | DART_API_KEY | dart, market-scan | DART 공시(dart.fss.or.kr) → 오픈 API → 인증키 신청 |
 | ECOS_API_KEY | ecos, market-scan | 한국은행 경제통계(ecos.bok.or.kr) → 개발자 센터 → API 키 |
-| KIS_APP_KEY | kis-* (itda-stocks) | 한국투자증권 개발자 포털 → 앱 키 발급 |
-| KIS_APP_SECRET | kis-* (itda-stocks) | 한국투자증권 개발자 포털 → 시크릿 키 |
-| KIS_ACCOUNT_NO | kis-* (itda-stocks) | 한국투자증권 계좌번호 |
 
 ### 실패 시 처리
 

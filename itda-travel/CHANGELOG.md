@@ -3,6 +3,12 @@
 이 플러그인의 주요 변경 사항을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.0.0/),
 버전은 [SemVer](https://semver.org/lang/ko/)를 따릅니다.
 
+## [1.0.3] - 2026-09-27
+
+### Changed
+
+- `train_cli.py`(train-ktx·train-srt 공용 코어) 머리 주석에서 공개 배포에 없는 팩의 모듈 비유를 뺐다. 동작 변화 없음.
+
 ## [1.0.2] - 2026-09-27
 
 ### Changed

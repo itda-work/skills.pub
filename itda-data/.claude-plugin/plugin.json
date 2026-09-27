@@ -1,7 +1,7 @@
 {
   "name": "itda-data",
   "description": "표·CSV·텍스트 데이터를 정리·계산·검산하고 비식별한다 — 눈대중 금지·계산은 코드가. 엑셀 수식 감사·재계산, CS 상담 텍스트 분석(감정·인텐트·일치도), 외부 AI 반입 전 마스킹 게이트.",
-  "version": "12.0.0",
+  "version": "12.0.1",
   "author": {
     "name": "스킬.잇다",
     "url": "https://github.com/itda-work"

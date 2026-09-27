@@ -11,7 +11,7 @@ allowed-tools: Read, Write, Bash, mcp__workspace__bash
 argument-hint: "[요구사항 또는 메모 첨부]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "0.13.3"
+  version: "0.13.4"
   category: "productivity"
   status: "experimental"
   created_at: "2026-05-21"

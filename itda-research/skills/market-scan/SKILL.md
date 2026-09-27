@@ -14,12 +14,12 @@ allowed-tools: Read, Write, Edit, Bash, WebSearch, WebFetch, AskUserQuestion, Sk
 argument-hint: "[시장·주제]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "0.2.3"
+  version: "0.2.4"
   category: "research"
   status: "experimental"
   recommended: true
   created_at: "2026-06-08"
-  updated_at: "2026-09-25"
+  updated_at: "2026-09-27"
   aliases: "시장조사, 시장분석, 경쟁분석, market research"
   tags: "market-research, competitive-analysis, market-sizing, source-verification, interview, cowork, research"
 ---
@@ -55,7 +55,7 @@ metadata:
 - **신뢰도 점수를 지어내지 않는다**. 모델은 "신뢰도 85%" 같은 보정된 확신도를 만들 능력이 없다 — 지어내면 *엄밀함의 외피를 쓴 거짓 확신*이 된다. 그래서 등급은 **출처의 유형**(사람이 재확인 가능)으로만 매기고, 반드시 한 줄 근거를 붙인다.
 - **사실과 추정을 분리한다**. 확인된 수치와 추정·가설을 한 문장에 섞지 않는다. 다만 시장 규모처럼 공식 수치가 없을 때는 추정으로 메우지 말라는 뜻이 아니라, **방법·가정을 공개한 명시적 추정**으로 분리해 적는다(§ 시장 규모 — 확인과 추정의 분리).
 - **국내 정형 데이터는 검색보다 공공 API**. 시장규모·산업통계·기업재무처럼 공식 출처가 있는 정형 데이터는 웹 검색보다 공공데이터 스킬이 정확하다(§ 2단계 라우팅).
-- **데이터 소스는 확장형 포트폴리오, 가용한 것만 정직하게 제시**. 웹 검색이 전부가 아니다 — 정형은 공공 API(`itda-gov:*`), **주제에 맞으면 도메인 전문 스킬**(부동산 `itda-gov:*`·주식 `itda-stocks:*`·외식 `eatery-trend`·상권 `itda-travel:place-finder` 등)까지. 고정 목록이 아니라 **주제·환경에 따라 늘어난다** — 새 스킬은 라우팅 항목 추가로 흡수하지 본문을 다시 쓰지 않는다. 어떤 소스를 쓸지는 **인터뷰에서 사용자가 고른다**(§ 1단계 데이터 소스 선택). 단 **먼저 가용성을 점검해 실제로 쓸 수 있는 소스만 보기로 올린다** — 미연결 엔진을 가용한 척 메뉴에 올리는 "거짓 메뉴"는 금지(연극이 된다).
+- **데이터 소스는 확장형 포트폴리오, 가용한 것만 정직하게 제시**. 웹 검색이 전부가 아니다 — 정형은 공공 API(`itda-gov:*`), **주제에 맞으면 도메인 전문 스킬**(부동산 `itda-gov:*`·상장사 재무·공시 `itda-gov:dart`·외식 `eatery-trend`·상권 `itda-travel:place-finder` 등)까지. 고정 목록이 아니라 **주제·환경에 따라 늘어난다** — 새 스킬은 라우팅 항목 추가로 흡수하지 본문을 다시 쓰지 않는다. 어떤 소스를 쓸지는 **인터뷰에서 사용자가 고른다**(§ 1단계 데이터 소스 선택). 단 **먼저 가용성을 점검해 실제로 쓸 수 있는 소스만 보기로 올린다** — 미연결 엔진을 가용한 척 메뉴에 올리는 "거짓 메뉴"는 금지(연극이 된다).
 - **메타결정은 객관식, 맥락은 주관식**. 목적·범위 같은 닫힌 결정은 AskUserQuestion 보기로(빈 화면 막힘 방지), "어떤 시장인지·뭘 알고 싶은지" 같은 맥락은 주관식으로 받는다 — 여기서 보기를 깔면 Claude의 보기가 사용자의 본인 단어를 덮어쓴다.
 
 ## 진행 절차
@@ -108,7 +108,7 @@ metadata:
 | 웹 검색·원문 확인 (내장 WebSearch) | 항상 가용(키 불요·단일 인덱스) | 항상 포함, 기본 ☑ |
 | **다중엔진 웹 검색** (`itda-web:web-search`, 별도 팩) | `web-search`의 `--check-env`(또는 환경·"Claude 지침"에 `TAVILY_API_KEY`·`NAVER_SEARCH_CLIENT_ID`·`NAVER_SEARCH_CLIENT_SECRET`·`SERPER_API_KEY`·`EXA_API_KEY`·`PERPLEXITY_API_KEY` 중 **1개 이상**) 존재 확인 | **키 보유 시에만 포함**(거짓 메뉴 금지). 키 0개면 보기에서 빼고 내장 WebSearch만 — "(키 감지됨: tavily,naver…)" 표기 |
 | 공공데이터 API (`itda-gov:*`) | 작업폴더 `.env`/환경변수에 관련 키(`KOSIS_API_KEY`·`DART_API_KEY`·`ECOS_API_KEY` 등) 존재 확인 | 포함(키 없어도 공식사이트 폴백 가능). "(키 감지됨)" / "(키 미설정→발급 안내)" 표기 |
-| **주제 연관 전문 스킬** | **시장 주제로 후보 판별** 후 설치/가용 확인 — 부동산→`itda-gov:*`(실거래·가격지수), 주식·ETF·섹터→`itda-stocks:surge-data`, 외식·F&B→`itda-travel:eatery-trend`, 창업 상권·로컬→`itda-travel:place-finder` | 주제 적합 + 가용 시 포함(예: "부동산 시장"이면 itda-gov 제안). 무관/미설치면 제외 |
+| **주제 연관 전문 스킬** | **시장 주제로 후보 판별** 후 설치/가용 확인 — 부동산→`itda-gov:*`(실거래·가격지수), 상장사·업종 재무→`itda-gov:dart`(공시·재무제표), 금리·환율 등 거시 지표→`itda-gov:ecos`, 외식·F&B→`itda-travel:eatery-trend`, 창업 상권·로컬→`itda-travel:place-finder` | 주제 적합 + 가용 시 포함(예: "부동산 시장"이면 itda-gov 제안). 무관/미설치면 제외 |
 
 - 질문: "어떤 데이터 소스로 조사할까요? (여러 개 선택 가능)"
 - 기본 체크: 빠른 스캔 → [웹] + (키 있으면)[다중엔진 web-search]. 심층 스캔 → 추가로 주제 연관 전문 스킬·공공 API + (키 있으면)다중엔진 web-search를 권장 체크. 사용자가 더하거나 뺀다.

@@ -2,6 +2,12 @@
 
 이 플러그인의 주요 변경 사항을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/), 버전은 [SemVer](https://semver.org/)를 따릅니다.
 
+## [2.0.2] - 2026-09-27
+
+### Changed
+
+- `work-plan` 0.13.4 — 발급 안내 표와 알려진 환경변수 목록에서 공개 팩 스킬이 쓰지 않는 증권사 키 3종(`KIS_APP_KEY`·`KIS_APP_SECRET`·`KIS_ACCOUNT_NO`)을 뺐다. 계획에 넣으면 이제 "알려진 목록에 없음" 으로 확인을 요청한다.
+
 ## [2.0.1] - 2026-09-27
 
 ### Changed

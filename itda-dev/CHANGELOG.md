@@ -2,6 +2,12 @@
 
 이 플러그인의 주요 변경 사항을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/), 버전은 [SemVer](https://semver.org/)를 따릅니다.
 
+## [2.0.2] - 2026-09-27
+
+### Changed
+
+- README 머리말에서 다른 팩으로 옮긴 개인 도구들의 이름과 옮겨 간 팩 이름을 뺐다 — 공개 README 가 설치할 수 없는 스킬을 가리키지 않게.
+
 ## [2.0.1] - 2026-09-27
 
 ### Changed
