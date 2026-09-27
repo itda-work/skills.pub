@@ -4,7 +4,7 @@
 
 > 2026-09-05 재정비(#1648)로 구 `itda-work` 의 web-search·web-reader·web-scout·blog-reader 가 이 팩으로 왔습니다. `itda-research`(ground-check·market-scan)가 이 팩의 web-reader·web-search 를 폴백·수집 엔진으로 쓰므로 함께 설치하는 것을 권합니다.
 >
-> 로그인·JS 렌더가 필요한 페이지는 `aside-browser-mcp`(Aside 브라우저)로 가져옵니다. hyve 앱 전제였던 `web-automation` 은 2026-09-25 저장소 이관 때 빠졌습니다.
+> 로그인·JS 렌더가 필요한 페이지는 `aside-browser-mcp`(Aside 브라우저)로 가져옵니다. hyve 앱 전제였던 브라우저 자동화 규율 스킬은 2026-09-25 저장소 이관 때 빠졌습니다.
 
 ## 포함 스킬
 

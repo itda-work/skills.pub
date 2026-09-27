@@ -46,7 +46,8 @@ SUPPORTED_CURRENCIES = frozenset(
 #   g294197-d5250436                                             → g294197-d5250436
 _HOTEL_KEY_RE = re.compile(r"g(\d+)-d(\d+)")
 
-_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 hotel-search/1.0"
+# 외부로 나가는 UA 에 우리 신원(제품·조직·스킬 이름)을 싣지 않는다(outbound-identity-leak).
+_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
 _TIMEOUT = 30
 
 

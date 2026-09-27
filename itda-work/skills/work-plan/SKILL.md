@@ -11,11 +11,11 @@ allowed-tools: Read, Write, Bash, mcp__workspace__bash
 argument-hint: "[요구사항 또는 메모 첨부]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "0.13.1"
+  version: "0.13.3"
   category: "productivity"
   status: "experimental"
   created_at: "2026-05-21"
-  updated_at: "2026-09-25"
+  updated_at: "2026-09-27"
   aliases: "계획세우기, 실행계획, 구현계획"
   tags: "Cowork, work-plan, plan work, action-plan"
 ---
@@ -80,7 +80,7 @@ work-find 메모 첨부 시: 트랙(A/B/혼합), 문제 정의 한 줄, 관련 �
 
 ### Stage 3 — 계획 수립 + Ground-check
 
-1. `references/skill-catalog.md`(자동 생성 카탈로그 — `skills/scripts/gen_skill_catalog.py` 산출물, 수기 편집 금지)에서 요구사항에 맞는 itda-* 스킬을 찾는다.
+1. `references/skill-catalog.md`(자동 생성 카탈로그 — 공개 팩 스킬만 싣는다, 수기 편집 금지)에서 요구사항에 맞는 itda-* 스킬을 찾는다. 카탈로그에 없는 스킬은 추천하지 않는다.
 2. mirror-back 결과를 단계별로 쪼개 각 단계마다 어떤 스킬이 수행하는지 매핑한다.
 3. 각 단계에서 사용자가 미리 준비해야 하는 자료를 식별한다 (자료명 / 내용 / 형식 / 보관 위치).
 4. 필요한 API 키·환경변수를 식별하고 발급 방법을 한 줄로 안내한다.
@@ -164,7 +164,7 @@ Human-tone 정제:
 
 ## 참조 문서 (on-demand 로드)
 
-- `references/skill-catalog.md` — itda-* 스킬 전체 목록 (이름 / 요약 / 필요 키 / 트리거 예시)
+- `references/skill-catalog.md` — 공개 팩의 itda-* 스킬 목록 (이름 / 요약 / 필요 키 / 트리거 예시)
 - `references/mirror-back-patterns.md` — Stage 2 mirror-back 템플릿 + 반복 종료 패턴
 - `references/ground-check-rules.md` — 스킬명·환경변수 검증 규칙 + 알려진 환경변수 목록
 - `GUIDE.md` — 사용자 활용 가이드 (스킬 호출 시 로드 안 됨)

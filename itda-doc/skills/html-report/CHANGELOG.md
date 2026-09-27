@@ -1,5 +1,10 @@
 # Changelog — html-report
 
+## 0.3.2 (2026-09-27)
+
+- 팔레트가 radius 를 정한다는 서술을 걷어냈다 — 그 값의 출처(design-core 프리셋)가 사라졌고 실제 radius 는 가족 스펙(corporate 6px·consulting 2px·minimal 6px·editorial 0~4px)이 정한다. `tech-vivid-dark` 금지 조합의 사유도 지운 프리셋의 모티프(glow·라운드 0.25) 대신 README 표의 값으로 다시 썼다(12.0.0 공개 전 리뷰 L1).
+- 디자인 스킬 4종 제거(2026-09-27)에 맞춰 형제 지목을 걷어냈다. 팔레트 프리셋 9종은 원래 값이 인라인돼 있어 동작 불변이며, 이제 `references/styles/README.md` 표가 유일한 정본이다(description·argument-hint·tags·본문·GUIDE 의 공유 프리셋 서술 정리). "쓰지 않을 때" 표의 워드·PPT 행은 "현재 지원 스킬 없음(한글 문서는 itda-doc:hwpx)" 으로.
+
 ## 0.3.1 (2026-09-03)
 
 - description 에 `[책임 경계]` 슬롯 + `## 이 스킬을 쓰지 않을 때` 표 — 아침 브리핑 페이지는 `itda-work:morning-brief` 로 라우팅(hyve #1638).

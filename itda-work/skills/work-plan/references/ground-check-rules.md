@@ -31,7 +31,7 @@ DP-3 원칙: 검증 실패 시 abort(중단)가 아닌 downgrade(경고 표시)�
 메모에 등장하는 모든 환경변수(API 키 이름)는 허용 목록에 있어야 한다.
 
 허용 목록 = **① 아래 기본 표 ∪ ② `skill-catalog.md` "필요한 키" 열 자동 파생**
-(`ground_check.get_known_env_vars()`, #1216). 카탈로그는 `skills/scripts/gen_skill_catalog.py`
+(`ground_check.get_known_env_vars()`, #1216). 카탈로그는 저장소 생성기가 공개 팩 스킬만 모아 만든
 생성물이므로, 스킬이 추가·변경되면 카탈로그 재생성만으로 허용 목록이 따라온다.
 아래 기본 표는 발급 방법 안내를 가진 대표 키만 담는다 — 표에 없는 카탈로그 파생 키의
 발급 방법은 해당 스킬의 SKILL.md·GUIDE 를 참조한다.

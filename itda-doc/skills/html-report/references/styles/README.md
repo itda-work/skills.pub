@@ -1,7 +1,7 @@
 # html-report 스타일 시스템 — 골격 축(가족) × 팔레트 축(프리셋)
 
 스타일은 두 축의 조합이다. **가족**은 레이아웃·표면 처리·타이포 위계·히어로·차트 문법을 정하고,
-**팔레트**는 색·의미색 관행·라운드·display 폰트를 정한다. 어느 조합이든 SKILL.md §1·§3·§4·§6·§7·§8·§9·§10
+**팔레트**는 색·의미색 관행·display 폰트를 정한다(radius 는 가족 스펙이 정한다 — 아래 표에 radius 열이 없는 이유). 어느 조합이든 SKILL.md §1·§3·§4·§6·§7·§8·§9·§10
 품질 계약은 그대로다 — 가족은 §2 컴포넌트 규격의 **변형**이고 팔레트는 §5 토큰의 **값**이다.
 
 ## 축 A — 스타일 가족 5종
@@ -23,9 +23,9 @@
 - "공공기관"·"관공서"·"정부"·"과제 보고"·"개조식"·"보고서 양식"·"흑백 인쇄" → `public-kr`
 - 무신호 + 대화형 → AskUserQuestion(콘텐츠 적합 후보 2~3 + "알아서") · 무신호 + 비대화형 → 위 표 "잘 맞는 문서" 로 자동 선택 + 근거 1줄
 
-## 축 B — 팔레트 프리셋 (design-core `../../../design-core/library/` 8종 + 자체 1종)
+## 축 B — 팔레트 프리셋 9종 (이 표가 정본)
 
-design-core 토큰(`canvas surface ink muted primary accent hairline up down`)을 html-report CSS 변수로 옮긴 값이다.
+브랜드 토큰(`canvas surface ink muted primary accent hairline up down`)을 html-report CSS 변수로 옮긴 값이다.
 링크(`tokens.css`)가 아니라 **`:root` 블록에 인라인**한다(§1 단일 파일). 사용자 DESIGN.md 가 오면 같은 표의 열을 그 hex 로 치환한다.
 
 | 프리셋 | `--bg` | `--paper` | `--tint` | `--ink` | `--g500` | `--accent` | `--accent-2` | `--line` | `--pos` | `--neg` | display 폰트(라틴·숫자 전용) |
@@ -52,8 +52,8 @@ design-core 토큰(`canvas surface ink muted primary accent hairline up down`)�
 기본 짝 외의 조합도 허용하되 아래는 금지다(계약 충돌).
 
 - `public-kr` × 다크 부팅 프리셋 — 흑백 인쇄 우선 계약과 충돌. `public-kr` 은 `gov-mono` 고정, 강조색만 사용자 hex 로 치환 가능.
-- `editorial` × `tech-vivid-dark` — glow 모티프가 편집 여백 계약과 충돌.
-- `consulting` × `tech-vivid-dark` — pill·라운드 0.25 가 직각 계약과 충돌.
+- `editorial` × `tech-vivid-dark` — 검정 바탕 위 형광 초록 강조가 편집 여백·절제된 강조 계약과 충돌.
+- `consulting` × `tech-vivid-dark` — Arial Black 디스플레이·형광 강조가 절제된 직각 문서 계약과 충돌.
 
 ## 구 프리셋 이름 하위 호환 (v0.2 → v0.3)
 

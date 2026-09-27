@@ -3,6 +3,19 @@
 All notable changes to the `calendar` skill are documented here.
 This skill follows the itda-skills SPEC workflow (SPEC-CALENDAR-001).
 
+## [0.6.2] — 2026-09-27
+
+### Changed
+
+- 설치 판정을 서버 이름 기준으로 — 도구 목록에 이름에 `itda-hyve__` 가 든 도구(Cowork `mcp__remote-devices__itda-hyve__*`, Claude Code `mcp__itda-hyve__*`)가 없을 때만 설치·업데이트 안내. 앞 문구는 Cowork 접두어만 조건으로 삼아 Claude Code 에 연결한 사용자에게도 재설치를 안내하게 했다(12.0.0 공개 전 리뷰 M1). 금지는 "다른 서버의 도구·내장 fetch" 로 한정. 도구 표 머리·실패 표에 Claude Code 이름 병기.
+- `calendar_delete` 가 `not_found` 면 이미 지워진 것으로 보고 다시 지우지 않는다 — 사용자에게 "이미 지워져 있다" 고 알린다(계약 3·실패 표·GUIDE). Cowork 실측(2026-09-26)에서 모델이 이미 지운 일정을 한 번 더 지우려다 `not_found` 를 받았다. `deleted` 를 받은 일정도 같은 대화에서 다시 1차 호출하지 않는다.
+
+## [0.6.1] — 2026-09-27
+
+### Changed
+
+- 옛 서버 이름 안내 제거 — 개명 전 이름의 도구를 이름으로 지목하던 분기를 없애고 "도구 목록에 itda-hyve 도구가 없으면(미설치·미연결·0.9.0 보다 옛 판) 0.9.0 이상 설치·업데이트와 연결을 안내하고 멈춘다" 한 갈래로 합쳤다. compatibility·GUIDE 의 옛 이름 병기도 뺐다. `references/netbridge.md` 사본 동기화.
+
 ## [0.6.0] — 2026-09-25 (itda-work/itda-hyve#6)
 
 > **릴리스**: skills **11.0.0**(`skills-v11.0.0`, 첫 공개 저장소 `itda-work/skills.pub`)에 싣는다.

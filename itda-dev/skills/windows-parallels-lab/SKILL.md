@@ -8,8 +8,8 @@ description: >-
   건드리지 않고 클론 + 스냅샷으로 복원한다. Parallels 26/27 + ARM Win11 전용.
   [책임 경계] 되돌릴 수 있는 클론 전담 — 되돌릴 수 없는 실머신 조작은 다루지 않는다.
 metadata:
-  version: "0.1.1"
-  updated_at: "2026-09-25"
+  version: "0.1.2"
+  updated_at: "2026-09-27"
 ---
 
 # windows-parallels-lab
@@ -17,7 +17,7 @@ metadata:
 macOS 호스트에서 Claude Code 가 **Parallels Desktop 안의 Windows 11 클론**을 제어해, macOS 에서 원천적으로 불가능한 두 가지를 세션 안에서 완결한다:
 
 - **UC1 — Windows 실런타임 검증**: COM/Office/Outlook/.NET 경로처럼 Windows 에서만 도는 코드를 게스트에 배포·실행하고 결과를 회수한다. `ci-runner-policy`(Windows 러너 미채택)를 위반하지 않는 **온디맨드 세션 보조**다 — CI 게이트가 아니다.
-- **UC2 — 문서 렌더링 그라운드 트루스**: `hwpx`·`pptx-design` 등이 생성한 문서를 **실제 한글/Office** 로 열어 `prlctl capture`(2596×1460 PNG) → 에이전트 비전으로 깨짐·폰트·레이아웃을 판독한다. 파서 자기검증이 못 주는 유일한 검증축이다.
+- **UC2 — 문서 렌더링 그라운드 트루스**: `hwpx` 등이 생성한 문서를 **실제 한글/Office** 로 열어 `prlctl capture`(2596×1460 PNG) → 에이전트 비전으로 깨짐·폰트·레이아웃을 판독한다. 파서 자기검증이 못 주는 유일한 검증축이다.
 
 `windows-vm-lab`(VMware Fusion, 폐기)의 대체다 — 2026-08-25 폐기 결정(#1572). vmrun 판의 게스트 계정·키체인·SSH·UAC 경계가 **전부 사라진다**: `prlctl exec` 는 자격증명 없이 SYSTEM(IsAdmin=True) 권한으로 돈다(실측).
 

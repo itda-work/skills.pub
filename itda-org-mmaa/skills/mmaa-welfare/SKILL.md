@@ -15,9 +15,9 @@ metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
   status: "active"
-  version: "0.3.1"
+  version: "0.3.2"
   created_at: "2026-07-27"
-  updated_at: "2026-09-25"
+  updated_at: "2026-09-27"
   tags: "MMAA, welfare, benefits, condo, snapshot, QnA"
 ---
 

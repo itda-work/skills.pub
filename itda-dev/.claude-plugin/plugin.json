@@ -1,7 +1,7 @@
 {
   "name": "itda-dev",
   "description": "개발 환경을 돕는다 — Cloudflare Tunnel 노출, 에이전트·스킬 하네스 설계, 개발도구 릴리즈 요약, Orca 활용 코칭, Windows 랩(Parallels 클론), Claude·Codex 사용량 조회.",
-  "version": "11.0.0",
+  "version": "12.0.0",
   "author": {
     "name": "스킬.잇다",
     "url": "https://github.com/itda-work"

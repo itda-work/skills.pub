@@ -17,7 +17,8 @@ from urllib.request import Request, urlopen
 
 # {base} 1단위당 각 통화 환율. .rates.KRW 가 base→KRW 환산율.
 FX_URL = "https://open.er-api.com/v6/latest/{base}"
-_UA = "Mozilla/5.0 hotel-search/1.0"
+# 외부로 나가는 UA 에 우리 신원(제품·조직·저장소 URL)을 싣지 않는다 — 범용 토큰만(outbound-identity-leak).
+_UA = "Mozilla/5.0"
 _TIMEOUT = 15
 
 

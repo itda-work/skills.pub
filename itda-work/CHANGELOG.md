@@ -2,6 +2,17 @@
 
 이 플러그인의 주요 변경 사항을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/), 버전은 [SemVer](https://semver.org/)를 따릅니다.
 
+## [2.0.1] - 2026-09-27
+
+### Changed
+
+- `work-plan` 0.13.3 — 스킬 카탈로그에 공개 팩 스킬만 싣는다(비공개 `itda-egg`·`itda-stocks` 17행 제외, 97 → 80). 설치할 수 없는 스킬을 추천하지 않는다(12.0.0 리뷰 참고 항목).
+- **itda-hyve 설치 판정을 서버 이름 기준으로** — `email`·`calendar` 본문과 `references/netbridge.md`: 이름에 `itda-hyve__` 가 든 도구(Cowork `mcp__remote-devices__itda-hyve__*`, Claude Code `mcp__itda-hyve__*`)가 없을 때만 설치 안내. Claude Code 에 연결한 사용자에게 재설치를 안내하던 문구를 바로잡았다(12.0.0 공개 전 리뷰 M1).
+- `calendar` 0.6.2 — `calendar_delete` 가 `not_found` 면 이미 지워진 것으로 보고 다시 지우지 않고 사용자에게 알린다(Cowork 실측 2026-09-26, 이미 지운 일정 재삭제 시도).
+- `weather-here` 0.12.6 — 외부로 나가는 User-Agent 에서 우리 신원(저장소 URL·조직·스킬 이름)을 뺐다(outbound-identity-leak) — `Mozilla/5.0 (compatible; weather-here-skill; +itda-skills)` → `Mozilla/5.0`.
+- **옛 서버 이름 안내 제거** — `email` 0.35.1·`calendar` 0.6.1: 개명 전 이름의 도구를 지목하던 분기를 "itda-hyve 도구가 없으면(미설치·미연결·0.9.0 보다 옛 판) 0.9.0 이상 설치·업데이트 안내" 한 갈래로 합치고, compatibility·GUIDE 의 옛 이름 병기를 뺐다. `references/netbridge.md` 사본 동기화.
+- `work-plan` 0.13.2 — 스킬 카탈로그 재생성(itda-org-taxhero `web-automation`·itda-doc 디자인 스킬 4종 제거 반영). 인수 테스트의 신세대 스킬 표본을 pptx-shrink 로 바꾸고, 제거한 스킬이 카탈로그·디렉토리에 없음을 단언하는 회귀를 더했다.
+
 ## [2.0.0] - 2026-09-25
 
 > **릴리스**: skills **11.0.0**(`skills-v11.0.0`, 첫 공개 저장소 `itda-work/skills.pub`)에 싣는다.

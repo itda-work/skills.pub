@@ -6,15 +6,15 @@ description: >
   "OO 프로젝트 회의 다 찾아줘", "그 약속 취소해줘"처럼 말하면 됩니다. 수정은 조회한 etag 로만, 삭제는 미리보기를 보여 주고 승인을 받은 뒤에만 합니다.
   [책임 경계] 본 스킬은 일정 조회·추가·수정·삭제·빈 시간 탐색 전담 — 아침 브리핑 페이지(오늘 일정+미회신 메일 한 장)는 itda-work:morning-brief, 메일 읽기·발송은 itda-work:email.
 license: Apache-2.0
-compatibility: "Claude Code & Cowork. itda-hyve 0.9.0 이상(로컬 MCP 서버, 구 itda-butler) 필요 — 계정 목록과 캘린더 도구 5개를 쓴다."
+compatibility: "Claude Code & Cowork. itda-hyve 0.9.0 이상(로컬 MCP 서버) 필요 — 계정 목록과 캘린더 도구 5개를 쓴다."
 allowed-tools: "mcp__remote-devices__itda-hyve__accounts_list, mcp__remote-devices__itda-hyve__calendar_list, mcp__remote-devices__itda-hyve__calendar_events, mcp__remote-devices__itda-hyve__calendar_get, mcp__remote-devices__itda-hyve__calendar_put, mcp__remote-devices__itda-hyve__calendar_delete"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
   recommended: true
-  version: "0.6.0"
+  version: "0.6.2"
   created_at: "2026-06-01"
-  updated_at: "2026-09-26"
+  updated_at: "2026-09-27"
   tags: "calendar, caldav, icloud, apple, naver, event, schedule, recurrence, rrule, alarm, reminder, timezone, etag, itda-hyve, multi-account, free-slots, availability, search, delete-confirmation"
 ---
 
@@ -23,7 +23,7 @@ metadata:
 일정은 **itda-hyve 의 캘린더 도구 5개와 `accounts_list` 로만** 다룬다. itda-hyve 는 사용자 PC 에서 도는 로컬 MCP 서버이고,
 CalDAV 로그인에 쓰는 앱 비밀번호는 itda-hyve 의 볼트에만 있다. 이 스킬은 자격증명을 읽지도 묻지도 않는다.
 
-| 할 일 | 도구 (Cowork 에서 보이는 전체 이름) |
+| 할 일 | 도구 (Cowork 에서 보이는 전체 이름 — Claude Code 는 `mcp__itda-hyve__<도구>`) |
 |---|---|
 | 계정 목록·캘린더 지원 여부 | itda-hyve 의 `accounts_list` (`mcp__remote-devices__itda-hyve__accounts_list`) |
 | 캘린더 목록 | itda-hyve 의 `calendar_list` (`mcp__remote-devices__itda-hyve__calendar_list`) |
@@ -33,9 +33,9 @@ CalDAV 로그인에 쓰는 앱 비밀번호는 itda-hyve 의 볼트에만 있다
 | 일정 지우기 | itda-hyve 의 `calendar_delete` (`mcp__remote-devices__itda-hyve__calendar_delete`) |
 
 **다른 경로를 쓰지 않는다.** 환경변수·`.env`·스크립트로 계정을 찾거나 CalDAV 서버에 직접 붙지 않고, 웹 캘린더 브라우저로 돌아가지 않는다.
-도구 목록에 itda-hyve 가 없으면 설치·연결되지 않은 것이다 — 사용자에게 itda-hyve 설치(받는 곳 https://github.com/itda-work/itda-hyve.pub/releases/latest)와 Claude Desktop 연결을 안내하고 멈춘다.
-**itda-hyve 는 없고 개명 전 이름의 도구(`mcp__remote-devices__itda-butler__*`)만 보이면 0.9.0 이전 판이다** — 계정 등록을 안내하지 말고
-"itda-hyve 를 0.9.0 이상으로 업데이트해 주세요" 라고 안내하고 멈춘다. 옛 이름 도구나 `http_request` 로 CalDAV 를 대신 부르지 않는다(0.9.0 은 캘린더 도구를 모두 등록한다).
+도구 목록에 이름에 `itda-hyve__` 가 든 도구(Cowork `mcp__remote-devices__itda-hyve__<도구>`, Claude Code `mcp__itda-hyve__<도구>`)가 없으면 설치·연결되지 않았거나 0.9.0 보다 옛 판이다 — 계정 등록을 안내하지 말고
+itda-hyve 0.9.0 이상 설치(이미 있으면 업데이트, 받는 곳 https://github.com/itda-work/itda-hyve.pub/releases/latest)와 Claude Desktop 연결을 안내하고 멈춘다.
+다른 서버의 도구(개명 전 이름의 판 포함)·내장 fetch·`http_request` 로 CalDAV 를 대신 부르지 않는다(0.9.0 은 캘린더 도구를 모두 등록한다).
 이 스킬 폴더의 `scripts/` 는 이 스킬의 실행 경로가 아니다 — 실행하지 않는다(다른 스킬이 쓰는 옛 코드로, 후속 이슈에서 지운다).
 공용 규약은 [references/netbridge.md](references/netbridge.md) 가 정본이다(도구 지목·60초 호출 상한·보안 계약).
 
@@ -229,6 +229,9 @@ itda-hyve 가 강제한다. 1차 호출은 **지우지 않는다.**
 - 계약 4 의 일정(참석자·약한/없는 etag·원문 불완전)은 1차 호출에서 거부된다 — 미리보기가 오지 않는다.
 - **2차가 timeout·network_error 로 끝나면** 2차를 다시 보내지 않는다(이미 지워졌으면 `not_found`, 아니면 토큰이 소멸해 `confirm_invalid` 가 온다).
   `calendar_get` 으로 확인해 `not_found` 면 삭제된 것으로 보고한다. **남아 있으면** 1차부터 다시 — 새 미리보기를 보여 주고 다시 승인받는다(앞선 승인으로 갈음하지 않는다).
+- **`calendar_delete` 가 `not_found` 면 이미 지워진 것이다**(조회로 받은 uid 인데 없는 경우 — 이 대화에서 앞서 지웠거나 다른 기기에서 지웠다).
+  다시 지우려 하지 않는다 — 같은 uid 로 재호출하거나 다른 캘린더·비슷한 일정을 찾아 대신 지우지 말고, 사용자에게 "이미 지워져 있다" 고 알린다.
+  `deleted` 를 받은 일정도 같은 대화에서 다시 1차 호출하지 않는다.
 - 어느 일정을 지울지 모호하면("토요일 약속 취소") 먼저 `calendar_events` 로 후보를 보여 주고, 사용자가 고른 것만 1차 호출한다. 여러 건을 한꺼번에 지우지 않는다.
 
 ## 계약 4 — itda-hyve 가 고치지도 지우지도 않는 일정
@@ -303,11 +306,12 @@ itda-hyve 에 빈 시간 도구는 없다. "다음 주에 1시간 빈 시간 찾
 
 | 상황 | 대응 |
 |---|---|
-| itda-hyve 는 없고 `itda-butler` 이름의 도구만 보임 | 개명 전(0.9.0 이전) 판이다. itda-hyve 0.9.0 이상으로 업데이트를 안내하고 멈춤(계정 등록 안내 아님, 옛 이름 도구·`http_request` 우회 금지) |
+| 도구 목록에 이름에 `itda-hyve__` 가 든 도구가 없음(Cowork `mcp__remote-devices__itda-hyve__*`, Claude Code `mcp__itda-hyve__*`) | 미설치·미연결이거나 0.9.0 보다 옛 판이다. itda-hyve 0.9.0 이상 설치·업데이트와 Claude Desktop 연결을 안내하고 멈춤(계정 등록 안내 아님, 다른 서버의 도구·내장 fetch·`http_request` 우회 금지) |
 | `accounts_list` 가 빈 목록 · `supported: true` 가 없음 | GUI 계정 화면에서 네이버·아이클라우드 등록 또는 직접 입력 계정에 CalDAV 주소 입력을 안내하고 멈춤 |
 | `calendar.supported: false` | 캘린더 도구를 부르지 말고 `calendar.reason` 을 그대로 전함 |
 | `auth_error` | 앱 비밀번호가 틀렸거나 바뀌었다. GUI 계정 화면의 "연결 테스트" 로 캘린더(CalDAV) 줄을 확인하도록 안내 |
 | `not_found` | 계정·uid·캘린더가 없다. 계정 이름이면 `accounts_list` 로 다시 확인, 아니면 `calendar_events` 로 다시 찾거나 `calendar_list`(필요하면 `refresh: true`)로 이름 확인 |
+| `not_found` (`calendar_delete`) | 조회로 받은 uid 면 **이미 지워진 것**이다. 다시 지우지 말고(재호출·대체 일정 삭제 금지) 사용자에게 이미 지워져 있다고 알린다(계약 3) |
 | `etag_conflict` (`calendar_put`) | 계약 2 — `calendar_get` 재조회 → 바뀐 내용 보여 주고 확인 → 새 etag 로 1회 |
 | `etag_conflict` (`calendar_delete` 2차) | 토큰은 이미 소멸했다. 1차부터 다시 불러 새 미리보기를 보여 주고 바뀐 점을 짚어 **다시 승인**받는다(계약 3) |
 | `confirm_invalid` | 토큰이 없거나·이미 쓰였거나·만료(10분)됐거나·그 사이 일정이 바뀌었다. `calendar_delete` 1차 호출부터 다시 — 새 미리보기를 사용자에게 보여 주고 다시 승인받는다 |

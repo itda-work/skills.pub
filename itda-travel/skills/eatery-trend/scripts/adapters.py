@@ -31,7 +31,8 @@ from env_loader import MissingAPIKeyError, resolve_api_key
 # ---------------------------------------------------------------------------
 # 상수
 # ---------------------------------------------------------------------------
-_UA = "Mozilla/5.0 (compatible; eatery-trend-skill; +itda-skills)"
+# 외부로 나가는 UA 에 우리 신원(제품·조직·저장소 URL)을 싣지 않는다 — 범용 토큰만(outbound-identity-leak).
+_UA = "Mozilla/5.0"
 
 _AC_URL = "https://ac.search.naver.com/nx/ac"
 _DATALAB_URL = "https://openapi.naver.com/v1/datalab/search"

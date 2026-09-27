@@ -1,5 +1,11 @@
 # Changelog — itda-data-analysis/xlsx-recalc
 
+## [0.1.1] — 2026-09-27
+
+### Changed
+
+- 제거된 xlsx 생성 스킬 지목을 `[책임 경계]`·"쓰지 않을 때"·권장 체인·GUIDE 에서 뺐다(2026-09-27). 경계 문장은 data-audit(감사)·data-verify(검산)로.
+
 ## [0.1.0] — 2026-09-14 (이슈 #1690)
 
 ### Added

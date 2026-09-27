@@ -2,23 +2,23 @@
 name: html-report
 description: >
   마크다운 보고서·분석 결과·회의 정리를 연차보고서 수준의 단일 파일 HTML 문서로 렌더링하는 스킬입니다. 외부 라이브러리 0개로 인라인 SVG 차트·스티키 목차·다크 모드·A4 인쇄를 내장하고 원본 데이터를 손실 없이 담습니다.
-  스타일은 골격 가족 5종(코퍼레이트·컨설팅·에디토리얼·미니멀·공공기관 보고서형) × design-core 팔레트 조합으로 고릅니다.
+  스타일은 골격 가족 5종(코퍼레이트·컨설팅·에디토리얼·미니멀·공공기관 보고서형) × 팔레트 프리셋 9종 조합으로 고릅니다.
   "이 보고서 HTML 파일로 만들어줘", "컨설팅 보고서 스타일로 전략 검토 문서 만들어줘", "공공기관 제출용 개조식 보고서 HTML로"처럼 말하면 됩니다.
   [책임 경계] 본 스킬은 보고서형 HTML 렌더 전담 — 아침 브리핑 페이지는 itda-work:morning-brief.
 license: Apache-2.0
 compatibility: "플랫폼 무관 (순수 프롬프트 스킬 — 스크립트·외부 의존 없음)"
 user-invocable: true
 allowed-tools: Read, Write, Glob, Grep, AskUserQuestion
-argument-hint: "<보고서.md> [스타일: corporate|consulting|editorial|minimal|public-kr] [팔레트: design-core 프리셋명|DESIGN.md] [출력.html]"
+argument-hint: "<보고서.md> [스타일: corporate|consulting|editorial|minimal|public-kr] [팔레트: 프리셋명|DESIGN.md] [출력.html]"
 metadata:
   author: "스킬.잇다"
-  version: "0.3.1"
+  version: "0.3.2"
   category: "document"
   status: "beta"
   recommended: true
   created_at: "2026-07-27"
-  updated_at: "2026-09-03"
-  tags: "html, report, document, single-file, chart, dashboard, print, dark-mode, style-preset, design-core, consulting, editorial, public-sector"
+  updated_at: "2026-09-27"
+  tags: "html, report, document, single-file, chart, dashboard, print, dark-mode, style-preset, palette, consulting, editorial, public-sector"
 ---
 
 # html-report — 극한 품질 단일 파일 HTML 문서 렌더러
@@ -28,7 +28,7 @@ metadata:
 | 상황 | 대신 쓸 스킬 |
 |---|---|
 | "아침 브리핑 보여줘", 캘린더·메일에서 수집해 하루 한 장 페이지로 | itda-work:morning-brief |
-| 워드·PPT 산출이 필요할 때 | itda-doc:docx-design · itda-doc:pptx-design |
+| 워드·PPT 파일이 필요할 때 | 현재 지원 스킬 없음 (한글 문서는 itda-doc:hwpx) |
 
 ## 목적
 
@@ -41,7 +41,7 @@ metadata:
 스타일은 **두 축의 조합**이다(`references/styles/README.md` 가 정본):
 
 - **골격 가족(축 A)** 5종 — `corporate`(코퍼레이트 리포트) · `consulting`(컨설팅 문서형) · `editorial`(에디토리얼) · `minimal`(미니멀 문서) · `public-kr`(공공기관 보고서형). 가족은 §2 컴포넌트 규격의 **변형**을 정한다(히어로·카드 정책·KPI 형태·표·차트 색·번호 체계). 가족 스펙 `references/styles/<가족>.md` 의 표가 §2 와 충돌하면 **가족 스펙이 우선**한다.
-- **팔레트 프리셋(축 B)** — 형제 스킬(`docx-design`·`pptx-design`·`xlsx-design`)과 공유하는 `../design-core/library/` 8종 + 공공기관용 `gov-mono`. 색·의미색 관행·radius·display 폰트만 정하고 §5 토큰 값으로 인라인된다. 사용자 DESIGN.md 가 오면 같은 자리에 그 hex 를 넣는다.
+- **팔레트 프리셋(축 B)** — 9종(공공기관용 `gov-mono` 포함, 값은 `references/styles/README.md` 표가 정본). 색·의미색 관행·display 폰트만 정하고 §5 토큰 값으로 인라인된다(radius·표면 처리는 가족 스펙이 정한다 — 팔레트에는 radius 값이 없다). 사용자 DESIGN.md 가 오면 같은 자리에 그 hex 를 넣는다.
 
 ## 워크플로우
 
@@ -128,9 +128,9 @@ metadata:
 }
 ```
 
-팔레트 프리셋 9종(design-core 8 + `gov-mono`)의 값·다크 짝·파생 규칙·의미색 관행(international/krx)·가족×팔레트 금지 조합은 **`references/styles/README.md` 가 정본**이다. 사용자 DESIGN.md 는 같은 변수에 hex 만 치환한다. 다크 부팅 프리셋(`kari`·`equity-research-dark`·`tech-vivid-dark`)은 §6 의 "OS 라이트 감지 시 라이트 부팅·인쇄 라이트 강제" 를 따른다.
+팔레트 프리셋 9종(`gov-mono` 포함)의 값·다크 짝·파생 규칙·의미색 관행(international/krx)·가족×팔레트 금지 조합은 **`references/styles/README.md` 가 정본**이다. 사용자 DESIGN.md 는 같은 변수에 hex 만 치환한다. 다크 부팅 프리셋(`kari`·`equity-research-dark`·`tech-vivid-dark`)은 §6 의 "OS 라이트 감지 시 라이트 부팅·인쇄 라이트 강제" 를 따른다.
 
-- 타입 스케일(1.25배): 12 / 15(본문) / 19 / 24 / 30 / 38px. 본문 line-height 1.7, 제목 1.25. **letter-spacing 음수는 라틴·숫자 전용**(한글 헤딩·본문에 음수 자간·thin weight 금지 — design-core 한글 가드와 동일).
+- 타입 스케일(1.25배): 12 / 15(본문) / 19 / 24 / 30 / 38px. 본문 line-height 1.7, 제목 1.25. **letter-spacing 음수는 라틴·숫자 전용**(한글 헤딩·본문에 음수 자간·thin weight 금지).
 - 라벨(eyebrow·표 헤더·캡션 라벨)은 **sans 12px 600 자간 .04em** 이 기본. mono 는 문서번호·Exhibit 번호·표 안 수치 식별자에만(가족 스펙이 달리 정하지 않는 한).
 - 간격 스케일: 4/8/12/16/24/32/48/64/72/96px 외 임의값 금지.
 - 본문 컨테이너 640~760px(가족별 고정값), 표·차트는 가족 브레이크아웃 폭까지.

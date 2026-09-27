@@ -5,7 +5,7 @@ description: >
   "GDP 추이 알려줘", "금리 환율 정리해줘", "100대 경제지표 확인해줘"처럼 말하면 됩니다.
   GDP·금리·환율·CPI·100대 핵심 지표 데이터셋을 다룹니다.
 license: Apache-2.0
-compatibility: "Claude Code & Cowork. Python 3.10+. 네트워크가 막힌 환경은 itda-hyve 0.9.0 이상(로컬 MCP 서버, 구 itda-butler)."
+compatibility: "Claude Code & Cowork. Python 3.10+. 네트워크가 막힌 환경은 itda-hyve 0.9.0 이상(로컬 MCP 서버)."
 allowed-tools: "mcp__remote-devices__itda-hyve__http_request, Bash, Read, Write, mcp__workspace__bash"
 user-invocable: true
 argument-hint: "[key|search|word|items|tables] [--stat 통계코드] [--start 시작연도] [--end 종료연도]"
@@ -14,9 +14,9 @@ metadata:
   category: "domain"
   status: "active"
   recommended: true
-  version: "0.10.9"
+  version: "0.10.10"
   created_at: "2026-03-29"
-  updated_at: "2026-09-25"
+  updated_at: "2026-09-27"
   tags: "GDP, ECOS, CPI, economics, interest rate, exchange rate, Bank of Korea"
 ---
 

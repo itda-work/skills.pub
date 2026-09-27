@@ -25,7 +25,7 @@ email 스킬 때문에 네이버·아이클라우드 메일을 이미 등록했�
 
 ## 처음 설정하기
 
-1. **itda-hyve(0.9.0 이상, 구 itda-butler)를 설치하고 Claude Desktop 에 연결합니다.** [itda-hyve 내려받기](https://github.com/itda-work/itda-hyve.pub/releases/latest)에서 운영체제에 맞는 설치 파일을 받습니다(설치 방법은 [설치 안내](https://github.com/itda-work/itda-hyve.pub#readme)).
+1. **itda-hyve(0.9.0 이상)를 설치하고 Claude Desktop 에 연결합니다.** [itda-hyve 내려받기](https://github.com/itda-work/itda-hyve.pub/releases/latest)에서 운영체제에 맞는 설치 파일을 받습니다(설치 방법은 [설치 안내](https://github.com/itda-work/itda-hyve.pub#readme)).
    설치한 뒤 itda-hyve 앱의 "Claude Desktop" 화면에서 등록 버튼을 누르면 됩니다.
 2. **메일 서비스에서 앱 비밀번호를 발급합니다.** 아래 서비스별 절차를 보세요. 메일용으로 이미 발급했다면 그대로 씁니다.
 3. **itda-hyve 의 "계정" 화면에서 계정을 추가합니다.** 제공자·아이디·앱 비밀번호를 넣으면 서버 주소가 자동으로 채워집니다.
@@ -116,6 +116,7 @@ email 스킬 때문에 네이버·아이클라우드 메일을 이미 등록했�
 | "다른 곳에서 바뀌었다"(etag_conflict) | 그 사이 다른 기기에서 일정이 바뀌었습니다. Claude 가 바뀐 내용을 보여 주면 확인하고 다시 진행하세요 |
 | Claude 가 "itda-hyve 를 업데이트해 주세요" 라고 한다 | 캘린더 기능은 itda-hyve **0.9.0 이상**이 필요합니다. 개명 전 판(0.9.0 이전)이 연결돼 있으면 계정이 등록돼 있어도 캘린더를 못 씁니다. [itda-hyve 최신판](https://github.com/itda-work/itda-hyve.pub/releases/latest)을 설치하고 Claude Desktop 을 다시 시작하세요 |
 | "여기서는 고칠(지울) 수 없어요 — 캘린더 앱에서 직접" | 참석자가 있는 일정이거나, 캘린더 서버가 안전한 수정 확인값을 주지 않는 일정입니다. 폰·웹의 캘린더 앱에서 직접 고치세요 |
+| 지우려는 일정이 "없다" 고 한다(not_found) | 이미 지워진 일정입니다 — 앞선 요청이나 다른 기기에서 지워졌습니다. Claude 는 다시 지우려 하지 않고 그렇게 알려 드립니다. 캘린더 앱에서 확인해 보세요 |
 | 지우기 확인이 "무효" 라고 한다(confirm_invalid) | 확인 뒤 10분이 지났거나, 그 사이 일정이 바뀌었습니다. 다시 지워 달라고 하면 새 확인을 받습니다 |
 | Claude 가 itda-hyve 를 모른다고 한다 | itda-hyve 가 Claude Desktop 에 연결되지 않은 것입니다. itda-hyve 의 "Claude Desktop" 화면에서 등록하고 Claude Desktop 을 다시 시작하세요 |
 | 일정이 안 보임 | `/calendar 지난달부터 다음 달까지 보여줘`처럼 기간을 넓히거나, `/calendar 내 캘린더 목록 보여줘`로 캘린더 이름을 확인하세요 |

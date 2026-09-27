@@ -1,14 +1,14 @@
 # itda-* 스킬 카탈로그
 
-> ⚠️ **자동 생성물 — 수기 편집 금지.** `skills/scripts/gen_skill_catalog.py` 가
-> `itda-*/skills/*/SKILL.md` frontmatter·본문에서 생성한다 (#1216).
-> 재생성: `python3 skills/scripts/gen_skill_catalog.py` (Windows: `py -3 …`)
+> ⚠️ **자동 생성물 — 수기 편집 금지.** `scripts/gen_skill_catalog.py` 가
+> 공개 팩(마켓플레이스 등록)의 `itda-*/skills/*/SKILL.md` frontmatter·본문에서 생성한다 (#1216).
+> 재생성: `python3 scripts/gen_skill_catalog.py` (Windows: `py -3 …`)
 > 정합 검사: `--check` — CI 가드는 `scripts/tests/test_gen_skill_catalog.py`.
 
 DP-1 Hybrid: 정적 생성 목록 + 호출 시 sanity check
 (`ground_check.skill_dir_exists` 가 아래 경로 매핑으로 실존 확인).
 
-총 102개 스킬 / 12개 팩.
+총 80개 스킬 / 9개 팩.
 
 | 스킬명 | 한 줄 요약 | 필요한 키 | 트리거 예시 | 팩 | 책임 경계 |
 |--------|-----------|-----------|------------|----|-----------|
@@ -23,7 +23,7 @@ DP-1 Hybrid: 정적 생성 목록 + 호출 시 sanity check
 | iaa-builder | CS 분류 라벨의 어노테이터 간 일치도(IAA)를 Cohen·Fleiss κ로 측정하는 스킬입니다. | 없음 | "이 라벨링 일치도 재줘", "Cohen 카파 계산", "골드셋 만들어줘" | itda-data | — |
 | pii-redact | 한국 CS 상담·문의 텍스트의 개인정보(PII)를 LLM에 넣기 전 결정론 룰로 검출·마스킹하는 스킬입니다. | 없음 | "이 상담 로그 비식별화해줘", "개인정보 가려줘", "PII 마스킹" | itda-data | — |
 | synthetic-data | 실제 데이터 없이 업무 문서의 구조만 인터뷰로 받아 같은 구조의 가상 데이터 세트를 만듭니다. | 없음 | "우리 대장 구조로 가상 데이터 50건", "실습용 가짜 환자 명단", "이 양식에 테스트 데이터 채워줘" | itda-data | 본 스킬은 가상 데이터 생성 전담 — itda-data:biz-redact 는 실제 문서 영업기밀 마스킹·복원, itda-data:pii-redact 는 정형 PII 마스킹. |
-| xlsx-recalc | openpyxl 등으로 만든 xlsx 는 수식만 있고 계산값이 비어 미리보기·pandas·다른 스킬에서 빈칸으로 보입니다. | 없음 | "엑셀 수식 값 채워줘", "xlsx 재계산해줘", "openpyxl 로 만든 파일 합계가 빈칸이야" | itda-data | 본 스킬은 수식 캐시값 재계산 전담 — itda-data:data-audit 는 수식 오류 감사, itda-doc:xlsx-design 은 xlsx 신규 생성. |
+| xlsx-recalc | openpyxl 등으로 만든 xlsx 는 수식만 있고 계산값이 비어 미리보기·pandas·다른 스킬에서 빈칸으로 보입니다. | 없음 | "엑셀 수식 값 채워줘", "xlsx 재계산해줘", "openpyxl 로 만든 파일 합계가 빈칸이야" | itda-data | 본 스킬은 수식 캐시값 재계산 전담 — itda-data:data-audit 는 수식 오류 감사, itda-data:data-verify 는 값 검산. |
 | changelog | Orca(onorca.dev)·Claude Code·Codex CLI·herdr 의 최근 릴리즈를 모아 버전별 한국어 요약으로 만들고 Orca 내장 브라우저 탭… | 없음 | "orca 업데이트 뭐 바뀌었어", "claude code 새 버전 뭐가 달라졌나", "codex cli 최근 릴리즈 요약" | itda-dev | — |
 | claude-usage | 이 머신에 로그인된 Claude Code 계정의 사용량(5시간·7일 창 사용률, 모델별 주간 한도, 리셋 시각, 플랜)을 저장된 OAuth 자격증명으로 직접 조… | 없음 | "claude 사용량 얼마나 남았어", "클로드 코드 한도 확인해줘", "5시간 창 리셋 언제야" | itda-dev | 본 스킬은 Claude Code 구독 사용량 전담 — itda-dev:codex-usage 는 Codex CLI 사용량. |
 | cloudflare-tunnel | 포트포워딩 없이 Cloudflare Tunnel로 내 서비스(원격 데스크톱·SSH·웹)를 안전하게 노출/접근하도록 셋업하는 스킬입니다. | CLOUDFLARE_API_TOKEN | "집 윈도우에 RDP 터널 깔아줘", "cloudflare tunnel로 ssh 열어줘", "터널 라우트에 access 걸어줘" | itda-dev | — |
@@ -32,26 +32,13 @@ DP-1 Hybrid: 정적 생성 목록 + 호출 시 sanity check
 | orca-coach | Orca(온오르카) 기능 활용 코치. | 없음 | "orca로 뭘 할 수 있어?", "이 작업에 orca 기능 뭐 쓰면 좋을까?", "orca 활용 아이디어 줘" | itda-dev | — |
 | windows-parallels-lab | macOS Parallels Desktop 의 자동화 전용 Windows 11 클론(win11-parlab)을 제어해 Windows 실런타임(COM/Office… | 없음 | "윈도우에서 실행해서 확인해줘", "hwpx 가 한글에서 안 깨지는지 봐줘", "게스트 화면 캡처해줘" | itda-dev | 되돌릴 수 있는 클론 전담 — 되돌릴 수 없는 실머신 조작은 다루지 않는다. |
 | blog-seo | 네이버 SearchAd API로 블로그 SEO용 블루키워드를 발굴하는 스킬입니다. | NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, NAVER_SEARCHAD_ACCESS_KEY, NAVER_SEARCHAD_CUSTOMER_ID, NAVER_SEARCHAD_SECRET_KEY | "블루키워드 찾아줘", "경쟁 적은 키워드 분석해줘", "블로그 키워드 포화지수 확인해줘" | itda-doc | — |
-| design-core | 브랜드 디자인을 고르고(getdesign 표준 DESIGN.md 카탈로그 차용), 만들고(한국·자사 브랜드 저작), 검증·조회해 웹·PPTX·DOCX·XLSX… | 없음 | "스포티파이 톤으로 디자인 골라줘", "우리 브랜드 디자인 시스템 정의해줘", "이 DESIGN.md 검증해줘" | itda-doc | — |
-| docx-design | 콘텐츠 마크다운과 수치 데이터로 디자인된 Word 문서(.docx)를 크로스플랫폼(macOS/Linux/Windows, Office 불필요)으로 신규 생성하는… | 없음 | "NovaTech 연차보고서 docx로 만들어줘", "이 프리셋으로 워드 보고서 디자인해줘", "md 내용으로 디자인된 워드 문서 생성" | itda-doc | — |
 | draft-post | 블로그·보고서·기획서·보도자료·뉴스레터를 도메인 맞춤 인터뷰로 초안 작성하는 스킬입니다. | 없음 | "블로그 글 써줘", "보고서 초안 작성해줘", "기획서 만들어줘" | itda-doc | 본 스킬은 초안 생성 전담(AI 흔적 사전의 정본: itda-doc:human-tone) — 이미 작성된 글의 AI 흔적 제거·문체 후처리는 itda-doc:human-tone 이 맡고, 본 스킬은 발행·송부를 하지 않습니다. |
 | html-report | 마크다운 보고서·분석 결과·회의 정리를 연차보고서 수준의 단일 파일 HTML 문서로 렌더링하는 스킬입니다. | 없음 | "이 보고서 HTML 파일로 만들어줘", "컨설팅 보고서 스타일로 전략 검토 문서 만들어줘", "공공기관 제출용 개조식 보고서 HTML로" | itda-doc | 본 스킬은 보고서형 HTML 렌더 전담 — 아침 브리핑 페이지는 itda-work:morning-brief. |
 | human-tone | 이미 작성된 한국어 사무 글(보고서·메일·기획서·공지)에서 AI 흔적을 걷어내는 후처리 스킬입니다. | 없음 | "이 보고서 AI 같아", "메일 너무 딱딱해", "사람이 쓴 것처럼 고쳐줘" | itda-doc | 본 스킬은 완성된 글의 후처리 검수 전담(AI 흔적 사전 가드 정본) — itda-doc:draft-post 는 처음부터 초안을 쓰는 생성 단계이며, 같은 글에 두 스킬을 겹쳐 적용하지 않습니다. |
 | hwpx | 한글 HWP·HWPX 문서 스킬입니다. | 없음 | "이 HWP 파일 읽어줘", "이 한글 양식 채워줘", "빈칸 채워줘" | itda-doc | — |
 | imagekit | 이미지 조회·리사이즈·여백 크롭·DPI 변경·포맷 변환·회전을 단일 CLI로 처리하는 스킬입니다. | 없음 | "이미지 크기 줄여줘", "여백 크롭해줘", "PNG를 JPG로 변환해줘" | itda-doc | — |
 | pdf-context-refinery | PDF를 LLM 컨텍스트·지식베이스용 구조화 마크다운으로 정제하는 스킬입니다. | 없음 | "PDF를 마크다운으로 변환해줘", "이 교재를 지식베이스로 만들어줘", "PDF OCR 정리해줘" | itda-doc | — |
-| pptx-design | 콘텐츠 마크다운과 수치 데이터로 16:9 PPTX 발표자료를 크로스플랫폼(macOS/Linux, Office 불필요)으로 신규 생성하는 스킬입니다. | 없음 | "삼성전자 주가전망 ppt 만들어줘", "이 DESIGN.md로 발표자료 디자인해줘", "md 내용으로 슬라이드 덱 생성" | itda-doc | — |
-| pptx-shrink | 기존 PPTX 파일의 용량을 줄이는 스킬입니다. | 없음 | "이 ppt 용량 줄여줘", "발표자료가 커서 메일로 못 보내", "pptx 압축해줘" | itda-doc | 본 스킬은 기존 pptx 용량 축소 전담 — itda-doc:imagekit 은 낱개 이미지, itda-doc:pptx-design 은 덱 신규 생성. |
-| xlsx-design | 수치 데이터로 디자인된 Excel 통합문서(.xlsx)를 크로스플랫폼(macOS/Linux/Windows, Office 불필요)으로 신규 생성하는 스킬입니다. | 없음 | "NovaTech 실적 엑셀로 만들어줘", "이 프리셋으로 대시보드 시트 디자인해줘", "데이터로 디자인된 xlsx 생성" | itda-doc | 본 스킬은 디자인된 xlsx 신규 생성 전담 — 이미 있는 xlsx 의 수식 캐시값 재계산은 itda-data:xlsx-recalc. |
-| artifact-packager | 정적 웹 산출물(Claude 아티팩트·HTML·dist 폴더)을 실행 가능한 단일 실행파일 또는 zip 으로 패키징해 내 PC 에서 띄우는 스킬입니다. | 없음 | "아티팩트 패키징해줘", "실행파일로 묶어줘", "이 산출물 실행파일로 만들어줘" | itda-egg | — |
-| daiso | 다이소 상품 검색·가격·매장 찾기·매장별 재고·진열 위치를 로그인 없이 조회하는 스킬입니다. | 없음 | "다이소 수납박스 검색", "이 상품 강남역 근처 다이소에 재고 있어?", "강남 다이소 매장 찾아줘" | itda-egg | — |
-| font-guide | 문서(docx/pptx/pdf)에 어울리는 무료 한글 폰트를 추천하고 자동 설치해주는 스킬입니다. | 없음 | "PPT용 폰트 추천해줘", "보고서에 어울리는 폰트 알려줘", "Pretendard 설치해줘" | itda-egg | — |
-| hangul-pron | 영어 문장·중국어 병음·일본어 가나를 한글로 소리 나는 대로 적어 준다 — "레츠 겥 드레ˇ스드", "{워=3}먼 {츠=1#} {판=4o} 빠", "{고=v}항… | 없음 | "레츠 겥 드레ˇ스드", "{워=3}먼 {츠=1#} {판=4o} 빠", "{고=v}항 오 타{베=v}요ー" | itda-egg | — |
-| kurly | 마켓컬리 상품 검색·가격·상세를 로그인 없이 조회하는 스킬입니다. | 없음 | "마켓컬리에서 우유 얼마야?", "컬리에서 딸기 검색해줘", "이 상품 품절인지 보고 링크도 줘" | itda-egg | — |
-| music-dl | 음원을 내려받아 Apple Music(Music.app)용으로 태깅·정품 앨범아트·가사까지 채워 넣고, 기존 로컬 음원의 결손도 보정한다. | 없음 | "이 노래 받아줘", "유튜브에서 음악 다운받아줘", "앨범아트 넣어줘" | itda-egg | — |
-| naver-blog-post | HTML 원고를 네이버 블로그 스마트에디터에 네이티브 컴포넌트(소제목·인용구 6종·구분선 8종·소스코드·표·이미지+캡션·목록)로 붙여넣고, 공개 범위를 확인한… | 없음 | "네이버 블로그에 올려줘", "블로그 글 발행해줘", "이 원고 네이버 블로그에 비공개로 올려줘" | itda-egg | — |
-| parcel-tracker | Track Korean parcel deliveries by waybill number over plain HTTP (stdlib only, no browser… | 없음 | "택배 조회해줘", "한진택배 537444594341 어디쯤이야", "CJ대한통운 운송장 조회해줘" | itda-egg | — |
-| u-library | 대전공공도서관(u-library.kr)의 대출현황·대출연장·소장자료 검색과 한밭도서관 희망도서 신청을 aside 브라우저 자동화로 수행한다. | 없음 | "빌린 책 언제까지야", "도서관 대출 연장해줘", "반납일 알려줘" | itda-egg | — |
+| pptx-shrink | 기존 PPTX 파일의 용량을 줄이는 스킬입니다. | 없음 | "이 ppt 용량 줄여줘", "발표자료가 커서 메일로 못 보내", "pptx 압축해줘" | itda-doc | 본 스킬은 기존 pptx 용량 축소 전담 — itda-doc:imagekit 은 낱개 이미지. |
 | airport-airline-stats | 인천공항 항공사별 월별 통계(운항·여객·화물)를 LLM-친화 JSON으로 조회하는 스킬입니다. | 없음 | "2025년 3월 인천공항 항공사별 통계 알려줘", "지난달 국제선 여객기 통계 뽑아줘", "T1 터미널 항공사별 운항 횟수 조회해줘" | itda-gov | — |
 | bai-notice | 감사원 통합공지 게시판을 내부 JSON API로 수집해 마크다운 표로 정리하는 스킬입니다. | 없음 | "감사원 공지 확인해줘", "감사원 통합공지 최근 10건 보여줘", "감사원에서 채용 공고 찾아줘" | itda-gov | — |
 | court-auction | 대법원 법원경매정보(courtauction.go.kr)의 부동산 매각공고·사건·물건을 조회하는 스킬입니다. | 없음 | "오늘 서울중앙지법 경매 공고 보여줘", "2024타경100001 사건 진행상황 알려줘", "강남 아파트 5억 이하 유찰 1회 물건 찾아줘" | itda-gov | — |
@@ -70,7 +57,6 @@ DP-1 Hybrid: 정적 생성 목록 + 호출 시 sanity check
 | realty-supply | KOSIS 주택 공급 지표(미분양·인허가·착공·준공·입주)와 청약홈 청약 통계를 수집하는 스킬입니다. | KOSIS_API_KEY, KO_DATA_API_KEY | "올해 강남구 아파트 미분양 추이 보여줘", "2024년 전국 인허가·착공·준공 통계 가져와줘", "최근 청약 경쟁률 높은 단지 목록 보여줘" | itda-gov | 본 스킬은 KOSIS 공급 지표·청약 통계 전담 — 개별 실거래 원본은 itda-gov:realty-deals, 가격지수·파생 통계는 itda-gov:realty-price-stats. |
 | taxlaw | 국세법령정보시스템(taxlaw.nts.go.kr)에서 세법 법령·세법해석례(예규)·판례/결정례·상담사례를 검색하고 전문(全文)을 조회하는 스킬입니다. | 없음 | "양도소득세 예규 찾아줘", "부가가치세 판례 검색해줘", "국세기본법 제18조 보여줘" | itda-gov | 본 스킬은 국세법령정보시스템 세법 조회(법령·예규·판례) 전담 — 위하고·홈택스 등 세무 포털 자동화·장부 수집은 범위 밖(현재 지원 스킬 없음)이며, 세법 밖 일반 법령은 다루지 않습니다. |
 | mmaa-welfare | 군인공제회 복지포털 스냅샷 Q&A — 복지부조(신규가입·출산 축하금, 재해위로금, 축하기념품)· 회원콘도 이용안내·유익한 정보(취업·창업·시니어)를 출처 URL… | 없음 | "출산축하금 얼마?", "군인공제회 콘도 이용 조건", "재해위로금 대상" | itda-org-mmaa | — |
-| web-automation | [현재 실행 경로 없음 — 노하우 참고용] hyve 앱 폐기로 이 스킬이 전제하는 hyve web_browse MCP 가 없다. | 없음 | "위하고 분개장 수집해줘", "수임처 회계 들어가서 장부 뽑아줘", "홈택스 사업자 상태 조회해줘" | itda-org-taxhero | 본 스킬은 WEHAGO·HOMETAX 사이트 특화 레시피 전담 — 세법 조문·예규 조회는 itda-gov:taxlaw. |
 | brain-audit | 업무DB(뇌)를 독립 재검수하는 스킬입니다. | 없음 | "뇌가 낡았는지", "이 업무DB 검수해줘", "뇌 아직 최신이야?" | itda-research | — |
 | brain-build | 회사 공유폴더의 비정형 문서 무더기(워드·엑셀·PPT·PDF·txt 수십~수백 개)를 근거 추적 가능한 업무DB(뇌)로 만드는 빌드 스킬입니다. | 없음 | "이 폴더를 업무DB로 만들어줘", "공유폴더 정리해서 뇌로 만들어줘", "이 문서들 근거 추적 가능하게 정리" | itda-research | — |
 | brain-fixture | 함정(모순·버전지옥·규정이중화·손상파일 등)을 의도적으로 심은 가상 회사의 연습용 데이터셋 폴더(워드·엑셀·PPT·PDF·txt·csv)를 만드는 스킬입니다. | 없음 | "연습용 가상 폴더 만들어줘", "함정 심은 모의 데이터셋 생성해줘", "헬스케어 회사 연습 데이터 만들어줘" | itda-research | — |
@@ -80,14 +66,6 @@ DP-1 Hybrid: 정적 생성 목록 + 호출 시 sanity check
 | investigate | 경쟁 가설과 반증 실험으로 근본 원인을 체계적으로 조사하는 스킬입니다. | 없음 | "왜 이렇게 느리지?", "이 에러 원인이 뭐야?", "원인 분석해줘" | itda-research | — |
 | market-scan | 외부 시장·산업 자료를 찾아 의사결정용으로 구조화하는 시장조사 스킬입니다. | DART_API_KEY, ECOS_API_KEY, EXA_API_KEY, KOSIS_API_KEY, NAVER_SEARCH_CLIENT_ID, NAVER_SEARCH_CLIENT_SECRET, PERPLEXITY_API_KEY, SERPER_API_KEY, TAVILY_API_KEY | "OO 시장 조사해줘", "시장 규모랑 경쟁사 알려줘", "신사업 진입할 만한지 분석해줘" | itda-research | — |
 | meeting-reliability | 회의 녹취·기록에서 "확인 / 확인 필요 / 예외"를 근거와 함께 정확히 가르는 신뢰성 검수 스킬입니다. | 없음 | "확인 / 확인 필요 / 예외", "이 녹취 결정사항 표로 정리해줘", "회의록 신뢰성 검수해줘" | itda-research | — |
-| kis-auth | 한국투자증권 KIS OpenAPI 인증을 설정·진단하는 스킬입니다. | KIS_ACCOUNT_NUMBER, KIS_APP_KEY, KIS_APP_SECRET | "KIS 인증 설정해줘", "한국투자증권 앱키 등록해줘", "모의투자 계정 설정해줘" | itda-stocks | — |
-| kis-backtest | KIS 과거 시세로 트레이딩 전략을 백테스트하는 스킬입니다. | KIS_APP_KEY, KIS_APP_SECRET | "이 전략 백테스트 해줘", "골든 크로스 성과 분석해줘", "최근 1년 데이터로 백테스팅 돌려줘" | itda-stocks | — |
-| kis-market | KIS OpenAPI로 시세·시장 데이터·계좌 잔고를 조회하는 스킬입니다. | KIS_APP_KEY, KIS_APP_SECRET | "삼성전자 현재 시세 조회해줘", "내 KIS 포트폴리오 보여줘", "내 계좌 잔고 확인해줘" | itda-stocks | — |
-| kis-order | 모의/실전 KIS 주식 주문을 default-deny 실전 주문 게이트·감사 로그와 함께 실행하는 스킬입니다. | KIS_APP_KEY, KIS_APP_SECRET | "모의투자로 카카오 5주 매수해줘", "실전으로 삼성전자 매도 실행해줘", "모의 잔고 전량 매수해줘" | itda-stocks | — |
-| kis-strategy | 트레이딩 전략을 설계하고 매수·매도·관망 시그널을 생성하는 스킬입니다. | KIS_APP_KEY, KIS_APP_SECRET | "골든크로스 전략 시그널 만들어줘", "RSI 14로 매매 시그널 생성해줘", "볼린저밴드 전략 만들어줘" | itda-stocks | — |
-| market-events | 코스피/코스닥 사이드카·서킷브레이커(CB) 발동을 빠르게 감지하는 스킬입니다 (PoC). | KIS_APP_KEY, KIS_APP_SECRET | "오늘 사이드카 발동했어?", "서킷브레이커 걸렸는지 확인해줘", "시장조치 감시 시작해줘" | itda-stocks | — |
-| stock-us | 미국 증시 분석·시황 아티클 작성 스킬입니다. | 없음 | "오늘 미국 증시 프리마켓 현황 알려줘", "NVDA 기술적 분석해줘", "이 PDF 시황 자료로 블로그 글 써줘" | itda-stocks | — |
-| surge-data | ETF 급등 감지를 위한 데이터 수집 스킬입니다. | KIS_ACCOUNT_NUMBER, KIS_APP_KEY, KIS_APP_SECRET | "지금 ETF 시장 스냅샷 수집해줘", "야간 미국 ETF 변동 데이터 가져와줘", "나스닥 지수·VIX·환율 매크로 지표 조회해줘" | itda-stocks | — |
 | eatery-trend | 여행지·동네의 '지금 뜨는' 맛집과 음식 트렌드를 검색량 surge로 탐지하는 스킬입니다. | NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, NAVER_SEARCHAD_ACCESS_KEY, NAVER_SEARCHAD_CUSTOMER_ID, NAVER_SEARCHAD_SECRET_KEY | "제주 요즘 뜨는 맛집", "성수에서 트렌디한 국밥", "지금 핫한 디저트 뭐야" | itda-travel | — |
 | flight-search | Google Flights 공개 검색으로 항공권을 조회·비교하는 스킬입니다. | 없음 | "인천에서 도쿄 6월 26일 항공권 찾아줘", "ICN-NRT 다음 달 최저가 언제야?", "9월에 7일 일정 왕복으로 제일 싼 출발일은?" | itda-travel | — |
 | hotel-search | 같은 호텔의 여러 예약 사이트(Booking·Agoda·Trip.com·Klook·공식사이트) 실시간 요금을 한 번에 비교해 최저가와 각 사이트 예약 링크를 찾… | 없음 | "신라호텔 서울 8월 1일부터 2박 최저가 비교해줘", "이 호텔 부킹이랑 아고다 중 어디가 싸? 예약 링크도 줘", "제주 그랜드하얏트 이번 주말 가격이랑 싼 날짜 알려줘" | itda-travel | — |
@@ -140,26 +118,13 @@ harness               → itda-dev/skills/harness/
 orca-coach            → itda-dev/skills/orca-coach/
 windows-parallels-lab → itda-dev/skills/windows-parallels-lab/
 blog-seo              → itda-doc/skills/blog-seo/
-design-core           → itda-doc/skills/design-core/
-docx-design           → itda-doc/skills/docx-design/
 draft-post            → itda-doc/skills/draft-post/
 html-report           → itda-doc/skills/html-report/
 human-tone            → itda-doc/skills/human-tone/
 hwpx                  → itda-doc/skills/hwpx/
 imagekit              → itda-doc/skills/imagekit/
 pdf-context-refinery  → itda-doc/skills/pdf-context-refinery/
-pptx-design           → itda-doc/skills/pptx-design/
 pptx-shrink           → itda-doc/skills/pptx-shrink/
-xlsx-design           → itda-doc/skills/xlsx-design/
-artifact-packager     → itda-egg/skills/artifact-packager/
-daiso                 → itda-egg/skills/daiso/
-font-guide            → itda-egg/skills/font-guide/
-hangul-pron           → itda-egg/skills/hangul-pron/
-kurly                 → itda-egg/skills/kurly/
-music-dl              → itda-egg/skills/music-dl/
-naver-blog-post       → itda-egg/skills/naver-blog-post/
-parcel-tracker        → itda-egg/skills/parcel-tracker/
-u-library             → itda-egg/skills/u-library/
 airport-airline-stats → itda-gov/skills/airport-airline-stats/
 bai-notice            → itda-gov/skills/bai-notice/
 court-auction         → itda-gov/skills/court-auction/
@@ -178,7 +143,6 @@ realty-price-stats    → itda-gov/skills/realty-price-stats/
 realty-supply         → itda-gov/skills/realty-supply/
 taxlaw                → itda-gov/skills/taxlaw/
 mmaa-welfare          → itda-org-mmaa/skills/mmaa-welfare/
-web-automation        → itda-org-taxhero/skills/web-automation/
 brain-audit           → itda-research/skills/brain-audit/
 brain-build           → itda-research/skills/brain-build/
 brain-fixture         → itda-research/skills/brain-fixture/
@@ -188,14 +152,6 @@ ground-check          → itda-research/skills/ground-check/
 investigate           → itda-research/skills/investigate/
 market-scan           → itda-research/skills/market-scan/
 meeting-reliability   → itda-research/skills/meeting-reliability/
-kis-auth              → itda-stocks/skills/kis-auth/
-kis-backtest          → itda-stocks/skills/kis-backtest/
-kis-market            → itda-stocks/skills/kis-market/
-kis-order             → itda-stocks/skills/kis-order/
-kis-strategy          → itda-stocks/skills/kis-strategy/
-market-events         → itda-stocks/skills/market-events/
-stock-us              → itda-stocks/skills/stock-us/
-surge-data            → itda-stocks/skills/surge-data/
 eatery-trend          → itda-travel/skills/eatery-trend/
 flight-search         → itda-travel/skills/flight-search/
 hotel-search          → itda-travel/skills/hotel-search/

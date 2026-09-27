@@ -1,5 +1,11 @@
 # Changelog — itda-work/weather-here
 
+## [0.12.6] — 2026-09-27
+
+### Changed
+
+- User-Agent `Mozilla/5.0 (compatible; weather-here-skill; +itda-skills)` → `Mozilla/5.0`(outbound-identity-leak). 위치·날씨 API 로그에 스킬·조직 이름을 남기지 않는다.
+
 ## [0.12.5] — 2026-07-26 (이슈 #1283)
 
 ### Changed

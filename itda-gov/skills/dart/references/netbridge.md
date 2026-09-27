@@ -1,4 +1,4 @@
-# itda-hyve(구 itda-butler·itda-netbridge) 로 네트워크·자격증명 다루기
+# itda-hyve 로 네트워크·자격증명 다루기
 
 > **정본**: 저장소 루트 `shared/netbridge.md`(파일 이름은 옛 이름 그대로 — 기존 참조를 깨지 않기 위해).
 > 이 파일을 참조하는 스킬은 같은 내용을 `references/netbridge.md` 로 동봉한다(배포본에는 `shared/*.md` 가 실리지 않기 때문 —
@@ -19,7 +19,8 @@ itda-hyve 는 사용자 PC 에서 도는 로컬 MCP 서버다. 스킬이 외부�
 
 ### 도구를 이름으로 지목한다
 
-Cowork 에서 itda-hyve 도구는 `mcp__remote-devices__itda-hyve__<도구>` 이름으로 보인다(개명 전 이름으로 실측, 0.9.0 에서 접두어만 바뀜 — 새 이름 실측은 아직). SKILL.md 는 두 곳에 적는다.
+itda-hyve 도구 이름은 서버 이름 `itda-hyve` 를 담는다 — Cowork 에서는 `mcp__remote-devices__itda-hyve__<도구>`(0.9.0, 2026-09-26 실측 — itda-hyve `FEATURES.md`),
+Claude Code 에 `itda-hyve` 이름으로 등록하면 `mcp__itda-hyve__<도구>` 다. SKILL.md 는 두 곳에 적는다.
 
 1. frontmatter `allowed-tools` 에 **전체 이름**:
 
@@ -32,10 +33,10 @@ Cowork 에서 itda-hyve 도구는 `mcp__remote-devices__itda-hyve__<도구>` 이
 
 도구 12개: `http_request` · `accounts_list` · `imap_list_mailboxes` · `imap_search` · `imap_fetch` · `imap_save_attachment` · `smtp_send` ·
 `calendar_list` · `calendar_events` · `calendar_get` · `calendar_put` · `calendar_delete`(itda-hyve 0.9.0 이상).
-도구 목록에 itda-hyve 가 없으면 설치·연결되지 않은 것이다 — 다른 경로로 우회하지 말고 사용자에게 itda-hyve 설치·Claude Desktop 연결을 안내한다.
+도구 목록에 이름에 `itda-hyve__` 가 든 도구(Cowork `mcp__remote-devices__itda-hyve__<도구>`, Claude Code `mcp__itda-hyve__<도구>`)가 없으면
+설치·연결되지 않았거나 0.9.0 보다 옛 판이다 — 우회하지 말고 사용자에게 itda-hyve 0.9.0 이상 설치(이미 있으면 업데이트)·Claude Desktop 연결을
+안내하고 멈춘다. **다른 서버의 도구**(개명 전 이름의 판 포함)나 내장 fetch 로 대신하지 않는다(0.9.0 은 도구 12개를 모두 등록한다).
 받는 곳은 https://github.com/itda-work/itda-hyve.pub/releases/latest (설치 안내 https://github.com/itda-work/itda-hyve.pub#readme) 이다 — 이 주소를 그대로 알려 준다.
-itda-hyve 는 없고 개명 전 이름의 도구(`mcp__remote-devices__itda-butler__*`)만 보이면 0.9.0 이전 판이다 — 도구 이름이 달라 스킬이 부를 수 없으니
-itda-hyve 0.9.0 이상으로 업데이트를 안내하고 멈춘다. 옛 이름 도구나 `http_request` 로 대신하지 않는다(0.9.0 은 도구 12개를 모두 등록한다).
 
 ### 요청 본문의 정확한 형태는 스킬이 준다
 

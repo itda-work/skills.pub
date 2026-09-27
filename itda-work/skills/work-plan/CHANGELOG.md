@@ -1,5 +1,18 @@
 # Changelog — work-plan
 
+## [0.13.3] — 2026-09-27
+
+### Changed
+
+- 스킬 카탈로그에서 비공개 팩(`itda-egg`·`itda-stocks` — 마켓플레이스 미등록) 스킬 17행을 뺐다. 공개 사용자에게 설치할 수 없는 스킬을 추천하지 않고, 공개물에 비공개 팩 이름을 싣지 않는다(12.0.0 공개 전 리뷰 참고 항목). 97 → 80 스킬 / 11 → 9 팩. 생성기가 `marketplace.json` 등록 팩만 거르고, 못 읽으면 실패한다. 회귀: `scripts/tests/test_gen_skill_catalog.py`(공개 카탈로그에 비공개 팩 이름·스킬 행 0, 공개 스킬 전수, fail-closed).
+
+## [0.13.2] — 2026-09-27
+
+### Changed
+
+- 스킬 카탈로그(`references/skill-catalog.md`) 재생성 — itda-org-taxhero `web-automation`·itda-doc 디자인 스킬 4종(design-core·docx-design·pptx-design·xlsx-design) 제거 반영.
+- 인수 테스트: 신세대 스킬 인식 표본을 pptx-design → pptx-shrink 로, 제거한 스킬 5종이 카탈로그·디렉토리에 없음을 단언하는 회귀 추가.
+
 ## [0.13.1] — 2026-09-25 (itda-work/itda-hyve#6)
 
 ### Changed

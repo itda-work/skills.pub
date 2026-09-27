@@ -6,7 +6,7 @@ description: >
   "네이버 배당 현황", "셀트리온 소송 이력"처럼 말하면 됩니다.
   기업 프로필·재무·인력·사업보고서·공시 목록에 더해 배당·증자·소송·전환사채 등 주요사항도 반환합니다.
 license: Apache-2.0
-compatibility: "Claude Code & Cowork. Python 3.10+. 네트워크는 itda-hyve 0.9.0 이상(로컬 MCP 서버, 구 itda-butler)."
+compatibility: "Claude Code & Cowork. Python 3.10+. 네트워크는 itda-hyve 0.9.0 이상(로컬 MCP 서버)."
 allowed-tools: "mcp__remote-devices__itda-hyve__http_request, Bash, Read, Write, mcp__workspace__bash"
 user-invocable: true
 argument-hint: "[search|info|finance|employees|profile|disclosure|business|compare|raw] [--name 회사명] [--corp-code 코드] [--year 연도] [--report annual|q1|q2|q3] [--prefer annual|latest] [--detail] [--unit auto|million|eok|jo] [--with-ratios] [--with-prior] [--endpoint 엔드포인트] [--param key=value] [--format json|table|csv]"
@@ -15,9 +15,9 @@ metadata:
   category: "domain"
   status: "active"
   recommended: true
-  version: "0.19.0"
+  version: "0.19.1"
   created_at: "2026-03-29"
-  updated_at: "2026-09-25"
+  updated_at: "2026-09-27"
   tags: "DART, CSV, company, financial, disclosure, competitor, business report, compare"
 ---
 

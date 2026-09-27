@@ -27,9 +27,10 @@ from bs4 import BeautifulSoup, Tag
 
 BASE = "https://www.mmaa.or.kr"
 ENTRY = f"{BASE}/web/contents/welfaremain.do"
+# 외부로 나가는 UA 에 우리 신원(제품·조직·스킬 이름)을 싣지 않는다(outbound-identity-leak).
 USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/126.0 Safari/537.36 itda-skills-mmaa-welfare"
+    "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 )
 # 제휴복지 카테고리 목록 (schBdcode 코드 → 라벨)
 CATEGORY_CODES = {

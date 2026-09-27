@@ -11,11 +11,11 @@ allowed-tools: Read, Bash, Write, WebSearch, mcp__workspace__bash
 argument-hint: "rates|heatmap|resolve --hotel-key g#-d# | --url <TripAdvisor URL> --checkin YYYY-MM-DD --checkout YYYY-MM-DD"
 metadata:
   author: "Chinseok"
-  version: "0.3.4"
+  version: "0.3.5"
   category: "data-fetching"
   status: "experimental"
   created_at: "2026-07-07"
-  updated_at: "2026-09-25"
+  updated_at: "2026-09-27"
   tags: "hotel, price, comparison, travel, tripadvisor, xotelo, ota, booking, agoda, read-only, api"
 ---
 

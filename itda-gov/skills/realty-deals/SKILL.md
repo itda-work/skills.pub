@@ -6,17 +6,17 @@ description: >
   전체 페이지네이션·다개월 범위·CSV/JSON 출력을 지원합니다.
   [책임 경계] 본 스킬은 국토교통부 실거래 raw 수집 전담 — 가격지수·평균/중위 파생 통계는 itda-gov:realty-price-stats, 미분양·인허가·청약은 itda-gov:realty-supply.
 license: Apache-2.0
-compatibility: "Python 3.10+, Claude Code & Cowork. 네트워크는 itda-hyve 0.9.0 이상(로컬 MCP 서버, 구 itda-butler)이 한다."
+compatibility: "Python 3.10+, Claude Code & Cowork. 네트워크는 itda-hyve 0.9.0 이상(로컬 MCP 서버)이 한다."
 user-invocable: true
 allowed-tools: "mcp__remote-devices__itda-hyve__http_request, Bash, Read, Write, mcp__workspace__bash"
 argument-hint: "지역명 + 기간 + 유형 (예: 강남구 2026년 1~6월 아파트 매매)"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "0.12.0"
+  version: "0.12.1"
   category: "domain"
   status: "active"
   created_at: "2026-05-15"
-  updated_at: "2026-09-25"
+  updated_at: "2026-09-27"
   tags: "realestate, molit, trade, rent, csv, json"
 ---
 

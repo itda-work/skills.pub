@@ -13,9 +13,8 @@ import urllib.request
 from typing import Any
 
 
-_USER_AGENT = (
-    "Mozilla/5.0 (compatible; weather-here-skill; +itda-skills)"
-)
+# 외부로 나가는 UA 에 우리 신원(제품·조직·저장소 URL)을 싣지 않는다 — 범용 토큰만(outbound-identity-leak).
+_USER_AGENT = "Mozilla/5.0"
 
 
 def fetch_json(

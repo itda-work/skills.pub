@@ -2,6 +2,12 @@
 
 이 스킬의 주요 변경 이력입니다. (Keep a Changelog 형식)
 
+## [0.1.9] — 2026-09-27
+
+### Changed
+
+- User-Agent `itda-web-search/0.1 (+https://github.com/itda-skills)` → `Mozilla/5.0`. 검색 API 로그에 저장소 URL·스킬 이름을 남기지 않는다(outbound-identity-leak). 호출자가 준 UA 는 그대로 쓴다. 회귀: `tests/test_search_http.py`.
+
 ## [0.1.8] — 2026-09-25 (itda-work/itda-hyve#6)
 
 ### Changed

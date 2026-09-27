@@ -2,7 +2,7 @@
 name: xlsx-recalc
 description: >
   openpyxl 등으로 만든 xlsx 는 수식만 있고 계산값이 비어 미리보기·pandas·다른 스킬에서 빈칸으로 보입니다. LibreOffice 로 재계산해 값을 채운 새 파일을 만들고, 틀린 값을 성공으로 쓸 위험(외부 링크 값 없음·구버전 LibreOffice)은 계산 전에 막습니다. "엑셀 수식 값 채워줘", "xlsx 재계산해줘", "openpyxl 로 만든 파일 합계가 빈칸이야"처럼 말하면 됩니다.
-  [책임 경계] 본 스킬은 수식 캐시값 재계산 전담 — itda-data:data-audit 는 수식 오류 감사, itda-doc:xlsx-design 은 xlsx 신규 생성.
+  [책임 경계] 본 스킬은 수식 캐시값 재계산 전담 — itda-data:data-audit 는 수식 오류 감사, itda-data:data-verify 는 값 검산.
 license: MIT
 compatibility: "Claude Code & Cowork. Python 3.10+ (stdlib). LibreOffice 24.8 이상(soffice) 필요."
 user-invocable: true
@@ -10,12 +10,12 @@ allowed-tools: Read, Bash, Glob, mcp__workspace__bash
 argument-hint: "<수식이 든.xlsx> [출력.xlsx]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "0.1.0"
+  version: "0.1.1"
   category: "data-analysis"
   status: "experimental"
   recommended: false
   created_at: "2026-09-13"
-  updated_at: "2026-09-14"
+  updated_at: "2026-09-27"
   tags: "xlsx, excel, recalc, recalculate, formula, cache, openpyxl, libreoffice, spreadsheet"
 ---
 
@@ -117,13 +117,13 @@ LibreOffice 는 저장할 때 수식을 다시 쓴다. 대부분은 표기만 �
 |---|---|
 | 수식이 틀렸는지·하드코드·범위 누락을 찾고 싶다 | `itda-data:data-audit` |
 | 합계·원장 대조처럼 값이 맞는지 검산하고 싶다 | `itda-data:data-verify` |
-| 데이터로 디자인된 엑셀을 새로 만들고 싶다 | `itda-doc:xlsx-design` |
+| 데이터로 디자인된 엑셀을 새로 만들고 싶다 | 현재 지원 스킬 없음 — 이 스킬은 이미 있는 xlsx 의 값만 채운다 |
 | 엑셀 파일을 열어 둔 채 실시간으로 계산값을 보고 싶다(Windows·Office) | `itda-data:data-audit` 의 실시간 경로 |
 
 ## 권장 체인
 
 ```
-xlsx-design(또는 openpyxl 생성) → xlsx-recalc → data-audit / data-verify
+openpyxl 등으로 생성 → xlsx-recalc → data-audit / data-verify
 ```
 
 감사·검수 스킬은 캐시값을 읽으므로, 방금 만든 xlsx 는 재계산을 먼저 거친다.

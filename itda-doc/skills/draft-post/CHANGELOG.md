@@ -1,5 +1,11 @@
 # Changelog — itda-work/draft-post
 
+## [1.2.8] — 2026-09-27
+
+### Changed
+
+- "쓰지 않을 때" 표의 조판 행에서 제거된 디자인 스킬(Word·PPT 생성) 지목을 빼고 `itda-doc:hwpx`·`itda-doc:html-report` 로 안내(2026-09-27).
+
 ## [1.2.6] — 2026-07-26 (이슈 #1283)
 
 ### Changed

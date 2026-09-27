@@ -3,6 +3,12 @@
 이 플러그인의 주요 변경 사항을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.0.0/),
 버전은 [SemVer](https://semver.org/lang/ko/)를 따릅니다.
 
+## [1.0.2] - 2026-09-27
+
+### Changed
+
+- 외부로 나가는 User-Agent 에서 우리 신원(저장소 URL·조직·스킬 이름)을 뺐다(outbound-identity-leak) — `eatery-trend` 0.1.4(네이버 자동완성 UA `Mozilla/5.0 (compatible; eatery-trend-skill; +itda-skills)` → `Mozilla/5.0`) · `hotel-search` 0.3.5(환율 UA `Mozilla/5.0 hotel-search/1.0` → `Mozilla/5.0`, Xotelo UA 끝의 `hotel-search/1.0` 제거).
+
 ## [1.0.1] - 2026-09-25
 
 ### Changed

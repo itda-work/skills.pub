@@ -2,6 +2,12 @@
 
 이 플러그인의 주요 변경 사항을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/), 버전은 [SemVer](https://semver.org/)를 따릅니다.
 
+## [2.0.1] - 2026-09-27
+
+### Changed
+
+- `windows-parallels-lab` 0.1.2 — 렌더링 그라운드 트루스 예시에서 제거된 덱 생성 스킬 지목을 뺐다(2026-09-27).
+
 ## [2.0.0] - 2026-09-25
 
 ### Removed

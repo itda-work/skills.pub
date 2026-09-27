@@ -11,12 +11,12 @@ allowed-tools: Read, Bash, Glob, Grep, mcp__workspace__bash
 argument-hint: "[xlsx 경로 또는 감사 요청]"
 metadata:
   author: "Chinseok"
-  version: "0.3.0"
+  version: "0.3.1"
   category: "data-tidy"
   status: "experimental"
   recommended: false
   created_at: "2026-07-07"
-  updated_at: "2026-09-25"
+  updated_at: "2026-09-27"
   tags: "xlsx, audit, formula, spreadsheet, openpyxl, qa, hardcode, incubating"
 ---
 
@@ -66,7 +66,6 @@ print(report.render(result))     # Sheet·Cell·Severity·Category·Issue·Fix �
 |---|---|
 | openpyxl 로 만든 파일이라 수식 캐시값이 비어 있다(값 기반 검사 전 재계산) | `itda-data:xlsx-recalc` |
 | 수식 구조가 아니라 합계·원장 대조로 값이 맞는지 검산 | `itda-data:data-verify` |
-| 데이터로 디자인된 엑셀을 새로 만들기 | `itda-doc:xlsx-design` |
 
 ## 범위 외
 - 재무모델 무결성: BS balance·cash tie-out·재무제표 3표 정합, DCF/LBO/3-statement/Merger/Comps 모델별 버그 (#952 스코프 아웃)

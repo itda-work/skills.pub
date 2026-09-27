@@ -6,15 +6,15 @@ description: >
   목록은 제목·보낸 사람만 먼저 보여 주고 고른 메일만 엽니다(읽음 표시 안 바뀜). "첨부 받아서 요약해줘"는 첨부를 폴더에 받아 파일을 열어 읽습니다. 발송은 미리보기를 보여 주고 승인을 받은 뒤에만 합니다.
   [책임 경계] 본 스킬은 메일 찾기·읽기·발송 전담 — 아침 브리핑 페이지(오늘 일정+미회신 요청 한 장)는 itda-work:morning-brief, 일정 조회·추가는 itda-work:calendar.
 license: Apache-2.0
-compatibility: "Claude Code & Cowork. itda-hyve 0.9.0 이상(로컬 MCP 서버, 구 itda-butler) 필요 — 메일 도구 6개를 쓴다."
+compatibility: "Claude Code & Cowork. itda-hyve 0.9.0 이상(로컬 MCP 서버) 필요 — 메일 도구 6개를 쓴다."
 allowed-tools: "mcp__remote-devices__itda-hyve__accounts_list, mcp__remote-devices__itda-hyve__imap_list_mailboxes, mcp__remote-devices__itda-hyve__imap_search, mcp__remote-devices__itda-hyve__imap_fetch, mcp__remote-devices__itda-hyve__imap_save_attachment, mcp__remote-devices__itda-hyve__smtp_send"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
   recommended: true
-  version: "0.35.0"
+  version: "0.35.1"
   created_at: "2026-03-18"
-  updated_at: "2026-09-26"
+  updated_at: "2026-09-27"
   tags: "email, smtp, imap, naver, gmail, google, daum, kakao, icloud, multi-account, itda-hyve, mailbox, search, unread, flagged, attachments, save-attachment, attachment-summary, html, reply, in-reply-to, phishing, send-confirmation"
 ---
 
@@ -23,7 +23,7 @@ metadata:
 메일은 **itda-hyve 의 메일 도구 6개로만** 다룬다. itda-hyve 는 사용자 PC 에서 도는 로컬 MCP 서버이고, 계정 비밀번호는
 itda-hyve 의 볼트에만 있다. 이 스킬은 자격증명을 읽지도 묻지도 않는다.
 
-| 할 일 | 도구 (Cowork 에서 보이는 전체 이름) |
+| 할 일 | 도구 (Cowork 에서 보이는 전체 이름 — Claude Code 는 `mcp__itda-hyve__<도구>`) |
 |---|---|
 | 계정 목록 | itda-hyve 의 `accounts_list` (`mcp__remote-devices__itda-hyve__accounts_list`) |
 | 메일함(폴더) 목록 | itda-hyve 의 `imap_list_mailboxes` (`mcp__remote-devices__itda-hyve__imap_list_mailboxes`) |
@@ -33,8 +33,8 @@ itda-hyve 의 볼트에만 있다. 이 스킬은 자격증명을 읽지도 묻�
 | 메일 보내기·답장 | itda-hyve 의 `smtp_send` (`mcp__remote-devices__itda-hyve__smtp_send`) |
 
 **다른 경로를 쓰지 않는다.** 환경변수·`.env`·스크립트로 계정을 찾지 않고, 내장 fetch·웹메일 브라우저로 돌아가지 않는다.
-도구 목록에 itda-hyve 가 없으면 설치·연결되지 않은 것이다 — 사용자에게 itda-hyve 설치(받는 곳 https://github.com/itda-work/itda-hyve.pub/releases/latest)와 Claude Desktop 연결을 안내하고 멈춘다.
-개명 전 이름의 도구(`mcp__remote-devices__itda-butler__*`)만 보이면 0.9.0 이전 판이다 — itda-hyve 0.9.0 이상으로 업데이트를 안내하고 멈춘다(옛 이름 도구로 대신하지 않는다).
+도구 목록에 이름에 `itda-hyve__` 가 든 도구(Cowork `mcp__remote-devices__itda-hyve__<도구>`, Claude Code `mcp__itda-hyve__<도구>`)가 없으면 설치·연결되지 않았거나 0.9.0 보다 옛 판이다 — 사용자에게 itda-hyve 0.9.0 이상 설치(이미 있으면 업데이트, 받는 곳 https://github.com/itda-work/itda-hyve.pub/releases/latest)와
+Claude Desktop 연결을 안내하고 멈춘다(다른 서버의 도구·내장 fetch 로 대신하지 않는다).
 공용 규약은 [references/netbridge.md](references/netbridge.md) 가 정본이다(도구 지목·보안 계약).
 
 ## 계정 — `accounts_list` 의 name 으로만 가리킨다

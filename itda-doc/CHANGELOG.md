@@ -3,6 +3,18 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/) 형식을 따르며,
 [Semantic Versioning](https://semver.org/lang/ko/)을 준수합니다.
 
+## [5.0.0] - 2026-09-27
+
+### BREAKING
+
+- **디자인 스킬 4종 제거** — `design-core`(브랜드 디자인 토큰 허브)·`docx-design`(Word 신규 생성)·`pptx-design`(PPTX 발표자료 신규 생성)·`xlsx-design`(Excel 신규 생성). 이 팩에서 Word·PPTX·Excel 파일을 새로 만드는 경로가 없어진다 — 한글 문서는 `hwpx`, HTML 보고서는 `html-report` 가 만든다. 12 → 8종.
+
+### Changed
+
+- `html-report` 0.3.2 — 형제 디자인 스킬 지목 정리. 팔레트 프리셋 9종은 원래 인라인 값이라 동작 불변, `references/styles/README.md` 가 유일한 정본. 팔레트가 radius 를 정한다는 서술(값의 출처가 지운 design-core 였다)을 걷어내고 radius 는 가족 스펙이 정한다고 적었다(12.0.0 리뷰 L1).
+- `draft-post` 1.2.8 · `pptx-shrink` 0.2.2 — "쓰지 않을 때" 표·`[책임 경계]` 에서 제거된 스킬 지목 정리.
+- 팩 description·keywords·README 에서 Word·PPT·Excel 생성과 브랜드 디자인 토큰 광고를 뺐다.
+
 ## [4.2.0] - 2026-09-25
 
 ### Removed

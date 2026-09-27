@@ -24,7 +24,8 @@ from typing import Any
 
 DEFAULT_TIMEOUT = 12
 DEFAULT_RETRIES = 2
-USER_AGENT = "itda-web-search/0.1 (+https://github.com/itda-skills)"
+# 외부로 나가는 UA 에 우리 신원(제품·조직·저장소 URL)을 싣지 않는다 — 범용 토큰만(outbound-identity-leak).
+USER_AGENT = "Mozilla/5.0"
 
 
 def _env_int(name: str, default: int) -> int:

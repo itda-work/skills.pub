@@ -11,11 +11,11 @@ allowed-tools: Read, Bash, Write, Glob, Grep, mcp__workspace__bash
 argument-hint: "[지역명(선택)]"
 metadata:
   author: "Chinseok"
-  version: "0.12.5"
+  version: "0.12.6"
   category: "data-fetching"
   status: "experimental"
   created_at: "2026-05-19"
-  updated_at: "2026-07-26"
+  updated_at: "2026-09-27"
   tags: "open-meteo, weather, location, openmeteo, keyless"
 ---
 

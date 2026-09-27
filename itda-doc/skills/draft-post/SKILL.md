@@ -12,10 +12,10 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash, mcp__workspace__bash
 argument-hint: "<topic> [--style <style>] [--save <path>] [--analyze <file>] [--list-styles]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "1.2.7"
+  version: "1.2.8"
   category: "writing"
   created_at: "2026-03-28"
-  updated_at: "2026-09-01"
+  updated_at: "2026-09-27"
   tags: "blog, report, draft, writing, official, government, press-release, proposal, briefing, newsletter, meeting-minutes"
 ---
 
@@ -199,7 +199,7 @@ metadata:
 | 이미 작성된 글의 AI 흔적 제거·문체 다듬기 | itda-doc:human-tone |
 | 네이버 블로그 키워드 선정(초안 앞 단계) | itda-doc:blog-seo |
 | 주장·수치의 출처 검증 | itda-research:ground-check |
-| 완성 문서를 docx/pptx/hwpx 로 조판 | itda-doc:docx-design · itda-doc:pptx-design · itda-doc:hwpx |
+| 완성 문서를 한글(hwpx)·HTML 보고서로 조판 | itda-doc:hwpx · itda-doc:html-report |
 | 메일 발송 | itda-work:email |
 
 ## 권장 체인

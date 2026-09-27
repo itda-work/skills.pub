@@ -1,5 +1,11 @@
 # Changelog — mmaa-welfare
 
+## [0.3.2] — 2026-09-27
+
+### Changed
+
+- 수집 User-Agent 끝의 `itda-skills-mmaa-welfare` 를 뺐다(outbound-identity-leak) — 브라우저 UA 부분은 그대로.
+
 ## [0.3.1] — 2026-09-25 (itda-work/itda-hyve#6)
 
 ### Changed

@@ -11,11 +11,11 @@ allowed-tools: Read, Bash, Write, Glob, Grep, mcp__workspace__bash
 argument-hint: "[지역/테마] 또는 [동네 주제]"
 metadata:
   author: "Chinseok"
-  version: "0.1.3"
+  version: "0.1.4"
   category: "data-fetching"
   status: "experimental"
   created_at: "2026-06-01"
-  updated_at: "2026-07-26"
+  updated_at: "2026-09-27"
   tags: "restaurant, food-trend, hotplace, search-volume, surge, naver-datalab, searchad, eatery-trend"
 ---
 

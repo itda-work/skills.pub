@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "대한민국 직장인·공공업무·투자자를 위한 Claude Code 스킬 마켓플레이스",
-    "version": "11.0.0",
+    "version": "12.0.0",
     "language": "ko"
   },
   "plugins": [
     {
       "name": "itda-doc",
       "source": "./itda-doc",
-      "description": "문서를 만들고 고친다 — Word·PPT·Excel·한글·HTML 렌더, 초안 작성과 AI 흔적 제거, 브랜드 디자인 토큰, 이미지 가공, 용량 축소, PDF 정제."
+      "description": "문서를 만들고 고친다 — 한글·HTML 렌더, 초안 작성과 AI 흔적 제거, 이미지 가공, PPT 용량 축소, PDF 정제."
     },
     {
       "name": "itda-data",

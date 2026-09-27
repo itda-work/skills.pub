@@ -1,5 +1,12 @@
 # Changelog — itda-gov
 
+## [7.0.1] - 2026-09-27
+
+### Changed
+
+- **itda-hyve 설치 판정을 서버 이름 기준으로** — `dart`·`ecos`·`realty-deals` 의 `references/netbridge.md`: 이름에 `itda-hyve__` 가 든 도구(Cowork `mcp__remote-devices__itda-hyve__*`, Claude Code `mcp__itda-hyve__*`)가 없을 때만 설치 안내. Claude Code 에 연결한 사용자에게 재설치를 안내하던 문구를 바로잡았다(12.0.0 공개 전 리뷰 M1).
+- **옛 서버 이름 안내 제거** — `dart`·`ecos`·`realty-deals`: compatibility 의 옛 이름 병기를 빼고 `references/netbridge.md` 사본을 정본과 동기화.
+
 ## [7.0.0] - 2026-09-25
 
 > **릴리스**: skills **11.0.0**(`skills-v11.0.0`, 첫 공개 저장소 `itda-work/skills.pub`)에 싣는다.
