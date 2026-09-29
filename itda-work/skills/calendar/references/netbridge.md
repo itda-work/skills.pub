@@ -44,7 +44,7 @@ Claude Code 에 `itda-hyve` 이름으로 등록하면 `mcp__itda-hyve__<도구>`
 도구 목록에 이름에 `itda-hyve__` 가 든 도구(Cowork `mcp__remote-devices__itda-hyve__<도구>`, Claude Code `mcp__itda-hyve__<도구>`)가 없으면
 설치·연결되지 않았거나 0.9.0 보다 옛 판이다 — 우회하지 말고 사용자에게 itda-hyve 0.9.0 이상 설치(이미 있으면 업데이트)·Claude Desktop 연결을
 안내하고 멈춘다. **다른 서버의 도구**(개명 전 이름의 판 포함)나 내장 fetch 로 대신하지 않는다(0.9.0 은 도구 12개를 모두 등록한다).
-받는 곳은 https://github.com/itda-work/itda-hyve.pub/releases/latest (설치 안내 https://github.com/itda-work/itda-hyve.pub#readme) 이다 — 이 주소를 그대로 알려 준다.
+받는 곳은 https://itda.work/hyve/ 이다(설치 안내도 같은 페이지에 있다) — 이 주소를 그대로 알려 준다.
 에이전트 작업 도구 `agent_run`·`job_status`(0.10.0)는 이 14개와 따로, **에이전트 계정이 있을 때만** 보인다(아래 "에이전트 작업 도구").
 
 ### 요청 본문의 정확한 형태는 스킬이 준다

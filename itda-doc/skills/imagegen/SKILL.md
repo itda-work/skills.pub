@@ -12,7 +12,7 @@ user-invocable: true
 argument-hint: "[케이스: blog-hero|slide-visual|icon-logo|character-illust|video-illust|figurine|photoreal-portrait|product-catalog|poster] <주제> [장수]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "1.0.0"
+  version: "1.0.1"
   category: "media"
   status: "experimental"
   created_at: "2026-05-30"
@@ -41,7 +41,7 @@ metadata:
 ## 사전 점검 (매번, 생성 전에)
 
 1. **도구가 있는가.** 도구 목록에 이름에 `itda-hyve__` 가 든 `agent_run` 이 없으면:
-   - `itda-hyve__accounts_list` 도 없다 → itda-hyve 가 설치·연결되지 않았다. 설치(받는 곳 https://github.com/itda-work/itda-hyve.pub/releases/latest)와 Claude Desktop 연결을 안내하고 멈춘다.
+   - `itda-hyve__accounts_list` 도 없다 → itda-hyve 가 설치·연결되지 않았다. 설치(받는 곳 https://itda.work/hyve/)와 Claude Desktop 연결을 안내하고 멈춘다.
    - `accounts_list` 는 있다 → 2번으로 간다(판이 낮거나, 에이전트 계정이 없거나, 재시작 전이다).
 2. **`accounts_list` 의 `agents[]` 를 본다**(인자 없음).
 
@@ -54,7 +54,7 @@ metadata:
 
    | 보이는 것 | 할 일 |
    |---|---|
-   | `server_version` 이 없거나 0.10.0 미만 | itda-hyve 가 옛 판이다(에이전트 탭은 0.10.0 부터 있다). "itda-hyve 를 최신판으로 업데이트해 주세요(https://github.com/itda-work/itda-hyve.pub/releases/latest)" 라고 안내하고 멈춘다 |
+   | `server_version` 이 없거나 0.10.0 미만 | itda-hyve 가 옛 판이다(에이전트 탭은 0.10.0 부터 있다). "itda-hyve 를 최신판으로 업데이트해 주세요(https://itda.work/hyve/)" 라고 안내하고 멈춘다 |
    | `server_version` 은 0.10.0 이상인데 `agents` 가 없다 | "itda-hyve 창의 **에이전트** 탭에서 **codex 설치** → 계정 추가 → **로그인** 을 해 주세요. 처음 추가했다면 Claude Desktop 을 다시 시작해야 합니다" 라고 안내하고 멈춘다 |
    | `available: false` | `reason` 을 그대로 전하고 멈춘다. 사유가 codex 설치면 "itda-hyve 창의 에이전트 탭에서 **codex 설치** 를 눌러 주세요" 로 안내한다(따로 설치한 codex 로는 대신할 수 없다). 단 **Intel Mac 은 아직 지원하지 않는다**(지금은 Apple Silicon Mac 만). 지금 `reason` 은 Intel 과 미설치를 가르지 못한다(itda-hyve#23) — 사용자가 Intel Mac 이라고 했거나, 에이전트 탭의 설치가 "이 플랫폼용으로 검증한 판이 없음" 으로 실패했다고 하면, 지원하지 않는다고 알리고 설치를 되풀이해 안내하지 않는다. 그 밖에 재시작 필요·Windows 등 |
    | **`logged_in: false`** | **codex 로그인이 안 돼 있다.** "itda-hyve 창의 에이전트 탭에서 **로그인** 을 눌러 주세요 — 브라우저가 열리면 ChatGPT 로 로그인합니다(터미널은 필요 없고, 끝나면 저절로 확인됩니다 — 표시가 안 바뀌면 **상태 확인**)" 라고 안내하고 멈춘다. 사용자가 로그인했다고 하면 그때 진행한다 |
@@ -203,7 +203,7 @@ metadata:
 | `not_installed` | `message` 를 그대로 전하고 멈춘다 — 'codex 가 설치되지 않음' 이면 "itda-hyve 창 → 에이전트 탭 → **codex 설치**", 홈 관련(전용 폴더가 아님·경로 없음·홈 없음·읽지 못함)이면 에이전트 탭에서 **계정을 다시 만들거나 로그인**을, 'codex 를 실행하지 못함' 이면 에이전트 탭에서 codex **무결성 확인**(또는 다시 설치)을 안내한다. 조치 뒤 **새 키**로 다시 |
 | `reverify_required` | codex 판·기능이 검증한 값과 다르다. 알리고, 원하면 **새 키**로 `agent_run` 을 다시 부른다(이번엔 확인 단계가 붙는다. 같은 키는 이 실패를 돌려준다) |
 | `no_output`·`unknown_thread` | 이미지가 만들어지지 않았거나 결과를 찾지 못했다. 프롬프트에 "Generate one image" 를 분명히 하고 새 키로 한 번 다시 |
-| `codex_exit` — message 에 `unknown configuration field`·`Error loading config`·`Unknown feature flag` | codex 가 itda-hyve 의 실행 설정을 거부했다(판이 맞지 않음 — 사용량은 쓰지 않았다). 같은 인자로 다시 해도 같은 결과다 — **다시 하지 않는다.** message 의 원인 줄·종료 코드를 그대로 전하고 itda-hyve 업데이트(https://github.com/itda-work/itda-hyve.pub/releases/latest) 또는 에이전트 탭의 codex **무결성 확인** 을 안내한다 |
+| `codex_exit` — message 에 `unknown configuration field`·`Error loading config`·`Unknown feature flag` | codex 가 itda-hyve 의 실행 설정을 거부했다(판이 맞지 않음 — 사용량은 쓰지 않았다). 같은 인자로 다시 해도 같은 결과다 — **다시 하지 않는다.** message 의 원인 줄·종료 코드를 그대로 전하고 itda-hyve 업데이트(https://itda.work/hyve/) 또는 에이전트 탭의 codex **무결성 확인** 을 안내한다 |
 | `codex_error`·그 밖의 `codex_exit` | codex 가 오류로 끝났다(사용량 한도·네트워크 등 — 원인은 message 를 보고 판단한다). 한 번 다시 해 보고, 되풀이되면 멈추고 알린다 |
 | `timeout` | 제한 시간(codex 실행 4분, 확인 단계를 포함한 작업 전체 약 9분) 안에 끝나지 않았다. `saved_paths` 가 있으면 그 파일은 만들어졌다 — 먼저 확인한다. 계정을 추가한 뒤 첫 실행(또는 codex 판이 바뀐 뒤)에 앞 작업의 시스템 스킬 확인을 너무 오래 기다려 시작도 못 한 경우도 있다(대기열은 제한 시간이 없다) — 새 키로 한 번 다시 |
 | `interrupted`·`runner_lost` | itda-hyve 쪽 실행이 끊겼다(앱 종료·재시작 등). 새 키로 한 번 다시 |

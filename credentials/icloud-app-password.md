@@ -21,7 +21,7 @@
 
 메일·캘린더 스킬은 계정을 PC 에 설치한 **itda-hyve** 앱에 등록해 두고 그 앱을 통해서만 씁니다.
 비밀번호는 itda-hyve 안에만 있고 Claude 에게 전달되지 않습니다. 설치는
-[itda-hyve 내려받기](https://github.com/itda-work/itda-hyve.pub/releases/latest)에서 합니다.
+[itda-hyve 내려받기](https://itda.work/hyve/)에서 합니다.
 
 1. itda-hyve 설정 창의 **계정** 화면에서 계정을 추가합니다
 2. 제공자 **아이클라우드**를 고르고, iCloud 이메일 주소(`you@icloud.com`)와 16자리 앱 전용 비밀번호를 넣습니다 — 서버 주소는 자동으로 채워집니다

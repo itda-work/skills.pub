@@ -2,6 +2,12 @@
 
 이 플러그인의 주요 변경 사항을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/), 버전은 [SemVer](https://semver.org/)를 따릅니다.
 
+## [3.0.1] - 2026-09-29
+
+### Changed
+
+- itda-hyve 설치·업데이트 안내의 받는 곳을 `https://itda.work/hyve/` 하나로 바꿨다(GitHub 릴리스 페이지 링크 제거, itda-work/skills#44) — `calendar` 0.7.1 · `email` 0.38.1 · `morning-brief` 0.12.2(`gather.py` 의 `update_url` 포함) · `time-audit` 0.3.1 · `weather-here` 0.14.1 · `inbox-triager` 에이전트. 동작은 그대로다.
+
 ## [3.0.0] - 2026-09-28
 
 > **릴리스**: skills **13.0.0**(`skills-v13.0.0`)에 싣는다.

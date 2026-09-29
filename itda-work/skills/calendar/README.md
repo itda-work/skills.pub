@@ -10,7 +10,7 @@ itda-hyve 에 등록한 네이버·아이클라우드·직접 입력(CalDAV 주�
 
 ## 동작 경로
 
-0.5.0 부터 일정은 **itda-hyve(사용자 PC 의 로컬 MCP 서버, 0.9.0 이상)의 캘린더 도구로만** 다룬다. 받는 곳: https://github.com/itda-work/itda-hyve.pub/releases/latest
+0.5.0 부터 일정은 **itda-hyve(사용자 PC 의 로컬 MCP 서버, 0.9.0 이상)의 캘린더 도구로만** 다룬다. 받는 곳: https://itda.work/hyve/
 Cowork 샌드박스는 외부 네트워크가 막혀 있어 스킬이 CalDAV 서버에 직접 붙을 수 없기 때문이다(#1710).
 
 | 도구 | 하는 일 |

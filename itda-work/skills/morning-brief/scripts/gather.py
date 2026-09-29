@@ -688,7 +688,7 @@ def hyve_outdated(err: object) -> bool:
 
 # 옛 판이면 브리핑을 그리지 않는다(itda-work/skills#43) — 0.9.5 로 받은 메일이 빈 브리핑을 끝까지 만들었고, 사용자는 업데이트 뒤
 # 두 번 만들었다(Cowork 실측 13.0.0-test.7). 업데이트 안내만 내고 candidates 를 쓰지 않는다 → render 가 불릴 재료가 없다.
-UPDATE_URL = "https://github.com/itda-work/itda-hyve.pub/releases/latest"
+UPDATE_URL = "https://itda.work/hyve/"
 UPDATE_STEPS = (
     f"{UPDATE_URL} 에서 itda-hyve {HYVE_MIN_VERSION} 이상 설치본을 받아 지금 설치본을 바꾼다",
     "Claude Desktop 을 완전히 끝냈다가 다시 연다(itda-hyve 가 새 판으로 다시 뜬다)",

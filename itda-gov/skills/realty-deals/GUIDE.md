@@ -18,7 +18,7 @@ title: "realty-deals 사용 가이드"
    - 아파트 매매: https://www.data.go.kr/data/15126469/openapi.do
    - 아파트 전월세: https://www.data.go.kr/data/15126474/openapi.do
    - (오피스텔·연립다세대·토지 등도 동일하게 유형별로 신청)
-3. 발급받은 키를 **itda-hyve 앱의 "시크릿" 탭**에 `KO_DATA_API_KEY` 라는 이름으로 등록합니다(itda-hyve 0.9.0 이상이 없으면 [여기서 내려받아](https://github.com/itda-work/itda-hyve.pub/releases/latest) 설치하고 Claude Desktop 에 연결합니다). 키 값은 그 앱 안에만 저장되고 Claude 에게는 전달되지 않습니다(Claude 는 이름만 씁니다).
+3. 발급받은 키를 **itda-hyve 앱의 "시크릿" 탭**에 `KO_DATA_API_KEY` 라는 이름으로 등록합니다(itda-hyve 0.9.0 이상이 없으면 [여기서 내려받아](https://itda.work/hyve/) 설치하고 Claude Desktop 에 연결합니다). 키 값은 그 앱 안에만 저장되고 Claude 에게는 전달되지 않습니다(Claude 는 이름만 씁니다).
 
 > 공공데이터포털은 같은 키를 **Encoding / Decoding** 두 형태로 보여 줍니다. **Decoding 키**를 등록하세요 — Encoding 키를 넣으면 "등록되지 않은 서비스키"(resultCode 30) 오류가 납니다.
 

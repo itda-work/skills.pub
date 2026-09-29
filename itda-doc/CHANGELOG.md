@@ -3,6 +3,12 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/) 형식을 따르며,
 [Semantic Versioning](https://semver.org/lang/ko/)을 준수합니다.
 
+## [6.1.1] - 2026-09-29
+
+### Changed
+
+- `imagegen` 1.0.1 — itda-hyve 설치·업데이트 안내의 받는 곳을 `https://itda.work/hyve/` 하나로 바꿨다(GitHub 릴리스 페이지 링크 제거, itda-work/skills#44). 동작은 그대로다.
+
 ## [6.1.0] - 2026-09-29
 
 ### Added

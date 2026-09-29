@@ -15,9 +15,9 @@ metadata:
   category: "domain"
   status: "active"
   recommended: true
-  version: "0.19.2"
+  version: "0.19.3"
   created_at: "2026-03-29"
-  updated_at: "2026-09-28"
+  updated_at: "2026-09-29"
   tags: "DART, CSV, company, financial, disclosure, competitor, business report, compare"
 ---
 

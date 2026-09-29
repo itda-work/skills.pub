@@ -1,5 +1,11 @@
 # Changelog — itda-dart
 
+## [0.19.3] — 2026-09-29 (itda-work/skills#44)
+
+### Changed
+
+- `references/netbridge.md` 사본을 정본과 동기화 — 받는 곳 한 줄이 `https://itda.work/hyve/` 로 바뀌었다. 동작은 그대로다.
+
 ## [0.19.2] — 2026-09-28 (itda-work/skills#26)
 
 ### Changed

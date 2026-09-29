@@ -11,11 +11,11 @@ allowed-tools: "mcp__remote-devices__itda-hyve__location, mcp__remote-devices__i
 argument-hint: "[지역명(선택)]"
 metadata:
   author: "Chinseok"
-  version: "0.14.0"
+  version: "0.14.1"
   category: "data-fetching"
   status: "experimental"
   created_at: "2026-05-19"
-  updated_at: "2026-09-28"
+  updated_at: "2026-09-29"
   tags: "open-meteo, weather, location, openmeteo, keyless, itda-hyve"
 ---
 
@@ -63,7 +63,7 @@ IP 위치는 **요청을 보낸 컴퓨터**의 위치이고, 한국 통신사 IP
 | ② | 도구 목록에 이름에 `itda-hyve__location` 이 든 도구가 있다(itda-hyve 0.9.3 이상 — Cowork `mcp__remote-devices__itda-hyve__location`, Claude Code `mcp__itda-hyve__location`) | **location 경로**(아래). OS 위치 서비스(Wi-Fi 기반, 시·군·구까지) → IP 서비스 여러 곳의 합의 |
 | ③ | `location` 은 없고 `itda-hyve__http_request` 는 있다(0.9.0~0.9.2) | **IP 한 곳 경로**(아래). 시·도가 틀릴 수 있어 날씨 줄에 "(대략·IP 기준)" 이 붙는다. itda-hyve 업데이트를 한 줄 권한다 |
 | ④ | itda-hyve 도구가 없고 로컬 실행(Claude Code 등) | 인자 없이 실행 — 스크립트가 직접 IP 조회(사용자 PC 에서 도니 PC 의 IP 다. 역시 "(대략·IP 기준)") |
-| – | itda-hyve 도구가 없고 Cowork | 인자 없이 실행하면 스크립트가 **exit 3 으로 멈춘다**(아래 판별). 지역명을 1회 안내하고, 현재 위치를 원하면 itda-hyve 0.9.3 이상 설치(https://github.com/itda-work/itda-hyve.pub/releases/latest)·Claude Desktop 연결을 안내한다 |
+| – | itda-hyve 도구가 없고 Cowork | 인자 없이 실행하면 스크립트가 **exit 3 으로 멈춘다**(아래 판별). 지역명을 1회 안내하고, 현재 위치를 원하면 itda-hyve 0.9.3 이상 설치(https://itda.work/hyve/)·Claude Desktop 연결을 안내한다 |
 
 **환경 판별은 스크립트가 한다** — 스크립트 파일이 `/sessions/<id>/…` 아래(Cowork 마운트)에 있으면 직접 IP 조회를 하지 않는다.
 Cowork 에는 Claude Code 환경변수가 주입되지 않고 `HOME` 도 회차마다 달라 환경변수로는 가를 수 없다. 모델이 따로 판별하지 않는다.

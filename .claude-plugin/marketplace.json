@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "대한민국 직장인·공공업무·투자자를 위한 Claude Code 스킬 마켓플레이스",
-    "version": "13.0.0",
+    "version": "13.0.1",
     "language": "ko"
   },
   "plugins": [

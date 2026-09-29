@@ -27,7 +27,7 @@ title: "weather-here (현재 위치 날씨) 활용 가이드"
 인증키·회원가입·신청은 **필요 없습니다.** Claude Code 에서는 설치 직후 바로 씁니다.
 
 **"지금 여기" 날씨를 정확히 보려면** itda-hyve(내 PC 에서 도는 도우미 프로그램) **0.9.3 이상**이
-Claude Desktop 에 연결돼 있으면 좋습니다 — 받는 곳 https://github.com/itda-work/itda-hyve.pub/releases/latest .
+Claude Desktop 에 연결돼 있으면 좋습니다 — 받는 곳 https://itda.work/hyve/ .
 itda-hyve 는 먼저 **컴퓨터의 위치 서비스**(Wi-Fi 기반, 구 단위까지)로 위치를 찾고, 안 되면 인터넷 주소로
 위치를 알려 주는 서비스 여러 곳의 **다수결**로 찾습니다. 인터넷 주소 한 곳만 보면 통신사 거점(예: KT 는 성남)이
 잡혀 시·도부터 틀리는 일이 흔합니다.

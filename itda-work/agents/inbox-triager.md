@@ -109,7 +109,7 @@ itda-hyve 는 사용자 PC 에서 도는 로컬 MCP 서버이고 계정 비밀�
 실패는 위 "비고"에 정직하게 보고하고, 임의 값·추측으로 덮지 않습니다. 같은 호출을 되풀이하지 않습니다(재시도는 itda-hyve 가 이미 했습니다).
 
 - **itda-hyve 도구 없음** — `ToolSearch` 로도 이름에 `itda-hyve__` 가 든 메일 도구가 없으면 멈추고
-  "itda-hyve 미설치·미연결 또는 0.9.2 보다 옛 판 — 설치·업데이트: https://github.com/itda-work/itda-hyve.pub/releases/latest" 를 비고에 적습니다.
+  "itda-hyve 미설치·미연결 또는 0.9.2 보다 옛 판 — 설치·업데이트: https://itda.work/hyve/" 를 비고에 적습니다.
   다른 서버의 도구·내장 fetch·웹메일 브라우저로 대신하지 않습니다.
 - **`imap_search` 요약에 `message_id` 가 없거나 `"\\Sent"` 가 `not_found`·`invalid_input`** — itda-hyve 가 0.9.2 보다 옛 판입니다.
   분류는 계속하되 스레드 맥락(작업 순서 5)은 하지 않고 "답장 여부 판정 불가(itda-hyve 0.9.2 이상 필요)" 를 비고에 적습니다.

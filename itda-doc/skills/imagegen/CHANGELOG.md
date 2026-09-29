@@ -2,6 +2,11 @@
 
 > 2026-06-16: `itda-egg/codex-image` → `itda-media/imagegen` 졸업 마이그레이션(SPEC-IMAGEGEN-002 P2). 이하 0.7.1까지는 codex-image 시절 이력.
 
+## 1.0.1 (2026-09-29) — itda-work/skills#44
+
+- itda-hyve 설치·업데이트 안내의 받는 곳을 `https://itda.work/hyve/` 하나로 바꿨다(GitHub 릴리스 페이지 링크 제거, itda-work/skills#44). SKILL.md 의 설치·업데이트 안내 3곳.
+- `references/netbridge.md` 사본을 정본과 동기화 — 받는 곳 한 줄이 `https://itda.work/hyve/` 로 바뀌었다.
+
 ## 1.0.0 (2026-09-29) — itda-hyve#8·#16
 
 itda-hyve 에서 제거됐던 imagegen 을 **itda-doc/imagegen** 으로 되살린다. 생성 경로는 itda-hyve 의 에이전트 작업 도구(`accounts_list`·`agent_run`·`job_status`, recipe `codex.imagegen`)다.

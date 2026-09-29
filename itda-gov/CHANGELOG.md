@@ -1,5 +1,11 @@
 # Changelog — itda-gov
 
+## [8.0.1] - 2026-09-29
+
+### Changed
+
+- itda-hyve 받는 곳을 `https://itda.work/hyve/` 하나로 바꿨다(GitHub 릴리스 페이지 링크 제거, itda-work/skills#44) — `realty-deals` 0.12.2(GUIDE 내려받기 링크) · `dart` 0.19.3 · `ecos` 0.10.12(`references/netbridge.md` 사본 동기화). 동작은 그대로다.
+
 ## [8.0.0] - 2026-09-28
 
 ### BREAKING

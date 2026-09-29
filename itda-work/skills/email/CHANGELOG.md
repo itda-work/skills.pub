@@ -1,5 +1,12 @@
 # Changelog — itda-email
 
+## [0.38.1] — 2026-09-29 (itda-work/skills#44)
+
+### Changed
+
+- itda-hyve 설치·업데이트 안내의 받는 곳을 `https://itda.work/hyve/` 하나로 바꿨다(GitHub 릴리스 페이지 링크 제거, itda-work/skills#44). SKILL.md·GUIDE.md.
+- `references/netbridge.md` 사본을 정본과 동기화 — 받는 곳 한 줄이 `https://itda.work/hyve/` 로 바뀌었다.
+
 ## [0.38.0] — 2026-09-28 (#34)
 
 ### Added

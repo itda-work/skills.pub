@@ -1,5 +1,11 @@
 # Changelog — itda-gov/ecos
 
+## [0.10.12] — 2026-09-29 (itda-work/skills#44)
+
+### Changed
+
+- `references/netbridge.md` 사본을 정본과 동기화 — 받는 곳 한 줄이 `https://itda.work/hyve/` 로 바뀌었다. 동작은 그대로다.
+
 ## [0.10.11] — 2026-09-28 (itda-work/skills#26)
 
 ### Changed

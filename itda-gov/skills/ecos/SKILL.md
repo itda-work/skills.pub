@@ -14,9 +14,9 @@ metadata:
   category: "domain"
   status: "active"
   recommended: true
-  version: "0.10.11"
+  version: "0.10.12"
   created_at: "2026-03-29"
-  updated_at: "2026-09-28"
+  updated_at: "2026-09-29"
   tags: "GDP, ECOS, CPI, economics, interest rate, exchange rate, Bank of Korea"
 ---
 

@@ -15,7 +15,7 @@ metadata:
   category: "document"
   status: "beta"
   recommended: false
-  version: "0.12.1"
+  version: "0.12.2"
   created_at: "2026-09-03"
   updated_at: "2026-09-29"
   tags: "morning, brief, daily, digest, calendar, email, html, single-file, dashboard, schedule, inbox, unreplied, cowork, itda-hyve"
@@ -52,7 +52,7 @@ gather.py --input $IN ─▶ candidates.json ─▶ (당신: 요약 문장) ─�
 도구 목록에 이름에 `itda-hyve__batch` 가 든 도구가 없거나, 있어도 그 입력 스키마에 **`plan_file`** 이 없거나 `calls[].args` 설명에
 **`account` 에 `"*"`**(`{account}`·`{n}`) 이야기가 없으면 itda-hyve 가 없거나 **0.9.5 보다 옛 판**이다(batch·`imap_fetch` 의 `uids`·일정 참석자가
 0.9.3, `plan_file`·대량 메일 표지 `bulk` 가 0.9.4, `account: "*"`·`imap_search` 의 `include_snippet` 이 0.9.5, `snippet_for` 가 0.9.6 부터다) — 사용자에게
-itda-hyve 0.9.6 이상 설치(이미 있으면 업데이트, 받는 곳 https://github.com/itda-work/itda-hyve.pub/releases/latest)와 Claude Desktop 연결을
+itda-hyve 0.9.6 이상 설치(이미 있으면 업데이트, 받는 곳 https://itda.work/hyve/)와 Claude Desktop 연결을
 안내하고 멈춘다. 계획 파일을 열어 `calls` 로 옮겨 적거나 도구를 하나씩 불러 대신하지 않는다(도구 목록 = 스키마로 가른다).
 0.9.5 와 0.9.6 은 batch 스키마로 가를 수 없다(`snippet_for` 는 `imap_search` 인자다) — 그래서 **batch 결과로 가른다**. 스크립트가 보는 근거는
 둘이다: 1차는 `accounts_list` 최상위 `server_version`(0.9.5 도 준다)이 0.9.6 보다 낮은 것, 2차는 받은편지함 호출의 `invalid_input`
@@ -283,7 +283,7 @@ python3 "$SKILL_DIR/scripts/gather.py" --input "$IN" --sections 날씨 --out "$W
 
 ```json
 {"status": "hyve_outdated", "required": "0.9.6", "found": null, "evidence": ["inbox_rejected"],
- "rejected_accounts": ["naver"], "update_url": "https://github.com/itda-work/itda-hyve.pub/releases/latest",
+ "rejected_accounts": ["naver"], "update_url": "https://itda.work/hyve/",
  "steps": ["… 설치본을 받아 지금 설치본을 바꾼다", "Claude Desktop 을 완전히 끝냈다가 다시 연다 …", "브리핑을 다시 요청한다"]}
 ```
 

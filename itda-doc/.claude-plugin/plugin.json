@@ -1,7 +1,7 @@
 {
   "name": "itda-doc",
   "description": "문서를 만들고 고친다 — 한글·HTML 렌더, 초안 작성과 AI 흔적 제거, 이미지 생성·가공, PPT 용량 축소, PDF 정제.",
-  "version": "13.0.0",
+  "version": "13.0.1",
   "author": {
     "name": "스킬.잇다",
     "url": "https://github.com/itda-work"

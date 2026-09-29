@@ -12,9 +12,9 @@ metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
   recommended: true
-  version: "0.38.0"
+  version: "0.38.1"
   created_at: "2026-03-18"
-  updated_at: "2026-09-28"
+  updated_at: "2026-09-29"
   tags: "email, smtp, imap, naver, gmail, google, daum, kakao, icloud, multi-account, itda-hyve, mailbox, search, unread, flagged, attachments, save-attachment, attachment-summary, html, reply, in-reply-to, phishing, send-confirmation"
 ---
 
@@ -33,7 +33,7 @@ itda-hyve 의 볼트에만 있다. 이 스킬은 자격증명을 읽지도 묻�
 | 메일 보내기·답장 | itda-hyve 의 `smtp_send` (`mcp__remote-devices__itda-hyve__smtp_send`) |
 
 **다른 경로를 쓰지 않는다.** 환경변수·`.env`·스크립트로 계정을 찾지 않고, 내장 fetch·웹메일 브라우저로 돌아가지 않는다.
-도구 목록에 이름에 `itda-hyve__` 가 든 도구(Cowork `mcp__remote-devices__itda-hyve__<도구>`, Claude Code `mcp__itda-hyve__<도구>`)가 없으면 설치·연결되지 않았거나 0.9.0 보다 옛 판이다 — 사용자에게 itda-hyve 0.9.0 이상 설치(이미 있으면 업데이트, 받는 곳 https://github.com/itda-work/itda-hyve.pub/releases/latest)와
+도구 목록에 이름에 `itda-hyve__` 가 든 도구(Cowork `mcp__remote-devices__itda-hyve__<도구>`, Claude Code `mcp__itda-hyve__<도구>`)가 없으면 설치·연결되지 않았거나 0.9.0 보다 옛 판이다 — 사용자에게 itda-hyve 0.9.0 이상 설치(이미 있으면 업데이트, 받는 곳 https://itda.work/hyve/)와
 Claude Desktop 연결을 안내하고 멈춘다(다른 서버의 도구·내장 fetch 로 대신하지 않는다).
 공용 규약은 [references/netbridge.md](references/netbridge.md) 가 정본이다(도구 지목·보안 계약).
 

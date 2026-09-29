@@ -13,11 +13,11 @@ user-invocable: true
 argument-hint: "[기간(기본 최근 4주) 또는 캘린더 소스 지정]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "0.3.0"
+  version: "0.3.1"
   category: "productivity"
   status: "experimental"
   created_at: "2026-07-24"
-  updated_at: "2026-09-28"
+  updated_at: "2026-09-29"
   aliases: "시간감사, 업무시간매핑, 시간분석, 하루용량"
   tags: "Cowork, time audit, time mapping, calendar analytics, workload, capacity, bottleneck, work map"
 ---
@@ -71,7 +71,7 @@ $env:SKILL_DIR = "$env:CLAUDE_PLUGIN_ROOT\skills\time-audit"  # 미설정이면 
 도구는 itda-hyve 의 `accounts_list`·`calendar_events` 두 개다(Cowork 에서 보이는 이름
 `mcp__remote-devices__itda-hyve__<도구>`, Claude Code 는 `mcp__itda-hyve__<도구>`). 도구 목록에 이름에
 `itda-hyve__` 가 든 도구가 없거나 `calendar_events` 인자에 `save_as` 가 없으면(0.9.2 미만) itda-hyve 0.9.2 이상 설치(이미 있으면 업데이트, 받는 곳
-https://github.com/itda-work/itda-hyve.pub/releases/latest)와 Claude Desktop 연결을 안내하고 이 소스는 멈춘다.
+https://itda.work/hyve/)와 Claude Desktop 연결을 안내하고 이 소스는 멈춘다.
 환경변수·`.env`·다른 스킬의 스크립트로 캘린더 서버에 직접 붙지 않는다. 공용 규약은
 [references/netbridge.md](references/netbridge.md) 가 정본이다.
 

@@ -12,11 +12,11 @@ allowed-tools: "mcp__remote-devices__itda-hyve__http_request, Bash, Read, Write,
 argument-hint: "지역명 + 기간 + 유형 (예: 강남구 2026년 1~6월 아파트 매매)"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "0.12.1"
+  version: "0.12.2"
   category: "domain"
   status: "active"
   created_at: "2026-05-15"
-  updated_at: "2026-09-27"
+  updated_at: "2026-09-29"
   tags: "realestate, molit, trade, rent, csv, json"
 ---
 

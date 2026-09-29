@@ -62,7 +62,7 @@ Claude Cowork 와 Claude Code 에서 씁니다. 메일·일정은 **itda-hyve**(
 
 ### 1. itda-hyve 준비 — 0.9.6 이상
 
-itda-hyve 를 설치하고 Claude Desktop 에 연결합니다. 필요한 판은 이렇습니다.
+itda-hyve 를 설치하고 Claude Desktop 에 연결합니다(받는 곳 [itda.work/hyve](https://itda.work/hyve/)). 필요한 판은 이렇습니다.
 
 | 하려는 것 | 필요한 itda-hyve |
 |---|---|
@@ -183,7 +183,7 @@ Claude 가 itda-hyve 에게 **두세 번에 나눠 한꺼번에** 묻습니다 �
 판이 모자라면 Claude 가 브리핑을 만들지 않고 업데이트 순서를 안내합니다. 옛 판으로 만들면 받은 메일이 빈
 브리핑이 나오기 때문에, 반쯤 빈 페이지를 내놓는 대신 먼저 멈춥니다.
 
-1. 새 itda-hyve 설치본을 받아 지금 설치본을 바꿉니다. 설치본은 처음 itda-hyve 를 받은 곳(강의에서 안내받은 곳)에서 받습니다.
+1. 새 itda-hyve 설치본을 받아 지금 설치본을 바꿉니다. 설치본은 [itda.work/hyve](https://itda.work/hyve/) 에서 받습니다.
 2. Claude Desktop 을 완전히 끝냈다가 다시 엽니다 — itda-hyve 가 새 판으로 다시 뜹니다.
 3. 브리핑을 다시 요청합니다.
 

@@ -10,7 +10,7 @@ title: "email 활용 가이드"
 
 ## 처음 설정하기
 
-1. **itda-hyve(0.9.0 이상)를 설치하고 Claude Desktop 에 연결합니다.** [itda-hyve 내려받기](https://github.com/itda-work/itda-hyve.pub/releases/latest)에서 운영체제에 맞는 설치 파일을 받습니다(설치 방법은 [설치 안내](https://github.com/itda-work/itda-hyve.pub#readme)).
+1. **itda-hyve(0.9.0 이상)를 설치하고 Claude Desktop 에 연결합니다.** [itda-hyve 내려받기](https://itda.work/hyve/)에서 운영체제에 맞는 설치 파일을 받습니다(설치 방법도 같은 페이지에 있습니다).
    설치한 뒤 itda-hyve 앱의 "Claude Desktop" 화면에서 등록 버튼을 누르면 됩니다.
 2. **메일 서비스에서 앱 비밀번호를 발급합니다.** 메일 서비스는 보안 때문에 계정 비밀번호를 그대로 쓰지 못합니다. 아래 서비스별 절차대로 2단계 인증을 켜고 앱 비밀번호를 받으세요.
 3. **itda-hyve 의 "계정" 화면에서 계정을 추가합니다.** 제공자·아이디·앱 비밀번호만 넣으면 서버 주소는 자동으로 채워지고, 저장 전에 연결 테스트를 합니다(메일은 보내지 않습니다).

@@ -2,6 +2,11 @@
 
 이 파일이 변경 이력의 유일 정본이다.
 
+## 0.12.2 (2026-09-29) — itda-work/skills#44
+
+- itda-hyve 설치·업데이트 안내의 받는 곳을 `https://itda.work/hyve/` 하나로 바꿨다(GitHub 릴리스 페이지 링크 제거, itda-work/skills#44). SKILL.md, `gather.py` 가 옛 itda-hyve 에 내놓는 `update_url`·`update_steps`, GUIDE.md 의 사전 준비·업데이트 절("강의에서 안내받은 곳" 대신 itda.work/hyve).
+- `references/netbridge.md` 사본을 정본과 동기화 — 받는 곳 한 줄이 `https://itda.work/hyve/` 로 바뀌었다.
+
 ## 0.12.1 (2026-09-29)
 
 - **GUIDE.md 를 사이트 독자 눈높이로** (website#207) — 0.12.0 활용법을 다듬어 「모양 고르기」 절·필요한 itda-hyve 판 표·브라우저로 열기(「파일·링크 열기」 끌 수 있음) 소절을 두고, 설치·업데이트 안내의 GitHub 링크를 뺐다(itda-hyve 는 강의에서 안내받은 곳에서 받는다). 스크립트·페이지는 그대로다.
