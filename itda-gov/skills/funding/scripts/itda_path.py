@@ -23,13 +23,13 @@
     캐시 거주지로 우선한다.
   - **읽기 (find_env_files 병합)**: 열거 **후순위**(더 로컬한 후보)의 환경변수
     파일이 승리한다(later-wins, AC-006.10a). 같은 루트 안에서는 파일명 별칭
-    우선순위(.env > .env.txt > env.txt > 환경변수.txt, #1210)가 적용된다. 단
+    우선순위(.env > .env.txt > 환경변수.txt, #1210·#26)가 적용된다. 단
     ITDA_DATA_ROOT 루트의 파일은 **명시 오버라이드**라 예외적으로 병합 최강
     (리스트 맨 뒤)으로 블록 재배치된다(#1205). settings.json·os.environ·CLI 인자는
     여전히 모든 환경변수 파일 위(env_loader 참조).
 
-환경변수 파일명 별칭 (#1210): 각 후보 루트에서 `.env` · `.env.txt` · `env.txt` ·
-  `환경변수.txt` 를 탐색한다(비개발자가 점 파일을 만들기 어려운 문제 대응).
+환경변수 파일명 별칭 (#1210 도입, #26 에서 3종으로): 각 후보 루트에서 `.env` · `.env.txt` · `환경변수.txt`
+  를 탐색한다(비개발자가 점 파일을 만들기 어려운 문제 대응).
   한글 파일명은 NFC·NFD 두 형태 모두 매칭한다(macOS↔Linux 정규화 함정).
 
 읽기(find_env_files)와 쓰기(pick_cache_location)의 후보 집합이 다르다:
@@ -61,11 +61,11 @@ from pathlib import Path
 
 _ITDA_DIR = ".itda-skills"
 
-# 환경변수 파일명 별칭 (#1210) — 비개발자가 점(.) 파일을 만들기 어려워 .txt 형태를
-# 허용한다. 같은 루트 내 우선순위: .env > .env.txt > env.txt > 환경변수.txt (정본
-# 우선). 병합이 later-wins 라 find_env_files 는 루트 내에서 약→강(이 튜플의 역순)
+# 환경변수 파일명 별칭 (#1210 도입, itda-work/skills#26 에서 3종으로 줄임) — 비개발자가 점(.) 파일을 만들기 어려워 .txt 형태를
+# 허용한다. 같은 루트 내 우선순위: .env > .env.txt > 환경변수.txt (정본 우선).
+# 병합이 later-wins 라 find_env_files 는 루트 내에서 약→강(이 튜플의 역순)
 # 으로 append 한다. 이 상수는 env_doctor 등과 공유되는 단일 정의다.
-_ENV_FILENAMES = (".env", ".env.txt", "env.txt", "환경변수.txt")
+_ENV_FILENAMES = (".env", ".env.txt", "환경변수.txt")
 
 # 한글 파일명은 NFC/NFD 두 정규화 형태 모두 탐색한다 (#1210) — macOS 호스트가 만든
 # NFD 파일명이 Cowork Linux 마운트의 NFC 문자열 조회에 안 잡히는 함정 대응.
@@ -411,15 +411,15 @@ def pick_cache_location(rel: str) -> Path:
 def find_env_files() -> list[Path]:
     """모든 후보 경로에서 환경변수 파일을 탐색한다 (병합 순서 = 약 → 강).
 
-    각 후보 루트에서 별칭 4종(`.env` · `.env.txt` · `env.txt` · `환경변수.txt`,
-    #1210)을 탐색해 존재하는 파일만 반환한다. 이 리스트는 **읽기 병합용 순서**다
+    각 후보 루트에서 별칭 3종(`.env` · `.env.txt` · `환경변수.txt`, #1210·#26)을
+    탐색해 존재하는 파일만 반환한다. 이 리스트는 **읽기 병합용 순서**다
     — 소비자(env_loader.merged_env·resolve_api_key)는 **뒤에 오는 파일일수록 우선**
     적재한다(후순위=더 로컬 후보 승리, AC-006.10a).
 
     두 축의 우선순위:
       - **루트 간(상위 축)**: 후보 열거 순서. 더 로컬한(뒤) 루트가 앞 루트를
         이긴다 — 루트 locality 가 파일명보다 우선한다.
-      - **같은 루트 내(하위 축)**: `.env` > `.env.txt` > `env.txt` > `환경변수.txt`
+      - **같은 루트 내(하위 축)**: `.env` > `.env.txt` > `환경변수.txt`
         (정본 우선). later-wins 라 루트 내에서는 약→강(`환경변수.txt` … `.env`)
         순으로 append 해 `.env` 가 그 루트의 최강이 되게 한다.
 

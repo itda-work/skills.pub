@@ -19,7 +19,8 @@ from pathlib import Path
 if sys.version_info[0] < 3:  # pragma: no cover
     sys.exit("Error: Python 3 필요. Windows 는 py -3 로 실행하세요.")
 
-DOC_TYPES = {"docx", "xlsx", "pptx", "pdf", "txt", "csv", "broken", "lock"}
+DOC_TYPES = {"docx", "xlsx", "pptx", "pdf", "txt", "csv", "broken", "lock", "hwpx", "hwp5", "hwp3"}
+HANGUL_TYPES = {"hwpx", "hwp5", "hwp3"}
 TRAP_TYPES = {
     "contradiction",
     "version-hell",
@@ -29,7 +30,14 @@ TRAP_TYPES = {
     "broken-file",
     "lock-file",
     "untitled",
+    "hangul-document",  # 정상 한글 문서(HWPX·HWP 5) — 한글 리더로 읽혀야 정답, 건너뛰면 오답(#31)
+    "hangul-unsupported",  # HWP 3.x·배포용 보호 HWP 5 — 한글 리더가 못 읽는 것이 정답(#31)
+    "ext-mismatch",  # 내용 형식 ≠ 확장자(.hwpx 인데 HWP 5) — 내용으로 읽혀야 정답(#31)
 }
+# format marker 값 — verify 가 파일 **내용 서명**으로 판정한다(확장자 무관).
+HANGUL_FORMATS = {"hwpx", "hwp5", "hwp5-distribution", "hwp3"}
+_FORMAT_SUFFIX = {"hwpx": ".hwpx", "hwp5": ".hwp", "hwp5-distribution": ".hwp", "hwp3": ".hwp"}
+MARKER_KINDS = ("value", "text", "unreadable", "name_prefix", "format")
 BAIT_TYPES = {"direction", "scope", "duplicate"}
 CONSISTENCY_OPS = {"sum", "product", "diff"}
 
@@ -199,7 +207,11 @@ def _validate_internal_date(s: str, where: str) -> None:
 
 def _validate_doc_body(doc: dict, where: str) -> None:
     t = doc["type"]
-    if t == "docx":
+    if "distribution" in doc and t != "hwp5":
+        raise BFError(f"{where}: distribution 은 type 'hwp5' 에만 쓸 수 있습니다(현재 '{t}').")
+    if "distribution" in doc and not isinstance(doc["distribution"], bool):
+        raise BFError(f"{where}: distribution 은 true|false 여야 합니다(현재 {doc['distribution']!r}).")
+    if t in ("docx", "hwpx", "hwp5"):
         _need(doc, "title", where, str)
         _need(doc, "blocks", where, list)
         for j, blk in enumerate(doc["blocks"]):
@@ -230,7 +242,7 @@ def _validate_doc_body(doc: dict, where: str) -> None:
         _need(doc, "content", where, str)
     elif t == "csv":
         _need(doc, "rows", where, list)
-    # broken / lock: 본문 없음(구조적 함정). note 는 선택.
+    # broken / lock / hwp3: 본문 없음(구조적 함정). note 는 선택.
 
 
 def _validate_trap_like(t: dict, where: str, paths: set[str], allowed_types: set[str]) -> None:
@@ -250,16 +262,51 @@ def _validate_trap_like(t: dict, where: str, paths: set[str], allowed_types: set
         # 유령 함정 차단(FIX-2) — 검증 가능한 marker 가 없으면 렌더되지 않은 함정이 정답지에 실린다.
         raise BFError(
             f"{where}: 검증 가능한 marker 가 최소 1개 필요합니다"
-            " (path + value|text|unreadable|name_prefix)."
+            f" (path + {'|'.join(MARKER_KINDS)})."
         )
     for j, m in enumerate(markers):
         mw = f"{where}.markers[{j}]"
         _need(m, "path", mw, str)
         if m["path"] not in paths:
             raise BFError(f"{mw}: path '{m['path']}' 가 documents 에 없습니다.")
-        kinds = [k for k in ("value", "text", "unreadable", "name_prefix") if k in m]
+        kinds = [k for k in MARKER_KINDS if k in m]
         if len(kinds) != 1:
-            raise BFError(f"{mw}: value|text|unreadable|name_prefix 중 정확히 1개를 지정해야 합니다(현재 {kinds}).")
+            raise BFError(f"{mw}: {'|'.join(MARKER_KINDS)} 중 정확히 1개를 지정해야 합니다(현재 {kinds}).")
+        if "format" in m and m["format"] not in HANGUL_FORMATS:
+            raise BFError(f"{mw}: format '{m['format']}' 은 {sorted(HANGUL_FORMATS)} 중 하나여야 합니다.")
+    _validate_hangul_trap(t, where, markers)
+
+
+def _validate_hangul_trap(t: dict, where: str, markers: list) -> None:
+    """한글 함정은 **무엇이 함정인지**를 format marker 로 선언해야 한다(#31).
+
+    선언이 함정의 뜻과 어긋나면(확장자가 맞는 '확장자 틀림', 읽히는 형식의 '미지원') 정답지가
+    존재하지 않는 함정을 싣는다 — 저작 단계에서 거부한다.
+    """
+    fmts = [m for m in markers if "format" in m]
+    has_content = any(k in m for m in markers for k in ("value", "text"))
+    if t["type"] == "hangul-document":
+        if not fmts or any(m["format"] not in ("hwpx", "hwp5") for m in fmts):
+            raise BFError(f"{where}: hangul-document 는 읽히는 형식의 format marker(hwpx|hwp5)가 필요합니다.")
+        if not has_content:
+            raise BFError(f"{where}: hangul-document 는 읽혀야 정답이므로 value|text marker 가 최소 1개 필요합니다.")
+    elif t["type"] == "hangul-unsupported":
+        if not fmts or any(m["format"] not in ("hwp3", "hwp5-distribution") for m in fmts):
+            raise BFError(
+                f"{where}: hangul-unsupported 는 format marker(hwp3|hwp5-distribution)가 필요합니다 — "
+                "읽히는 형식은 미지원 함정이 아닙니다."
+            )
+    elif t["type"] == "ext-mismatch":
+        if not fmts:
+            raise BFError(f"{where}: ext-mismatch 는 내용 형식을 밝히는 format marker 가 필요합니다.")
+        for m in fmts:
+            suffix = Path(m["path"]).suffix.lower()
+            if suffix == _FORMAT_SUFFIX[m["format"]]:
+                raise BFError(
+                    f"{where}: ext-mismatch 인데 '{m['path']}' 의 확장자({suffix})가 내용 형식({m['format']})과 같습니다."
+                )
+        if not has_content:
+            raise BFError(f"{where}: ext-mismatch 는 내용으로 읽혀야 정답이므로 value|text marker 가 최소 1개 필요합니다.")
 
 
 def _validate_insight(ins: dict, where: str, paths: set[str]) -> None:
@@ -381,7 +428,7 @@ def declared_text(doc: dict) -> str:
     """원장 문서 스펙에서 렌더될 전체 텍스트를 재구성한다(선언 기대값 추출용)."""
     t = doc["type"]
     parts: list[str] = []
-    if t == "docx":
+    if t in ("docx", "hwpx", "hwp5"):
         parts.append(doc.get("title", ""))
         for blk in doc["blocks"]:
             if blk["kind"] in ("p", "h"):
@@ -412,6 +459,185 @@ def declared_ints(doc: dict) -> set[int]:
     return extract_ints(declared_text(doc))
 
 
+def is_structural(doc: dict) -> bool:
+    """본문을 읽을 수 없어야 정상인 문서(손상·잠금·HWP 3·배포용 HWP 5) — 수치 재대조 대상 아님."""
+    t = doc["type"]
+    return t in ("broken", "lock", "hwp3") or (t == "hwp5" and bool(doc.get("distribution")))
+
+
+# ---------------------------------------------------------------- 문제파일 기대 분류(#31)
+
+# brain-build 관문3 `문제파일.md` 분류와 같은 낱말을 쓴다 — 정답지·채점지가 그 파일과 대조된다.
+INTAKE_OK = "정상 적재"
+INTAKE_UNREADABLE = "읽기 불가"
+INTAKE_NO_TOOL = "판독 도구 없음"
+
+
+def expected_intake(doc: dict) -> dict:
+    """문서 1건을 brain-build 가 어떻게 기록해야 정답인가.
+
+    반환: {status, reason, action, hangul}. hangul=True 인 파일은 itda-doc 미설치 환경에서
+    분류가 전부 '판독 도구 없음' 으로 바뀐다(리더를 못 돌리니 형식 판정도 못 한다 — brain-build 계약).
+    """
+    t = doc["type"]
+    hangul = t in HANGUL_TYPES
+    if t == "broken":
+        return {"status": INTAKE_UNREADABLE, "reason": "손상 파일(열기 실패)", "action": "원본 재요청", "hangul": False}
+    if t == "lock":
+        return {"status": INTAKE_UNREADABLE, "reason": "잠금 임시파일(~$ — 문서 아님)", "action": "무시·정리 대상", "hangul": False}
+    if t == "hwp3":
+        return {
+            "status": INTAKE_UNREADABLE,
+            "reason": "한글 리더 미지원 형식 — HWP 3.x",
+            "action": "한글에서 HWPX 로 저장한 원본 요청",
+            "hangul": True,
+        }
+    if t == "hwp5" and doc.get("distribution"):
+        return {
+            "status": INTAKE_UNREADABLE,
+            "reason": "한글 리더 미지원 형식 — 배포용 보호",
+            "action": "배포용이 아닌 원본 요청",
+            "hangul": True,
+        }
+    if hangul:
+        fmt = "HWP 5" if t == "hwp5" else "HWPX"
+        suffix = Path(doc["path"]).suffix.lower()
+        mismatch = suffix != (".hwp" if t == "hwp5" else ".hwpx")
+        note = f"내용은 {fmt} — 확장자({suffix or '없음'})와 달라도 내용으로 읽혀야 함" if mismatch else f"{fmt} 문서"
+        return {"status": INTAKE_OK, "reason": note, "action": "—", "hangul": True}
+    return {"status": INTAKE_OK, "reason": "", "action": "—", "hangul": False}
+
+
+def sniff_format(path: Path) -> str:
+    """파일 **내용 서명**으로 형식을 판정한다(확장자 무관 — format marker 의 기준).
+
+    반환: hwpx | hwp5 | hwp5-distribution | hwp5-encrypted | hwp3 | zip | ole | missing | other
+    """
+    if not path.exists():
+        return "missing"
+    head = path.read_bytes()[:8]
+    if head == b"\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1":
+        flags = _hwp5_flags(path)
+        if flags is None:
+            return "ole"
+        if flags & 0x02:
+            return "hwp5-encrypted"
+        if flags & 0x04:
+            return "hwp5-distribution"
+        return "hwp5"
+    if path.read_bytes()[:17] == b"HWP Document File":
+        return "hwp3"
+    if head[:4] == b"PK\x03\x04":
+        import zipfile
+
+        try:
+            with zipfile.ZipFile(path) as zf:
+                names = set(zf.namelist())
+                mt = zf.read("mimetype").strip() if "mimetype" in names else b""
+        except zipfile.BadZipFile:
+            return "other"
+        if mt in (b"application/hwp+zip", b"application/haansofthwp+zip") or "Contents/section0.xml" in names:
+            return "hwpx"
+        return "zip"
+    return "other"
+
+
+def read_cfb(path: Path) -> dict[tuple[str, ...], bytes]:
+    """OLE 복합 문서(CFB)의 스트림 전부를 {경로 튜플: 바이트} 로 읽는다 — 표준 라이브러리만.
+
+    HWP 5 판정·재파싱용 최소 판독기(v3·v4 섹터, FAT·미니 FAT, 헤더 DIFAT 109칸). 런타임 의존성을
+    늘리지 않으려고 olefile 대신 쓴다 — 형식 정합은 tests/test_hangul.py 가 olefile·itda-doc 리더로 교차 검증한다.
+    구조가 깨졌으면 ValueError.
+    """
+    import struct
+
+    data = path.read_bytes()
+    if len(data) < 512 or data[:8] != b"\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1":
+        raise ValueError("CFB 서명 아님")
+    sector = 1 << struct.unpack_from("<H", data, 30)[0]
+    mini = 1 << struct.unpack_from("<H", data, 32)[0]
+    n_fat, dir_start = struct.unpack_from("<II", data, 44)
+    cutoff, minifat_start = struct.unpack_from("<II", data, 56)
+    difat = [x for x in struct.unpack_from("<109I", data, 76)[:n_fat]]
+
+    def sec(i: int) -> bytes:
+        off = (i + 1) * sector
+        if off + sector > len(data):
+            raise ValueError(f"CFB 섹터 {i} 범위 밖")
+        return data[off : off + sector]
+
+    fat: list[int] = []
+    for s_ in difat:
+        fat.extend(struct.unpack(f"<{sector // 4}I", sec(s_)))
+
+    def chain(start: int, table: list[int]) -> list[int]:
+        out, seen = [], set()
+        while start < 0xFFFFFFFA:
+            if start in seen or start >= len(table):
+                raise ValueError("CFB 체인 순환·범위 밖")
+            seen.add(start)
+            out.append(start)
+            start = table[start]
+        return out
+
+    dir_bytes = b"".join(sec(i) for i in chain(dir_start, fat))
+    entries = []
+    for off in range(0, len(dir_bytes), 128):
+        e = dir_bytes[off : off + 128]
+        nlen = struct.unpack_from("<H", e, 64)[0]
+        name = e[: max(nlen - 2, 0)].decode("utf-16-le", "replace")
+        kind = e[66]
+        left, right, child = struct.unpack_from("<III", e, 68)
+        start, size = struct.unpack_from("<II", e, 116)
+        entries.append((name, kind, left, right, child, start, size))
+    if not entries or entries[0][1] != 5:
+        raise ValueError("CFB 루트 항목 없음")
+    root = entries[0]
+    ministream = b"".join(sec(i) for i in chain(root[5], fat)) if root[6] else b""
+    minifat: list[int] = []
+    for i in chain(minifat_start, fat):
+        minifat.extend(struct.unpack(f"<{sector // 4}I", sec(i)))
+
+    def stream(start: int, size: int) -> bytes:
+        if size < cutoff:
+            buf = b"".join(ministream[j * mini : (j + 1) * mini] for j in chain(start, minifat))
+        else:
+            buf = b"".join(sec(j) for j in chain(start, fat))
+        if len(buf) < size:
+            raise ValueError("CFB 스트림이 선언 크기보다 짧음")
+        return buf[:size]
+
+    out: dict[tuple[str, ...], bytes] = {}
+
+    def walk(sid: int, prefix: tuple[str, ...], depth: int) -> None:
+        if sid == 0xFFFFFFFF:
+            return
+        if sid >= len(entries) or depth > 64:
+            raise ValueError("CFB 디렉토리 트리 손상")
+        name, kind, left, right, child, start, size = entries[sid]
+        walk(left, prefix, depth + 1)
+        walk(right, prefix, depth + 1)
+        if kind == 2:
+            out[prefix + (name,)] = stream(start, size)
+        elif kind == 1:
+            walk(child, prefix + (name,), depth + 1)
+
+    walk(root[4], (), 0)
+    return out
+
+
+def _hwp5_flags(path: Path) -> int | None:
+    import struct
+
+    try:
+        fh = read_cfb(path).get(("FileHeader",), b"")
+    except ValueError:  # 깨진 OLE 는 '한글 아님'
+        return None
+    if len(fh) < 40 or not fh.startswith(b"HWP Document File"):
+        return None
+    return struct.unpack_from("<I", fh, 36)[0]
+
+
 # ---------------------------------------------------------------- 재파싱(독립)
 
 class ParsedDoc:
@@ -437,6 +663,12 @@ def reparse(path: Path, dtype: str) -> ParsedDoc:
             return _reparse_pdf(path)
         if dtype == "csv":
             return _reparse_csv(path)
+        if dtype == "hwpx":
+            return _reparse_hwpx(path)
+        if dtype == "hwp5":
+            return _reparse_hwp5(path)
+        if dtype == "hwp3":
+            return ParsedDoc("", set(), readable=False, is_zip=False)
         if dtype == "txt":
             txt = path.read_text(encoding="utf-8", errors="replace")
             return ParsedDoc(txt, extract_ints(txt), readable=True, is_zip=False)
@@ -498,6 +730,92 @@ def _reparse_csv(path: Path) -> ParsedDoc:
     with path.open("r", encoding="utf-8", errors="replace", newline="") as f:
         for row in csvmod.reader(f):
             parts.extend(cell for cell in row)
+    txt = "\n".join(parts)
+    return ParsedDoc(txt, extract_ints(txt), readable=True, is_zip=False)
+
+
+def _local(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def _reparse_hwpx(path: Path) -> ParsedDoc:
+    """HWPX 섹션 XML 의 문단(p)마다 텍스트(t)를 모은다 — 렌더러와 독립(표준 zipfile·XML)."""
+    import re as _re
+    import xml.etree.ElementTree as ET
+    import zipfile
+
+    # 서명 선검사는 두지 않는다 — zip 이 아니면 아래서 BadZipFile(→ reparse 가 판독 불가로), 섹션이 없으면 판독 불가.
+    parts: list[str] = []
+    with zipfile.ZipFile(path) as zf:
+        sections = sorted(
+            (n for n in zf.namelist() if _re.fullmatch(r"Contents/section\d+\.xml", n)),
+            key=lambda n: int(_re.search(r"(\d+)", n.rsplit("/", 1)[-1]).group(1)),
+        )
+        if not sections:
+            return ParsedDoc("", set(), readable=False, is_zip=True)
+        for name in sections:
+            root = ET.fromstring(zf.read(name))
+            for p in root.iter():
+                if _local(p.tag) == "p":
+                    parts.append("".join(t.text or "" for t in p.iter() if _local(t.tag) == "t"))
+    txt = "\n".join(parts)
+    return ParsedDoc(txt, extract_ints(txt), readable=True, is_zip=True)
+
+
+# HWP 5 문단 텍스트의 제어 문자(한/글 문서 파일 형식 5.0 §제어 문자) — 확장·인라인 제어는 8 WCHAR 를 차지한다.
+_HWP_CTRL_WIDE = {1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23}
+
+
+def _hwp5_para_text(data: bytes) -> str:
+    import struct
+
+    out: list[str] = []
+    i = 0
+    while i + 2 <= len(data):
+        ch = struct.unpack_from("<H", data, i)[0]
+        if ch in _HWP_CTRL_WIDE:
+            i += 16
+            continue
+        i += 2
+        if ch in (10, 13):
+            out.append("\n")
+        elif ch >= 32:
+            out.append(chr(ch))
+    # 서로게이트 쌍은 UTF-16 으로 다시 합친다
+    return "".join(out).encode("utf-16-le", "surrogatepass").decode("utf-16-le", "replace")
+
+
+def _reparse_hwp5(path: Path) -> ParsedDoc:
+    """CFB → BodyText/Section* raw deflate → 레코드 → PARA_TEXT. 보호 문서는 판독 불가."""
+    import struct
+    import zlib
+
+    if sniff_format(path) != "hwp5":  # 배포용·암호·HWP 아님 → 본문을 읽을 수 없다
+        return ParsedDoc("", set(), readable=False, is_zip=False)
+    streams = read_cfb(path)
+    compressed = bool(struct.unpack_from("<I", streams[("FileHeader",)], 36)[0] & 0x01)
+    names = sorted(
+        (k for k in streams if len(k) == 2 and k[0] == "BodyText" and k[1].startswith("Section")),
+        key=lambda k: int(k[1][len("Section"):] or 0),
+    )
+    if not names:
+        return ParsedDoc("", set(), readable=False, is_zip=False)
+    parts: list[str] = []
+    for k in names:
+        data = streams[k]
+        if compressed:
+            data = zlib.decompress(data, -15)
+        off = 0
+        while off + 4 <= len(data):
+            hdr = struct.unpack_from("<I", data, off)[0]
+            off += 4
+            tag, size = hdr & 0x3FF, (hdr >> 20) & 0xFFF
+            if size == 0xFFF:
+                size = struct.unpack_from("<I", data, off)[0]
+                off += 4
+            if tag == 0x43:  # PARA_TEXT
+                parts.append(_hwp5_para_text(data[off : off + size]))
+            off += size
     txt = "\n".join(parts)
     return ParsedDoc(txt, extract_ints(txt), readable=True, is_zip=False)
 

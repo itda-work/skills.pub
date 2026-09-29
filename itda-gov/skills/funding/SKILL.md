@@ -17,9 +17,9 @@ metadata:
   category: "domain"
   status: "active"
   recommended: true
-  version: "1.0.0"
+  version: "1.0.2"
   created_at: "2026-03-29"
-  updated_at: "2026-07-28"
+  updated_at: "2026-09-28"
   tags: "government funding, startup support, subsidy, survey, crawler, diff"
 ---
 
@@ -66,14 +66,14 @@ $env:SKILL_DIR = "$env:CLAUDE_PLUGIN_ROOT\skills\funding"  # 미설정이면 SKI
 키가 있으면 K-Startup 수집이 빨라지고 totalCount 로 전수 소진을 증명할 수 있다.
 
 작업 폴더(Cowork 연결 폴더 / Claude Code 프로젝트 루트) 루트 `.env` 에 아래 한 줄을 넣으면 자동 탐색된다.
-파일명 별칭 `.env.txt`·`env.txt`·`환경변수.txt` 도 동일하게 탐색된다.
+파일명 별칭 `.env.txt`·`환경변수.txt` 도 동일하게 탐색된다.
 
 ```
 KO_DATA_API_KEY=발급받은_Decoding_키
 ```
 
 > **키 주입 (Claude 실행 규칙):** 자격증명 유무를 `ls`/`find` 로 **사전 점검하지 않는다** — 스크립트가
-> 4종 파일명을 스스로 탐색하므로 **우선 실행**한다(셸 glob 은 별칭을 놓쳐 오탐한다). 키 미해석은
+> 3종 파일명(`.env`·`.env.txt`·`환경변수.txt`)을 스스로 탐색하므로 **우선 실행**한다(셸 glob 은 별칭을 놓쳐 오탐한다). 키 미해석은
 > 실패가 아니라 크롤 경로 전환이다. 사용자 지침(`CLAUDE.md`)에 값이 선언돼 있으면
 > `KO_DATA_API_KEY=<키> python3 "$SKILL_DIR/scripts/survey_crawl.py" ...` 로 전달해 재시도한다.
 
@@ -254,12 +254,13 @@ python3 "$SKILL_DIR/scripts/survey_crawl.py" detail bizinfo "<url>" "<url>" \
 `<회차>/attachments-md/<공고ID>/` 로 변환한다:
 
 - **HWP/HWPX** → `Skill` 도구로 `itda-doc:hwpx` 를 호출해 마크다운 변환(표 플래튼 포함)
-- **PDF** → `Skill` 도구로 `itda-doc:pdf-context-refinery` 를 호출해 본문 추출
+- **PDF** → `Skill` 도구로 `itda-doc:pdf-context-refinery` 를 호출해 본문 추출. 그 스킬이 전 페이지 텍스트층을 판정해 스캔 쪽은 비전으로 읽고,
+  그래도 못 읽은 쪽을 **"미검증 쪽: p.N, …"** 으로 돌려준다 — 그 목록을 공고별로 보고서 한계 고지에 옮긴다(앞은 텍스트·뒤 신청자격 표만 스캔인 공고가 실재한다).
 
-> **크로스플러그인 미설치 계약 (조용한 생략 금지)**: 이 두 스킬은 **itda-doc(hwpx)·itda-research(pdf-context-refinery)** 플러그인 소속이고
+> **크로스플러그인 미설치 계약 (조용한 생략 금지)**: 이 두 스킬은 **itda-doc** 플러그인(hwpx·pdf-context-refinery) 소속이고
 > funding 은 **itda-gov** 소속이라 함께 설치돼 있지 않을 수 있다. 호출이 실패하거나 스킬이 없으면
 > **변환을 조용히 건너뛰지 않는다** — 해당 공고를 "첨부 원문 미변환" 으로 표시하고, 보고서 한계 고지에
-> **"HWP/PDF 첨부 N건 미변환 — itda-doc·itda-research 플러그인을 설치하면 본문까지 검증할 수 있습니다"** 를 명시한다.
+> **"HWP/PDF 첨부 N건 미변환 — itda-doc 플러그인을 설치하면 본문까지 검증할 수 있습니다"** 를 명시한다.
 
 각 건에서 확인할 것(없으면 **'불명'**):
 
@@ -295,7 +296,7 @@ python3 "$SKILL_DIR/scripts/survey_crawl.py" detail bizinfo "<url>" "<url>" \
 - 마감일·금액·요건은 **원문에서 확인한 것만**. 추정 금지. 불명은 '불명'으로 쓰고 문의처(전화·이메일) 병기
 - 마지막에 **우선순위 액션 목록**(날짜별: "7/15까지 A와 B 동시 신청" 식)
 - **한계 고지** — 다음을 빠짐없이: 소스별 커버리지(manifest 기준, partial 소스는 "미완 수집"),
-  상세 검증 범위(N건/전체), 첨부 미검증·미변환 건수와 사유, '예비 가능' 판정은 공고 텍스트 기준이므로
+  상세 검증 범위(N건/전체), 첨부 미검증·미변환 건수와 사유, PDF 첨부의 미검증 쪽 목록, '예비 가능' 판정은 공고 텍스트 기준이므로
   신청 전 유선확인 권장, 마감 연장·조기마감 가능성
 - 채팅 응답은 요청 형식을 따르되 기본은 표 없는 텍스트 + URL 명시
 

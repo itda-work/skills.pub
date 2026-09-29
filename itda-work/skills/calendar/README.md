@@ -37,7 +37,8 @@ Cowork 샌드박스는 외부 네트워크가 막혀 있어 스킬이 CalDAV 서
 - 네이버는 서버가 반복 일정을 전개하지 않는다 — `unexpanded_recurring`·`rrule` 로 회차를 스스로 판단한다.
 - 참석자 초대·타인 빈 시간·할 일(VTODO)·캘린더 관리는 범위 밖.
 
-## `scripts/` 에 대하여
+## 스크립트·의존성이 없다
 
-`scripts/`(Python `caldav` 직접 접속 CLI)는 **이 스킬의 실행 경로가 아니다.** `itda-work:morning-brief` 의 `gather.py` 가
-`check_env.py`·`list_events.py` 를 실행 경로로 쓰고 있어 남겨 두었다 — 그 스킬이 itda-hyve 경로로 옮겨지면 함께 지운다(후속 이슈).
+0.7.0(itda-work/skills#19)에서 옛 `scripts/`(Python `caldav` 직접 접속 CLI)·`requirements.txt`(caldav·icalendar)·`deps.json`·`tests/` 를 지웠다.
+마지막 사용처였던 `itda-work:morning-brief`(0.3.0, #18)·`itda-work:time-audit`(0.2.0, #19)이 itda-hyve `calendar_events` 로 옮겨 갔다.
+이 스킬은 SKILL.md 절차와 itda-hyve 도구만으로 동작하며 설치할 파이썬 패키지가 없다.

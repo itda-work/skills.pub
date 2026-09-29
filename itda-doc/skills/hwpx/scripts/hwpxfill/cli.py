@@ -50,12 +50,33 @@ EXIT_STRICT = 3
 # ---- 입출력 ---------------------------------------------------------------------
 
 
+def _load_safe_archive():
+    """ZIP 가드 정본(reader/hwpx_native/safe_archive.py, 표준 라이브러리만)을 파일로 읽는다(#27)."""
+    import importlib.util
+
+    cached = sys.modules.get("hwpx_safe_archive")
+    if cached is not None:
+        return cached
+    path = Path(__file__).resolve().parents[2] / "reader" / "hwpx_native" / "safe_archive.py"
+    spec = importlib.util.spec_from_file_location("hwpx_safe_archive", path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"ZIP 가드를 찾지 못했습니다: {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["hwpx_safe_archive"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+guard = _load_safe_archive()
+
+
 def read_sections(path: Path) -> list[tuple[str, str]]:
-    """(엔트리명, XML) 을 section 번호 순으로."""
-    with zipfile.ZipFile(path) as zf:
+    """(엔트리명, XML) 을 section 번호 순으로. 압축 폭탄·위조 CD·DOCTYPE 는 guard.UnsafeArchiveError(#27)."""
+    with guard.open_zip(path) as zf:
+        budget = guard.Budget()
         names = [(int(SECTION_RE.match(n).group(1)), n) for n in zf.namelist() if SECTION_RE.match(n)]
         names.sort()
-        return [(n, zf.read(n).decode("utf-8")) for _, n in names]
+        return [(n, guard.read_entry(zf, n, budget).decode("utf-8")) for _, n in names]
 
 
 def scan_document(sections: list[tuple[str, str]]) -> list[Section]:
@@ -380,21 +401,69 @@ def cmd_fill(args: argparse.Namespace, src: Path, out: Path, mapping: dict[str, 
     if args.refresh_preview:
         preview = build_preview(current())
 
-    with zipfile.ZipFile(src) as zin, zipfile.ZipFile(out, "w") as zout:
-        wrote_preview = False
-        for info in zin.infolist():
-            data = zin.read(info.filename)
-            if info.filename in xmls:
-                data = xmls[info.filename].encode("utf-8")
-            elif info.filename == PREVIEW_ENTRY and preview is not None:
-                data = preview
-                wrote_preview = True
-            compress = zipfile.ZIP_STORED if info.filename == "mimetype" else zipfile.ZIP_DEFLATED
-            zout.writestr(info.filename, data, compress_type=compress)
+    wrote_preview = False
+    try:
+        with guard.open_zip(src) as zin, zipfile.ZipFile(out, "w") as zout:
+            budget = guard.Budget()
+            for info in zin.infolist():
+                data = guard.read_entry(zin, info, budget)
+                if info.filename in xmls:
+                    data = xmls[info.filename].encode("utf-8")
+                elif info.filename == PREVIEW_ENTRY and preview is not None:
+                    data = preview
+                    wrote_preview = True
+                compress = zipfile.ZIP_STORED if info.filename == "mimetype" else zipfile.ZIP_DEFLATED
+                zout.writestr(info.filename, data, compress_type=compress)
+    except guard.UnsafeArchiveError:
+        out.unlink(missing_ok=True)  # 쓰다 만 결과를 남기지 않는다 — 부분본이 결과 행세를 한다
+        raise
     if args.refresh_preview:
         print("위생: PrvText 재생성" if wrote_preview else "위생: PrvText 엔트리가 없어 재생성하지 않음")
+    broken = archive_regressions(src, out)
+    if broken:
+        # 채우기가 구조를 깨뜨렸다 — 원본 양식에는 없던 실패다. 결과 파일은 남기되 실패로 끝낸다(#10)
+        for msg in broken:
+            print(f"오류: 채우기 후 구조 검사 실패 — {msg}", file=sys.stderr)
+        return EXIT_USAGE
     print(f"완료: {out}")
     return EXIT_STRICT if (strict_fail and args.strict) else EXIT_OK
+
+
+# ---- 구조 검사 (생성 경로와 같은 검증기, #10) ------------------------------------------
+
+
+def _load_validator():
+    """report/hwpx_report/validator.py(표준 라이브러리만)를 파일로 직접 읽는다 — 패키지 __init__ 은 생성기 전체를 끌어온다."""
+    import importlib.util
+
+    path = Path(__file__).resolve().parents[2] / "report" / "hwpx_report" / "validator.py"
+    spec = importlib.util.spec_from_file_location("hwpx_validator", path)
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules.setdefault("hwpx_validator", module)
+    spec.loader.exec_module(module)
+    return module
+
+
+def archive_regressions(src: Path, out: Path) -> list[str]:
+    """결과에서 실패하고 **원본에서는 통과한** 구조 검사 메시지. 원본 양식이 이미 어긋난 항목은 경고만 한다
+    (한컴이 여는 사용자 양식을 우리 검사가 거부하면 안 된다)."""
+    validator = _load_validator()
+    if validator is None:
+        print("경고: 구조 검증기를 찾지 못해 채우기 결과 구조 검사를 건너뜁니다", file=sys.stderr)
+        return []
+    before = {c.name: c for c in validator.validate_archive(src.read_bytes()).checks}
+    after = validator.validate_archive(out.read_bytes()).checks
+    broken: list[str] = []
+    for check in after:
+        if check.passed:
+            continue
+        if before.get(check.name) is not None and not before[check.name].passed:
+            print(f"경고: 원본 양식부터 구조 검사 실패 — {check.name}: {check.message}", file=sys.stderr)
+            continue
+        broken.append(f"{check.name}: {check.message}")
+    return broken
 
 
 # ---- main -------------------------------------------------------------------
@@ -446,4 +515,8 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_CHECK
     except ControlInvariantError as exc:
         print(f"오류: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    except guard.UnsafeArchiveError as exc:
+        # 입력 파일 문제 — 기존 입력 오류(sys.exit 문자열)와 같은 exit 1, 트레이스백 없이(#27)
+        print(f"오류: 입력 HWPX 를 안전하게 열 수 없습니다 — {exc}", file=sys.stderr)
         return EXIT_USAGE

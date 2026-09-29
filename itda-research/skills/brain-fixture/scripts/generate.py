@@ -6,11 +6,12 @@
   python3 scripts/generate.py <ledger.json> --out <폴더>   # macOS/Linux
   py -3 scripts/generate.py <ledger.json> --out <폴더>      # Windows
 
-- 원장 documents[] 전건을 유형별로 렌더(docx·xlsx·pptx·pdf·txt·csv + broken·lock).
+- 원장 documents[] 전건을 유형별로 렌더(docx·xlsx·pptx·pdf·txt·csv·hwpx·hwp5 + broken·lock·hwp3).
 - os.utime 으로 파일 mtime = 원장 내부 날짜(internal_date).
 - 출력 폴더가 비어있지 않으면 exit 2(기존 데이터 덮어쓰기 금지, no-silent-fallback).
 - 원장 스키마 위반은 exit 2 명시 에러(어느 필드가 왜).
-값 수준 결정론: 같은 원장 → 같은 값·구조(바이트 동일성은 비보장).
+값 수준 결정론: 같은 원장 → 같은 값·구조(오피스 문서의 바이트 동일성은 비보장).
+한글 문서(hwpx·hwp5·hwp3)와 broken·lock 은 바이트까지 결정론이다(hangul_render — 시각·OS 바이트 고정).
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bf_common as bf  # noqa: E402
+import hangul_render  # noqa: E402
 
 
 def _prepare_out(out: Path) -> None:
@@ -208,6 +210,9 @@ _RENDERERS = {
     "csv": _render_csv,
     "broken": _render_broken,
     "lock": _render_lock,
+    "hwpx": hangul_render.render_hwpx,
+    "hwp5": hangul_render.render_hwp5,
+    "hwp3": hangul_render.render_hwp3,
 }
 
 

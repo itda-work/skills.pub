@@ -15,9 +15,9 @@ metadata:
   category: "domain"
   status: "active"
   recommended: true
-  version: "0.19.1"
+  version: "0.19.2"
   created_at: "2026-03-29"
-  updated_at: "2026-09-27"
+  updated_at: "2026-09-28"
   tags: "DART, CSV, company, financial, disclosure, competitor, business report, compare"
 ---
 
@@ -62,13 +62,13 @@ py -3 "$env:SKILL_DIR\scripts\install_skill_deps.py"
 
 **권장 (비개발자 포함 모든 사용자) — 작업 폴더 `.env`에 키 등록:**
 
-작업 폴더(Cowork 연결 폴더 / Claude Code 프로젝트 루트, 여러 개면 아무 폴더나) 루트에 `.env` 파일을 만들고 아래 한 줄을 넣어 두면 스킬이 자동으로 찾아 읽습니다. 파일명 별칭 `.env.txt`·`env.txt`·`환경변수.txt` 도 동일하게 탐색된다. 셸 환경변수나 `~/.claude/settings.json` 의 `env` 로 설정해도 되며, 로더가 자동으로 탐색합니다.
+작업 폴더(Cowork 연결 폴더 / Claude Code 프로젝트 루트, 여러 개면 아무 폴더나) 루트에 `.env` 파일을 만들고 아래 한 줄을 넣어 두면 스킬이 자동으로 찾아 읽습니다. 파일명 별칭 `.env.txt`·`환경변수.txt` 도 동일하게 탐색된다. 셸 환경변수나 `~/.claude/settings.json` 의 `env` 로 설정해도 되며, 로더가 자동으로 탐색합니다.
 
 ```
 DART_API_KEY=발급받은_키
 ```
 
-> **키 주입 (Claude 실행 규칙):** 자격증명 유무를 `ls`/`find` 등으로 **사전 점검하지 않는다** — 스크립트가 `.env`·`.env.txt`·`env.txt`·`환경변수.txt` 를 스스로 탐색하므로 **우선 실행**한다(셸 glob·검색 패턴은 별칭을 놓쳐 오탐한다: `.env*`→env.txt 누락, `*env*`→환경변수.txt 누락). 실행이 자격증명 누락으로 실패하면, 사용자 지침("Claude 지침"·`CLAUDE.md`)에 해당 변수가 선언돼 있는 경우 그 값을 환경변수로 전달해 재시도한다 — 예: `DART_API_KEY=<키> python3 "$SKILL_DIR/scripts/..."`. 지침에도 없으면 GUIDE의 발급 안내를 제시한다. 수동 확인이 꼭 필요하면 파일명 4종(`.env`·`.env.txt`·`env.txt`·`환경변수.txt`)을 그대로 나열해 확인한다.
+> **키 주입 (Claude 실행 규칙):** 자격증명 유무를 `ls`/`find` 등으로 **사전 점검하지 않는다** — 스크립트가 `.env`·`.env.txt`·`환경변수.txt` 를 스스로 탐색하므로 **우선 실행**한다(셸 glob·검색 패턴은 별칭을 놓쳐 오탐한다: `.env*`·`*env*` 는 `환경변수.txt` 를, `*.env` 는 `.env.txt` 를 놓친다). 실행이 자격증명 누락으로 실패하면, 사용자 지침("Claude 지침"·`CLAUDE.md`)에 해당 변수가 선언돼 있는 경우 그 값을 환경변수로 전달해 재시도한다 — 예: `DART_API_KEY=<키> python3 "$SKILL_DIR/scripts/..."`. 지침에도 없으면 GUIDE의 발급 안내를 제시한다. 수동 확인이 꼭 필요하면 파일명 3종(`.env`·`.env.txt`·`환경변수.txt`)을 그대로 나열해 확인한다.
 
 > **출처 표시 (Claude 실행 규칙):** 스크립트 stderr 에 `[자격증명] KEY ← 출처` 줄이 나오면, 그 내용을 사용자에게 짧게 알린다(예: "환경변수.txt 의 DART_API_KEY 를 사용했습니다") — 사용자가 어느 설정파일이 쓰였는지 인지하게 하는 계약이다. 값은 어디에도 표시하지 않는다.
 

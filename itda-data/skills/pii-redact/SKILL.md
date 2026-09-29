@@ -11,11 +11,11 @@ allowed-tools: Read, Bash, Write, Glob, Grep, mcp__workspace__bash
 argument-hint: "[비식별화할 텍스트 파일 또는 붙여넣은 CS 로그]"
 metadata:
   author: "Chinseok"
-  version: "0.1.3"
+  version: "0.2.0"
   category: "data-analysis"
   status: "experimental"
   created_at: "2026-06-01"
-  updated_at: "2026-07-26"
+  updated_at: "2026-09-28"
   tags: "pii, redaction, masking, privacy, korean, cs, stdlib"
 ---
 
@@ -32,7 +32,7 @@ metadata:
 
 1. **결정론 로컬 우선** — raw 텍스트를 **LLM에 먼저 넣지 않는다**. 정규식/룰로 먼저 가린다. (LLM 2차 리뷰는 *이미 마스킹된* 텍스트에만, 옵션·기본 off.)
 2. **재현율 우선** — 누락(PII 유출)이 과제거(본문 훼손)보다 위험. 단 마스킹 리포트로 무엇을 몇 건 가렸는지 투명 보고.
-3. **체크섬은 필터가 아니라 confidence 태그** — 주민번호 mod11·카드 Luhn 실패해도 마스킹은 하되 confidence를 낮춘다.
+3. **체크섬은 필터가 아니라 confidence 태그** — 카드 Luhn 실패해도 마스킹은 하되 confidence를 낮춘다. 주민번호는 2020-10 이후 뒷자리가 임의 번호라 mod11 을 보지 않는다 — **세기 반영 생년월일 유효성**(2월 30일·미래 생년은 비검출)으로 거르고, 하이픈 구분자·`주민`/`외국인등록` 라벨이면 high, 그 밖엔 candidate(둘 다 마스킹).
 4. **플레이스홀더 + 문서 내 일관 가명화** — `[전화_1]` 형식. 같은 문서에서 같은 값은 같은 토큰(무상태).
 5. **stdlib only** (`re`/`json`/`sys`/`os`/`argparse`) — 외부 의존 없음. 고정 출력 계약(`references/output-schema.json`).
 

@@ -2,6 +2,43 @@
 
 이 플러그인의 주요 변경 사항을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/), 버전은 [SemVer](https://semver.org/)를 따릅니다.
 
+## [3.0.0] - 2026-09-28
+
+> **릴리스**: skills **13.0.0**(`skills-v13.0.0`)에 싣는다.
+> 요구: **itda-hyve 0.9.6 이상** — 받는 곳 https://github.com/itda-work/itda-hyve.pub/releases/latest (0.9.1~0.9.5 는 공개하지 않고 0.9.6 에 #9·#10·#12·#15·#17·#21·#22 를 함께 싣는다)
+> morning-brief 는 0.9.6 의 `imap_search` `snippet_for`, 0.9.5 의 batch `account: "*"`·`imap_search` `include_snippet`, 0.9.4 의 batch `plan_file`·`imap_search` `bulk` 와 0.9.3 의 `batch`·`imap_fetch` `uids`·일정 참석자·`location` 을, time-audit 는 0.9.2 의 읽기 도구 `save_as`(응답을 연결 폴더에 직접 저장)를, inbox-triager 는 `\Sent` 와 0.9.1 의 `imap_search` 스레드 헤더(`message_id`·`in_reply_to`)를 쓴다.
+> `save_as`·`batch`·`plan_file` 은 도구 입력 스키마·도구 목록에 드러나 스킬이 호출 전에 가를 수 있다(없으면 업데이트 안내하고 멈춘다). 그래도 배포 순서로 보장한다 — 위 주소에 itda-hyve 0.9.6 설치본이 올라온 것을 확인한 뒤에 `skills-v13.0.0` 태그를 단다.
+
+### BREAKING
+
+- **메일·일정 계정을 `.env`·환경변수로 읽던 경로가 없어졌다.** morning-brief(0.2.x 까지 형제 스크립트로 IMAP·CalDAV 직접 접속)·time-audit(calendar 스크립트 실행)·`inbox-triager` 에이전트(email 읽기 스크립트)가 itda-hyve 도구로 옮겨 갔고, calendar·email 의 옛 직접 접속 스크립트는 삭제됐다. 계정은 itda-hyve 설정 창의 "계정" 화면에 등록한다. itda-hyve 없이 `.env` 만으로 쓰던 사용자는 itda-hyve 0.9.6 이상을 설치해야 한다.
+- **morning-brief·time-audit(itda-hyve 캘린더 소스)는 Cowork 에서 연결 폴더가 필요하다** — itda-hyve 가 응답을 그 폴더에 쓴다. `gather.py --plan`·`collect_events.py --plan` 은 `--save-dir <입력 폴더의 호스트 경로>` 없이는 `save_dir_required` 로 멈춘다(#34).
+
+### Changed
+
+- `morning-brief` 0.3.0 — 수집을 itda-hyve 경로로(`gather.py --plan`/`--input`). 형제 스크립트 subprocess·`.env` 자격증명·caldav 설치를 걷어냈고 candidates.json 계약·render·verify 는 그대로다. 미회신 판정은 itda-hyve 스레드 헤더(옛 판이면 `thread_headers_missing` 결손으로 페이지가 업데이트를 안내). 서버가 펼치지 않은 반복 일정을 회차로 전개한다(#18).
+- `morning-brief` 0.4.0 — **itda-hyve 가 응답을 입력 폴더에 직접 쓴다**: `--plan` 이 모든 호출에 `save_dir`(새 인자 `--save-dir`)·`save_as`·`overwrite` 를 싣고 SKILL.md 의 "응답을 그대로 Write" 지시를 없앴다(Cowork 실측의 가장 큰 병목). 보낸편지함을 `mailbox: "\\Sent"` 로 받아 라운드 4 → 3(`imap_list_mailboxes` 바퀴 제거), `include_references` 끔(보낸편지함 30일·200통 유지 — 근거는 스킬 README). 날씨 위치를 itda-hyve `http_request` 로 받아 `weather_here.py --geo-input` 에 넘긴다(#33 방식). 최소 itda-hyve 0.9.2(#34).
+- `calendar` 0.7.0 — 옛 CalDAV 직접 접속 `scripts/`·`requirements.txt`(caldav·icalendar)·`deps.json`·`tests/` 삭제. 설치할 파이썬 패키지가 없어졌다(#19).
+- `email` 0.36.0 — 사용처 없는 옛 IMAP/SMTP 스크립트 17개(발송·초안·폴더 조작·`thread_status`)와 테스트 삭제. `inbox-triager` 에이전트가 실행하는 읽기 스크립트 9개는 남겼다(#19).
+- `inbox-triager` 에이전트 — 받은편지함 트리아지를 itda-hyve `accounts_list`·`imap_list_mailboxes`·`imap_search`·`imap_fetch` 로 옮겼다. `tools` 를 그 4개와 `ToolSearch` 로 좁혀 셸·파일 읽기·발송·첨부 저장 도구가 없다 — 환경변수·`.env` 자격증명과 email 스크립트를 더는 쓰지 않는다. 분류 표·권장 액션만 반환하는 계약은 그대로다. 피싱은 보이는 신호로만 판정하고 "발신 인증 미확인" 을 붙이며, 답장 여부는 요청받았을 때 보낸 메일함의 `in_reply_to` 로 대조한다(#20).
+- `email` 0.37.0 — 옛 IMAP 직접 접속 읽기 스크립트 9개와 테스트 삭제(#20). 스킬 폴더에 `scripts/` 가 없다.
+- `time-audit` 0.2.0 — 네이버·아이클라우드·CalDAV 소스를 itda-hyve `calendar_events` 로 옮겼다(`scripts/collect_events.py`, `--plan`/`--input`). calendar 스킬의 옛 직접 접속 스크립트를 더는 부르지 않는다. 수집이 불완전하면 초안을 쓰지 않는다(#19).
+- `time-audit` 0.3.0 — `calendar_events` 응답을 itda-hyve 가 입력 폴더에 직접 쓴다(`collect_events.py --plan --save-dir`, `save_as`). 최소 itda-hyve 0.9.2(#34).
+- `email` 0.38.0 — 보낸·임시·휴지통·스팸 메일함을 특수 용도 이름(`"\\Sent"` 등, itda-hyve 0.9.2)으로 바로 지목하는 안내. 최소 판은 0.9.0 그대로(#34).
+- `inbox-triager` 에이전트 — 스레드 맥락의 보낸 메일함을 `"\\Sent"` 로 받는다(메일함 목록 조회 생략). 최소 itda-hyve 0.9.2(#34).
+- `weather-here` 0.13.0 — Cowork 에서 현재 위치를 itda-hyve `http_request`(ipapi.co·ipwho.is)로 받는다. 스크립트가 Cowork 작업 공간에서 돌면 직접 IP 조회(클라우드 IP — 샌프란시스코 실측)를 하지 않고 exit 3 으로 멈춘다. `--lat`/`--lon`·`--geo-input`·`--weather-request`/`--weather-input` 추가, 로컬 실행은 그대로(#33).
+- `weather-here` 0.14.0 — 현재 위치를 itda-hyve 0.9.3 의 `location` 도구(OS 위치 서비스 → IP 서비스 6곳 합의)로 받는다. IP 한 곳(ipapi.co)은 대전 KT 회선을 성남으로 잡았다. 날씨 줄 첫머리가 출처를 드러낸다 — OS 위치는 "대전광역시 중구", IP 합의는 "(시·도 기준)", 합의 실패·IP 한 곳은 "(대략·IP 기준)". location 이 없는 0.9.0~0.9.2 는 `http_request` 경로 그대로(#37).
+- `morning-brief` 0.5.0 — **새 구성**: 오늘 일정 전체(시간·장소·참석 인원) → 일정별 관련 메일(참석자·주최자 주소, 다음으로 제목 키워드 — 제목·보낸 사람·날짜·회신 여부) → 일정과 무관한 미회신 메일(제목·보낸 사람·요약). 목록·매칭·정렬은 `gather.py`, 모델은 요약 문장만(content·candidates schema 2). 지형·세 마디·두 목록·내일 일정·관련 사람 정보를 뺐다. 수집은 itda-hyve 0.9.3 `batch` 두세 번(①계정·위치 ②일정·받은/보낸 메일·날씨 예보 ③미회신 본문 `uids`), 날씨 위치는 `location`. 최소 itda-hyve 0.9.3(#38).
+- `morning-brief` 0.6.0 — `gather.py --plan` 이 batch 인자를 입력 폴더의 `plan-<k>.json` 으로 쓰고 `{"plan_file": …}` 한 줄만 낸다. 모델은 그대로 batch 에 준다(호출 목록을 다시 출력하던 바퀴 사이 84초 제거). 대량 메일(itda-hyve 0.9.4 `imap_search` `bulk`·`bulk_reason`, 헤더 없는 것은 noreply 류 보낸 사람·제목 「(광고)」)을 미회신·요약에서 빼고 「뉴스레터·알림 N통」 한 줄(뉴스레터·자동 알림·광고 수)로 센다. 관련 메일에는 참석자·주최자 주소로 이어질 때만 붙고 "단체 발송" 으로 보인다. `bulk` 가 없는 응답은 보낸 사람·제목 규칙만(하위 호환). 최소 itda-hyve 0.9.4 — batch 스키마에 `plan_file` 이 없으면 업데이트 안내(#39).
+- `morning-brief` 0.7.0 — **「미회신」 은 사람 메일만**: 표지 없는 자동 메일(로컬파트 어디에든 noreply·noreturn 류, 표시 이름 「발신전용」·「회신불가」)을 대량 발송으로 보고, 역할 주소(billing·receipt·order·alert·notice 등 — support·info·help 제외)·발송 서브도메인(notice.·email.·mail.·news. 등)은 최근 30일 보낸편지함에 없는 상대일 때만 대량 발송으로 본다. 미회신 뒤에 **「대량 발송 메일」 절**(종류 → 발신자 → 제목 목록, 모델 요약 없음 — candidates `email.bulk.groups`, 종류에 `billing` 추가). `--plan` 은 계획 파일을 fsync·재확인한 뒤에만 경로를 내고, `--input`·`--save-dir` 의 마지막 이름이 다르면 `save_dir_mismatch`(NFC 비교 — NFD 한글 폴더 대응)(#40).
+- `morning-brief` 0.8.0 — **수집이 batch 한 번**: 계정 목록·위치·모든 계정의 오늘 일정·받은 메일(본문 앞부분 300자, `include_snippet`)·보낸 메일을 `account: "*"`(파일 이름 `{n}`)로 한꺼번에 받는다. 미회신 요약은 snippet 으로 쓰고 본문 바퀴를 없앴다(snippet 이 없는 메일만 예외로 `imap_fetch` `uids`). `location` 은 같은 batch 에 정밀(OS) 그대로 — 긴 대기는 위치 권한을 정하지 않은 첫 회차뿐이다(README D17). 날씨 예보는 weather-here 가 샌드박스에서 직접 받고 실패하면 `http_request` 한 번. 최소 itda-hyve 0.9.5(#40).
+- `morning-brief` 0.9.0 — **대량 발송 메일을 메일 계정별로**: 「대량 발송 메일」 절이 계정(이름·주소·통수) 소절 → 종류 → 발신자 → 제목이다(발신자 상한은 계정마다, 메일 계정이 하나면 소절 머리 없이 예전 모양). 메일 계정이 둘 이상이면 관련 메일·미회신 줄에 계정 이름 배지. candidates `email.bulk` 가 `accounts[]` 로 바뀌었다(최상위 `groups` 제거) — verify 가 계정 합·계정 소절·배지를 대조한다(#41).
+- `morning-brief` 0.10.0 — 받은 메일 본문 앞부분을 **사람 메일에만** 받는다(`imap_search` `snippet_for: "non_bulk"`, itda-hyve 0.9.6 — 대량 발송·noreply 메일은 건너뛴다). 서버가 건너뛴 메일(`snippet_skipped`)은 미회신 후보가 되지 않는다. 0.9.5 가 이 인자를 거부하면 페이지가 "0.9.6 이상으로 업데이트" 를 말한다. 최소 itda-hyve 0.9.6(itda-work/itda-hyve#22).
+- `morning-brief` 0.11.0 — **보고서 스타일 4종**: 기본은 세로 시간축(`timeline` — 일정 길이에 비례한 블록, 1시간 이상 빈 시간, 관련 메일은 일정 옆), "보고서 형식으로"·"표로"·"인쇄용으로" 하면 `memo`(결재 메모)·`desk`(지표 띠·표)·`print`(A4 두 단)(`render.py --style`). 네 스타일은 내용이 같고 verify 를 모두 통과한다. 「일정별 관련 메일」 은 따로 절이 아니라 각 일정 곁에 붙는다. 라이트·다크·폰 너비·인쇄 CSS, 웹 폰트 없음(#42).
+- `references/netbridge.md` 사본(email·calendar·morning-brief·time-audit·weather-here) — 정본에 읽기 도구 `save_as` 절과 특수 용도 메일함을 더했다(#34). `location` 절(#37), `batch`·`imap_fetch` `uids`·일정 참석자 절(#38), batch `plan_file`·`imap_search` `bulk` 절(#39).
+- `email` 0.35.2 — 첨부 HWP·HWPX·스캔 PDF 읽기 안내를 문서 스킬(`itda-doc:hwpx`·`itda-doc:pdf-context-refinery`) 계약과 맞췄다. 못 읽은 쪽이 있으면 요약에 그 사실을 적는다(#12).
+- `work-plan` 0.14.0 — 메일·캘린더 계정을 환경변수로 안내하지 않는다. ground check 가 `NAVER_EMAIL`·`NAVER_APP_PASSWORD`·`GOOGLE_*`·`DAUM_*` 를 허용 목록에서 빼고 "itda-hyve 계정 화면에 등록" 경고로 내려보내며, 메모 틀·GUIDE 예시를 계정 등록 절차로 바꿨다(#23).
+
 ## [2.0.2] - 2026-09-27
 
 ### Changed

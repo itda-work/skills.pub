@@ -303,6 +303,57 @@ def _segments(text: str, keys: list[str]) -> list[str]:
     return [s for s in segs if s.strip()]
 
 
+def expected_fill(paras: list[Para], mapping: dict[str, Value]) -> dict[int, list[tuple[int, str, str]]]:
+    """채우기가 넣었어야 할 값을 문단별로 — `fill.fill_texts` 와 같은 규칙(매핑 순서로 키를 찾고, 이미 차지한
+    자리와 겹치면 건너뛰며, 목록 값은 문서 순서로 하나씩 소비). 반환: {문단 인덱스: [(위치, 키, 값)…] 위치순}."""
+    cursors: dict[str, int] = {}
+    out: dict[int, list[tuple[int, str, str]]] = {}
+    for index, p in enumerate(paras):
+        if not p.text:
+            continue
+        claimed: list[tuple[int, int]] = []
+        slots: list[tuple[int, str, str]] = []
+        for key, value in mapping.items():
+            if not key or SENTINEL in key:
+                continue
+            idx = 0
+            while True:
+                pos = p.text.find(key, idx)
+                if pos < 0:
+                    break
+                idx = pos + len(key)
+                if any(pos < e and s < idx for s, e in claimed):
+                    continue
+                if isinstance(value, list):
+                    cur = cursors.get(key, 0)
+                    if cur >= len(value):
+                        continue
+                    cursors[key] = cur + 1
+                    val = value[cur]
+                else:
+                    val = value
+                claimed.append((pos, idx))
+                if val:
+                    slots.append((pos, key, val))
+        if slots:
+            out[index] = sorted(slots)
+    return out
+
+
+def _find_value(text: str, value: str, start: int) -> int:
+    """값이 text[start:] 에 들어갔는가 — 줄바꿈은 결과에서 컨트롤(lineBreak)이 되므로 줄 단위로 이어서 찾는다.
+    찾으면 값 끝 위치, 못 찾으면 -1."""
+    cursor = start
+    for i, line in enumerate(value.replace("\r\n", "\n").split("\n")):
+        if not line:
+            continue
+        at = text.find(line, cursor)
+        if at < 0 or (i > 0 and text[cursor:at].strip(SENTINEL + "\n\r ") != ""):
+            return -1
+        cursor = at + len(line)
+    return cursor
+
+
 def find_residue(
     orig_paras: list[Para], result_paras: list[Para], mapping: dict[str, Value], keep: list[str]
 ) -> tuple[list[ResidueItem], dict[str, int]]:
@@ -316,7 +367,7 @@ def find_residue(
     shapes = marker_shapes(keys)
     result_blob = "\n".join(p.text for p in result_paras if p.text)
     items: list[ResidueItem] = []
-    seen: set[str] = set()
+    seen: set = set()
 
     def kept(s: str) -> bool:
         return any(k and k in s for k in keep)
@@ -329,6 +380,31 @@ def find_residue(
             where = next((p.number for p in orig_paras if key in p.text), 0)
             items.append(ResidueItem("key", key, where))
     coverage = {"keys_in_original": 0, "values_found": 0}
+    expected = expected_fill(orig_paras, mapping)
+    positional = len(orig_paras) == len(result_paras)
+    if not positional:
+        # 채우기는 문단을 늘리거나 줄이지 않는다 — 수가 다르면 다른 파일이거나 구조가 바뀐 것
+        items.append(ResidueItem("structure", f"문단 수가 다릅니다: 원본 {len(orig_paras)} · 결과 {len(result_paras)}", 0))
+    misplaced_keys: set[str] = set()
+    if positional:
+        # 자리별 대조(#9): 원본 문단 i 에서 키가 있던 순서대로, 결과 문단 i 에 기대 값이 같은 순서로 들어갔는가.
+        # 결과 전체에서 값의 존재만 보면 두 값이 서로 자리를 바꾸거나 한 번만 들어가도 통과했다.
+        for index, slots in expected.items():
+            text = result_paras[index].text
+            cursor = 0
+            for _pos, key, value in slots:
+                if key in left_keys:
+                    continue
+                at = _find_value(text, value, cursor)
+                if at < 0:
+                    misplaced_keys.add(key)
+                    kind = "value_misplaced" if _find_value(text, value, 0) >= 0 or value in result_blob else "value_missing"
+                    # text 는 값 그대로 둔다(JSON 계약) — 어느 문단인지는 paragraph 가 말한다
+                    if (kind, value, index) not in seen:
+                        seen.add((kind, value, index))
+                        items.append(ResidueItem(kind, value, orig_paras[index].number))
+                    continue
+                cursor = at
     for key, value in mapping.items():
         if not key or SENTINEL in key:
             continue
@@ -338,6 +414,10 @@ def find_residue(
         coverage["keys_in_original"] += 1
         if key in left_keys:
             continue  # 키가 그대로 남아 있음 — 이미 ① 로 보고했다(중복 보고 금지)
+        if positional:
+            if key not in misplaced_keys:
+                coverage["values_found"] += 1
+            continue
         values = value if isinstance(value, list) else [value]
         missing = [v for v in values if v and v not in result_blob]
         if not missing:

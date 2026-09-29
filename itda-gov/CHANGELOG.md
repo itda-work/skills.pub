@@ -1,5 +1,22 @@
 # Changelog — itda-gov
 
+## [8.0.0] - 2026-09-28
+
+### BREAKING
+
+- **자격증명 파일 별칭에서 `env.txt` 를 뺐다** (itda-work/skills#26, 사용자 결정 2026-09-28). 스킬이 읽는 파일명은 `.env`·`.env.txt`·`환경변수.txt` 세 가지다. `env.txt` 에 키를 두었다면 **`환경변수.txt` 또는 `.env` 로 이름을 바꾼다** — 그대로 두면 키를 못 찾는다. 스킬은 `env.txt` 라는 파일을 더 이상 알아보지 못하며 별도 안내도 하지 않는다. 로더를 쓰는 팩 내 모든 스킬(`fuel-price` 포함)에 적용된다. 문서를 고친 스킬: `dart` 0.19.2 · `ecos` 0.10.11 · `funding` 1.0.2 · `g2b` 0.10.4 · `kosis` 0.12.1 · `realty-jeonse-gap` 0.9.9 · `realty-meta` 0.9.5 · `realty-price-stats` 0.9.10 · `realty-supply` 0.9.9(파일명 별칭 안내·키 주입 규칙을 3종으로).
+
+### Changed
+
+- `dart`·`ecos`·`realty-deals` 의 `references/netbridge.md` 사본을 정본과 동기화 — itda-hyve 0.9.4 의 batch `plan_file`·`imap_search` 대량 발송 표지(`bulk`·`bulk_reason`) 절이 더해졌다(itda-work/skills#39). 세 스킬의 동작은 그대로다.
+- 같은 사본에 itda-hyve 0.9.5 의 batch `account: "*"` 펼침·`imap_search` `include_snippet`·`location` 대기 시간 절이 더해졌다(itda-work/skills#40). 세 스킬의 동작은 그대로다.
+
+## [7.0.2] - 2026-09-28
+
+### Fixed
+
+- `funding` 1.0.1 — PDF 첨부 변환에서 `itda-doc:pdf-context-refinery` 가 돌려주는 "미검증 쪽"(스캔이라 못 읽은 쪽)을 공고별 한계 고지에 옮긴다. pdf-context-refinery 소속 표기를 `itda-doc` 으로 바로잡았다(#5).
+
 ## [7.0.1] - 2026-09-27
 
 ### Changed

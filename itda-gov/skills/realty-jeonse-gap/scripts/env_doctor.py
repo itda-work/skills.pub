@@ -1,7 +1,7 @@
 """env doctor — 환경변수 파일 발견·API 키 출처 진단 (값 비노출).
 
-find_env_files() 로 발견된 환경변수 파일들(.env·.env.txt·env.txt·환경변수.txt,
-별칭 4종 #1210), ~/.claude/settings.json env, os.environ
+find_env_files() 로 발견된 환경변수 파일들(.env·.env.txt·환경변수.txt,
+별칭 3종 #1210·#26), ~/.claude/settings.json env, os.environ
 을 대조해 **각 키가 어디서 정의됐고 어느 출처가 승자인지**를 리포트한다.
 env_loader 의 resolve_api_key 조회 우선순위(cli > os.environ > settings.json >
 .env(뒤일수록 강함, ITDA_DATA_ROOT/.env 는 명시 오버라이드 최강))와 동일한

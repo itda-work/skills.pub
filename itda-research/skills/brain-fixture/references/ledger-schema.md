@@ -68,6 +68,9 @@
 | `pdf`  | `title`(str), `lines`[str] | 한글 텍스트 레이어 PDF |
 | `txt`  | `content`(str) | 평문 |
 | `csv`  | `rows`[][] | CSV |
+| `hwpx` | `title`(str), `blocks`[] | 한글 HWPX(ZIP·XML) — 제목 + 문단(표 행은 셀을 ` \| ` 로 이은 문단) |
+| `hwp5` | `title`(str), `blocks`[], 선택 `distribution`(bool) | 한글 HWP 5(OLE 복합 문서). `distribution: true` 면 배포용 보호(속성 0x04 · 본문 자리는 판독 불가 바이트) |
+| `hwp3` | (선택 `note`) | `HWP Document File V3.00` 머리의 구형 한글 서명 파일(본문 없음) |
 | `broken` | (선택 `note`) | 손상 zip(열기 실패 — 문제파일 함정) |
 | `lock` | (선택 `note`) | `~$` 오피스 잠금 임시파일(문서 아님) |
 
@@ -75,6 +78,8 @@
 셀·라인의 **숫자는 verify ①축이 재파싱해 전수 대조**한다. 콤마 표기(`"19,800"`)와 순수 숫자(`19800`) 모두 19800 으로 인식된다.
 
 > **v1 한계 — 값은 양수 정수 권장.** verify ①축은 **정수 존재(membership)**로 대조하므로, **부호(음수) 검증은 v1 비대상**이다(`11500` → `-11500` 부호 반전 변조는 게이트가 잡지 못한다). 게이트의 목적은 렌더러 결함·원장↔문서 drift 검출이지 임의 변조 방어가 아니다(하이픈은 날짜 범위 표기라 부호 휴리스틱은 거짓 FAIL 위험이 커 채택하지 않음). 금액·수량은 **양수 정수**로 저작한다.
+
+> **한글 문서의 형식은 확장자가 아니라 type 이 정한다.** `hwp5` 를 `.hwpx` 경로에 두면 "확장자가 틀린 한글 파일" 이 된다(내용은 OLE). 렌더는 스킬이 최소 구조를 직접 조립하며(외부·다른 팩 파일 무의존) 같은 원장이면 **같은 바이트**다. 판독 계약은 한글 리더(`itda-doc:hwpx`)이고 한컴오피스 실행 호환은 비대상이다. 배포용·`hwp3` 는 본문이 없으므로 verify ①축(수치) 대상이 아니다 — ④축 `format` marker 로 확인한다.
 
 > [HARD] `broken`/`lock` 경로는 반드시 손상/잠금 의도를 반영한다. `lock` 은 basename 이 `~$` 로 시작해야 한다(예: `임시/~$월간보고.docx`).
 
@@ -112,6 +117,7 @@ marker 1건 = `{"path": …}` + 아래 중 **정확히 1개**:
 | `text`(str)  | 그 문구가 대상 문서에 있어야 함 | `{"path": "규정/…docx", "text": "500,000원"}` |
 | `unreadable`(true) | 대상이 손상 파일이어야 함(정상 zip 이면 FAIL) | `{"path": "백업/…xlsx", "unreadable": true}` |
 | `name_prefix`(str) | basename 이 접두로 시작 | `{"path": "임시/~$…docx", "name_prefix": "~$"}` |
+| `format`(str) | 파일 **내용 서명**이 이 한글 형식이어야 함(확장자 무관): `hwpx`·`hwp5`·`hwp5-distribution`·`hwp3` | `{"path": "공고/…_투찰계획서.hwpx", "format": "hwp5"}` |
 
 ### 함정 유형 카탈로그 (traps[].type, v1)
 
@@ -125,6 +131,9 @@ marker 1건 = `{"path": …}` + 아래 중 **정확히 1개**:
 | `broken-file` | 손상 파일 | `type:"broken"` 문서 + `unreadable:true` marker. |
 | `lock-file` | 오피스 잠금 임시 | `type:"lock"` 문서 + `name_prefix:"~$"` marker. |
 | `untitled` | 무제/제목없음 파일명이나 내용 중요 | `path` 를 `무제1.docx`·`임시/제목없음.txt` 로, 내용 marker(`text`)로 중요성 확인. |
+| `hangul-document` | 정상 한글 문서 — 읽혀야 정답 | `type:"hwpx"`(또는 확장자가 맞는 `hwp5`) + `format` marker(`hwpx`/`hwp5`) + 내용 marker(`value`/`text`) ≥1. |
+| `ext-mismatch` | 확장자가 틀린 한글 파일 — 내용으로 읽혀야 정답 | `type:"hwp5"` 를 `.hwpx` 경로에 + `format:"hwp5"` marker(확장자와 **달라야** 스키마 통과) + 내용 marker ≥1. |
+| `hangul-unsupported` | 한글 리더 미지원 형식 — "읽기 불가 · 한글 리더 미지원 형식" 기록이 정답 | `type:"hwp3"` 또는 `type:"hwp5", "distribution": true` + `format` marker(`hwp3`/`hwp5-distribution`만). |
 
 ### 오탐 미끼 유형 (baits[].type)
 
@@ -135,6 +144,20 @@ marker 1건 = `{"path": …}` + 아래 중 **정확히 1개**:
 | `duplicate` | 값 동일 사본 | 같은 값의 사본(`사본 - …`)은 모순이 아니라 중복. |
 
 미끼는 검수관이 "모순"으로 **오인하면 감점**인 지점이다. `detection` 에 "왜 모순이 아닌가" 를 쓴다.
+
+### 문제파일 기대 분류 (정답지·채점지 자동 파생)
+
+brain-build 가 `문제파일.md` 에 무엇을 적어야 정답인지는 **문서 type 에서 파생**된다(`bf_common.expected_intake` — 원장에 따로 적지 않는다):
+
+| 문서 | itda-doc 설치 | itda-doc 미설치 |
+|------|---------------|-----------------|
+| `broken` | 읽기 불가 — 손상 | 같음 |
+| `lock` | 읽기 불가 — 잠금 임시파일 | 같음 |
+| `hwpx`·`hwp5`(확장자 틀림 포함) | 정상 적재 | 판독 도구 없음 — itda-doc 미설치 |
+| `hwp3` | 읽기 불가 — 한글 리더 미지원 형식(HWP 3.x) | 판독 도구 없음 — itda-doc 미설치 |
+| `hwp5` + `distribution` | 읽기 불가 — 한글 리더 미지원 형식(배포용 보호) | 판독 도구 없음 — itda-doc 미설치 |
+
+정답지 「문제파일 기대 분류」 절과 `qa-key.json` 의 `file_status` 가 이 표를 파일별로 싣고, 적재 집계 기대값(원본 총 N / 정상 적재 M / 읽기 불가 K / 판독 도구 없음 T)을 두 환경으로 낸다.
 
 ---
 

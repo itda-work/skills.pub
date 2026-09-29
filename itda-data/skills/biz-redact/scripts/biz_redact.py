@@ -42,6 +42,7 @@ import os
 import re
 import sys
 import unicodedata
+from xml.parsers import expat
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -55,6 +56,9 @@ SCHEMA_VERSION = "1.0"
 TOKEN_RE = re.compile(r"⟦([^⟦⟧\s]{1,24})_(\d{1,4})⟧")
 
 WORKSPACE_ROOT = Path("_workspace/biz-redact")
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import hwpx_redact  # noqa: E402  — HWPX 경로(#17), stdlib only
 
 
 # ──────────────────────────────────────────────────────────────────
@@ -97,6 +101,32 @@ def _read_text(path: Path) -> str:
         raise UsageError(f"입력 파일이 없습니다: {path}")
     except UnicodeDecodeError:
         raise UsageError(f"UTF-8 텍스트가 아닙니다(UTF-8 로 저장해 다시 시도): {path}")
+
+
+def _read_bytes(path: Path) -> bytes:
+    try:
+        return path.read_bytes()
+    except FileNotFoundError:
+        raise UsageError(f"입력 파일이 없습니다: {path}")
+
+
+def _is_hwpx_path(path: Path) -> bool:
+    """HWPX 는 확장자가 아니라 내용(ZIP + 한글 mimetype)으로 가린다."""
+    try:
+        return hwpx_redact.is_hwpx(path.read_bytes())
+    except OSError:
+        return False
+
+
+def _write_atomic_bytes(path: Path, content: bytes, *, secret: bool = False) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600 if secret else 0o644)
+    with os.fdopen(fd, "wb") as f:
+        if secret and hasattr(os, "fchmod"):
+            os.fchmod(f.fileno(), 0o600)
+        f.write(content)
+    os.replace(tmp, path)
 
 
 def _restrict_opener(path, flags):
@@ -569,6 +599,165 @@ def mask(text: str, glossary: dict, *, glossary_sha256: str, doc_id: str, now: s
 
 
 # ──────────────────────────────────────────────────────────────────
+# HWPX (#17) — 서식 보존 마스킹 · 컨테이너 전체 잔존 게이트
+# ──────────────────────────────────────────────────────────────────
+
+
+def _container_residuals(entries, glossary: dict) -> dict:
+    """모든 텍스트 엔트리에서 잔존 출현 수 — {엔트리 이름: 건수}. 본문 밖(미리보기·메타데이터)까지 본다."""
+    surfaces = _build_surfaces(glossary)
+    found = {}
+    for info, data in entries:
+        if not hwpx_redact.TEXT_ENTRY_RE.search(info.filename):
+            continue
+        n = 0
+        for t in hwpx_redact.entry_texts(info.filename, data):
+            n += sum(len(pos) for _d, pos in _scan_occurrences(_nfc(t), surfaces))
+        if n:
+            found[info.filename] = n
+    return found
+
+
+def _section_xml(info, raw: bytes) -> str:
+    """본문 섹션 XML — UTF-8 이 아니면 손상된 문서다. 트레이스백 대신 사용 오류(exit 2·무산출)로 멈춘다(#29 fuzz 실측).
+
+    건너뛰면 그 섹션의 기밀이 마스킹 없이 나가므로 부분 처리는 하지 않는다. 메시지에는 엔트리 이름만 싣는다.
+    """
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise UsageError(f"HWPX 본문 {info.filename} 가 UTF-8 이 아닙니다(바이트 {exc.start}) — 손상된 문서입니다. "
+                         "한글에서 열어 다시 저장한 파일을 주세요") from exc
+
+
+XML_ENTRY_SUFFIXES = (".xml", ".hpf", ".rdf")
+
+
+def _read_hwpx_entries(data: bytes) -> list:
+    """HWPX 엔트리를 읽고, 치환·검사 대상 XML 이 전부 well-formed 인지 **가리기 전에** 확인한다(#29).
+
+    정규식 경로라 깨진 XML 도 그대로 치환되어 깨진 masked.hwpx 가 산출물로 나갔다(실 코퍼스 본문 90% 절단 45건 중 43건 exit 0).
+    깨진 입력을 깨진 출력으로 넘기지 않는다 — fail-closed(exit 2·무산출). 메시지에는 엔트리 이름·줄·열만 싣는다
+    (expat 오류 문구에는 문서 내용이 없다).
+    """
+    entries = hwpx_redact.read_zip(data)
+    for info, raw in entries:
+        name = info.filename
+        if hwpx_redact.SECTION_RE.match(name):
+            _section_xml(info, raw)  # 본문은 UTF-8 이어야 한다 — 그 사유를 먼저 말한다
+        elif not name.lower().endswith(XML_ENTRY_SUFFIXES):
+            continue
+        parser = expat.ParserCreate()
+        try:
+            parser.Parse(raw, True)
+        except expat.ExpatError as exc:
+            raise UsageError(f"HWPX {name} 의 XML 이 깨졌습니다({expat.ErrorString(exc.code)}, 줄 {exc.lineno} 열 {exc.offset}) — "
+                             "손상된 문서라 가리지 않습니다. 한글에서 열어 다시 저장한 파일을 주세요") from exc
+    return entries
+
+
+def mask_hwpx(data: bytes, glossary: dict, *, glossary_sha256: str, doc_id: str, now: str):
+    """HWPX 마스킹. (masked_bytes, masked_text, map_dict, report_dict) 반환.
+
+    map·집계는 문서의 모든 글자(본문 스트림 + 본문 밖 조각)를 이은 가상 텍스트에 텍스트 경로 `mask()` 를 돌려 얻고,
+    HWPX 치환 결과가 그 `mask()` 결과와 같은지 대조한다(두 경로가 갈리면 UsageError — 조용히 다른 규칙을 쓰지 않는다).
+    """
+    validate_glossary(glossary, warn=lambda _m: None)
+    surfaces = _build_surfaces(glossary)
+    entries = _read_hwpx_entries(data)
+    virtual_parts: list[str] = []
+    masked_parts: list[str] = []
+    out_entries = []
+    sections_masked: list[str] = []
+    preview_replaced = 0
+    images = 0
+    normalized = False
+    for info, raw in entries:
+        name = info.filename
+        if hwpx_redact.SECTION_RE.match(name):
+            xml = _section_xml(info, raw)
+            st = hwpx_redact.build_stream(xml)
+            normalized = normalized or any(p.text != p.raw_text for p in st.pieces)
+            spans = hwpx_redact.plan(st.text, surfaces)
+            new_xml = hwpx_redact.apply_plan(xml, st, spans)
+            virtual_parts.append(st.text)
+            masked_parts.append(hwpx_redact.build_stream(new_xml).text)
+            sections_masked.append(new_xml)
+            out_entries.append((info, new_xml.encode("utf-8")))
+        elif hwpx_redact.PREVIEW_IMAGE_RE.match(name):
+            out_entries.append((info, hwpx_redact.BLANK_PNG))
+            preview_replaced += 1
+        elif hwpx_redact.TEXT_ENTRY_RE.search(name) and name != "mimetype":
+            try:
+                text = raw.decode("utf-8-sig")
+            except UnicodeDecodeError:
+                out_entries.append((info, raw))
+                continue
+            if name.lower().endswith(".txt"):
+                virtual_parts.append(text)
+                masked = hwpx_redact.mask_plain(text, surfaces)
+                masked_parts.append(masked)
+                out_entries.append((info, masked.encode("utf-8")))
+            else:
+                virtual_parts.extend(hwpx_redact.fragments(text))
+                new = hwpx_redact.mask_fragments(text, lambda t: hwpx_redact.mask_plain(t, surfaces))
+                masked_parts.extend(hwpx_redact.fragments(new))
+                out_entries.append((info, new.encode("utf-8")))
+        else:
+            if name.startswith("BinData/"):
+                images += 1
+            out_entries.append((info, raw))
+    sep = "\n\u241e\n"  # 조각 경계 — 표면형이 넘지 못한다
+    ref_masked, map_dict, report = mask(sep.join(virtual_parts), glossary,
+                                        glossary_sha256=glossary_sha256, doc_id=doc_id, now=now)
+    if ref_masked != _nfc(sep.join(masked_parts)):
+        raise UsageError("HWPX 치환 결과가 텍스트 경로 mask() 와 다릅니다 — 규칙이 갈렸습니다(버그). 산출하지 않습니다.")
+    masked_bytes = hwpx_redact.write_zip(out_entries)
+    residual = _container_residuals(hwpx_redact.read_zip(masked_bytes), glossary)
+    report["format"] = "hwpx"
+    report["normalized"] = report["normalized"] or normalized
+    report["container"] = {
+        "residual_by_entry": {k: v for k, v in residual.items()},  # 엔트리 이름·건수만(기밀값 미수록)
+        "preview_image_replaced": preview_replaced,
+        "images_unscanned": images,
+    }
+    report["residual_count"] = report["residual_count"] + sum(residual.values())
+    report["result"] = "pass" if report["residual_count"] == 0 else "fail"
+    masked_text = hwpx_redact.extract_text(sections_masked)
+    return masked_bytes, masked_text, map_dict, report
+
+
+def verify_hwpx(data: bytes, glossary: dict) -> dict:
+    residual = _container_residuals(_read_hwpx_entries(data), glossary)
+    return {"verified": not residual, "format": "hwpx", "residual_count": sum(residual.values()),
+            "residual_by_entry": residual}
+
+
+def restore_hwpx(data: bytes, map_data: dict, *, now: str):
+    """마스킹된 HWPX 의 토큰을 원값으로. (restored_bytes, report). 변형·환각 판정은 본문 평문에 텍스트 경로 restore() 를 쓴다."""
+    entries = _read_hwpx_entries(data)
+    sections = [_section_xml(info, raw) for info, raw in entries if hwpx_redact.SECTION_RE.match(info.filename)]
+    _restored, report = restore(hwpx_redact.extract_text(sections), map_data, now=now)
+    token_to_value = {e["token"]: e["value"] for e in map_data["entries"]}
+    out = []
+    for info, raw in entries:
+        if hwpx_redact.TEXT_ENTRY_RE.search(info.filename) and info.filename != "mimetype":
+            try:
+                text = raw.decode("utf-8-sig")
+            except UnicodeDecodeError:
+                out.append((info, raw))
+                continue
+            is_txt = info.filename.lower().endswith(".txt")
+            text = TOKEN_RE.sub(lambda m: (token_to_value[m.group(0)] if is_txt else hwpx_redact.xml_escape(token_to_value[m.group(0)]))
+                                if m.group(0) in token_to_value else m.group(0), text)
+            out.append((info, text.encode("utf-8")))
+        else:
+            out.append((info, raw))
+    report["format"] = "hwpx"
+    return hwpx_redact.write_zip(out), report
+
+
+# ──────────────────────────────────────────────────────────────────
 # verify (C3)
 # ──────────────────────────────────────────────────────────────────
 
@@ -823,6 +1012,8 @@ def _append_audit(audit_log: Path, record: dict) -> None:
 
 
 def cmd_mask(args) -> int:
+    if _is_hwpx_path(Path(args.input)):
+        return cmd_mask_hwpx(args)
     text = _read_text(Path(args.input))
     glossary_bytes, glossary = _load_glossary_file(Path(args.glossary))
     glossary_sha256 = hashlib.sha256(glossary_bytes).hexdigest()
@@ -868,7 +1059,47 @@ def cmd_mask(args) -> int:
     return 0
 
 
+def cmd_mask_hwpx(args) -> int:
+    """HWPX 마스킹 — masked.hwpx(서식 보존)·masked.txt(AI 에 넘길 평문)·map.json·report.json. 원자성은 텍스트 경로와 같다."""
+    data = _read_bytes(Path(args.input))
+    glossary_bytes, glossary = _load_glossary_file(Path(args.glossary))
+    glossary_sha256 = hashlib.sha256(glossary_bytes).hexdigest()
+    doc_id = _sanitize_doc_id(args.doc_id) if args.doc_id else hashlib.sha256(data).hexdigest()[:12]
+    now = args.now or _utc_now_iso()
+    out_dir = Path(args.out_dir) if args.out_dir else WORKSPACE_ROOT / doc_id
+    audit_log = Path(args.audit_log) if args.audit_log else WORKSPACE_ROOT / "audit.jsonl"
+    masked_bytes, masked_text, map_dict, report = mask_hwpx(
+        data, glossary, glossary_sha256=glossary_sha256, doc_id=doc_id, now=now)
+    sys.stdout.write(_dump_json(report))
+    _append_audit(audit_log, {
+        "ts": now, "action": "mask", "result": report["result"], "doc_id": doc_id, "format": "hwpx",
+        "glossary_name": glossary["name"], "glossary_sha256": glossary_sha256,
+        "by_category": report["by_category"], "tokens_total": report["tokens_total"],
+        "residual_count": report["residual_count"], "anomalies": 0,
+    })
+    if report["result"] != "pass":
+        where = ", ".join(f"{k} {v}건" for k, v in report["container"]["residual_by_entry"].items()) or "본문"
+        sys.stderr.write(f"[mask] 잔존 {report['residual_count']}건({where}) — 산출물을 승격하지 않습니다.\n")
+        return 1
+    _write_atomic_bytes(out_dir / "masked.hwpx", masked_bytes)
+    _write_atomic(out_dir / "masked.txt", masked_text)
+    _write_atomic(out_dir / "map.json", _dump_json(map_dict), secret=True)
+    _write_atomic(out_dir / "report.json", _dump_json(report))
+    c = report["container"]
+    sys.stderr.write(f"[mask] {report['tokens_total']} 토큰 → {out_dir / 'masked.hwpx'} (미리보기 그림 교체 {c['preview_image_replaced']}"
+                     f" · 문서 속 그림 {c['images_unscanned']}장은 글자를 볼 수 없음)\n")
+    return 0
+
+
 def cmd_verify(args) -> int:
+    if _is_hwpx_path(Path(args.text)):
+        _raw, glossary = _load_glossary_file(Path(args.glossary))
+        report = verify_hwpx(_read_bytes(Path(args.text)), glossary)
+        sys.stdout.write(_dump_json(report))
+        if not report["verified"]:
+            sys.stderr.write(f"[verify] 잔존 {report['residual_count']}건 검출.\n")
+            return 1
+        return 0
     text = _read_text(Path(args.text))
     _raw, glossary = _load_glossary_file(Path(args.glossary))
     report = verify(text, glossary)
@@ -880,6 +1111,8 @@ def cmd_verify(args) -> int:
 
 
 def cmd_restore(args) -> int:
+    if _is_hwpx_path(Path(args.ai_output)):
+        return cmd_restore_hwpx(args)
     ai_output = _read_text(Path(args.ai_output))
     _raw, map_data = _load_map_file(Path(args.map))
     now = args.now or _utc_now_iso()
@@ -925,6 +1158,28 @@ def cmd_restore(args) -> int:
     return 0
 
 
+def cmd_restore_hwpx(args) -> int:
+    data = _read_bytes(Path(args.ai_output))
+    _raw, map_data = _load_map_file(Path(args.map))
+    now = args.now or _utc_now_iso()
+    restored_bytes, report = restore_hwpx(data, map_data, now=now)
+    sys.stdout.write(_dump_json(report))
+    audit_log = Path(args.audit_log) if args.audit_log else WORKSPACE_ROOT / "audit.jsonl"
+    _append_audit(audit_log, {
+        "ts": now, "action": "restore", "result": "pass" if report["restored"] else "fail", "format": "hwpx",
+        "doc_id": map_data.get("doc_id"), "glossary_name": map_data.get("glossary_name"),
+        "glossary_sha256": map_data.get("glossary_sha256"), "by_category": report["by_category"],
+        "tokens_total": report["tokens_restored"], "residual_count": report["anomalies"]["variant_brackets"]["count"],
+        "anomalies": len(report["anomalies"]["hallucinated_tokens"]) + report["anomalies"]["variant_brackets"]["count"],
+    })
+    if not report["restored"]:
+        sys.stderr.write("[restore] 변형·환각 토큰 검출 — restored.hwpx 를 만들지 않습니다.\n")
+        return 1
+    out_path = Path(args.out) if args.out else Path(args.map).parent / "restored.hwpx"
+    _write_atomic_bytes(out_path, restored_bytes, secret=True)
+    return 0
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="biz_redact.py",
@@ -965,6 +1220,10 @@ def main(argv=None) -> int:
             return cmd_restore(args)
     except UsageError as exc:
         sys.stderr.write(f"오류: {exc}\n")
+        return 2
+    except hwpx_redact.UnsafeArchiveError as exc:
+        # 압축 폭탄·위조 ZIP·DOCTYPE — 사용 오류와 같은 exit 2, 트레이스백 없이(#27). 메시지는 엔트리 이름·크기뿐이다
+        sys.stderr.write(f"오류: HWPX 를 안전하게 열 수 없습니다 — {exc}\n")
         return 2
     return 2
 

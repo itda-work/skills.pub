@@ -12,9 +12,9 @@ metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
   recommended: true
-  version: "0.6.2"
+  version: "0.7.0"
   created_at: "2026-06-01"
-  updated_at: "2026-09-27"
+  updated_at: "2026-09-28"
   tags: "calendar, caldav, icloud, apple, naver, event, schedule, recurrence, rrule, alarm, reminder, timezone, etag, itda-hyve, multi-account, free-slots, availability, search, delete-confirmation"
 ---
 
@@ -36,7 +36,6 @@ CalDAV 로그인에 쓰는 앱 비밀번호는 itda-hyve 의 볼트에만 있다
 도구 목록에 이름에 `itda-hyve__` 가 든 도구(Cowork `mcp__remote-devices__itda-hyve__<도구>`, Claude Code `mcp__itda-hyve__<도구>`)가 없으면 설치·연결되지 않았거나 0.9.0 보다 옛 판이다 — 계정 등록을 안내하지 말고
 itda-hyve 0.9.0 이상 설치(이미 있으면 업데이트, 받는 곳 https://github.com/itda-work/itda-hyve.pub/releases/latest)와 Claude Desktop 연결을 안내하고 멈춘다.
 다른 서버의 도구(개명 전 이름의 판 포함)·내장 fetch·`http_request` 로 CalDAV 를 대신 부르지 않는다(0.9.0 은 캘린더 도구를 모두 등록한다).
-이 스킬 폴더의 `scripts/` 는 이 스킬의 실행 경로가 아니다 — 실행하지 않는다(다른 스킬이 쓰는 옛 코드로, 후속 이슈에서 지운다).
 공용 규약은 [references/netbridge.md](references/netbridge.md) 가 정본이다(도구 지목·60초 호출 상한·보안 계약).
 
 ## 계정 — `accounts_list` 의 name 으로만 가리킨다

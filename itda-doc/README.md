@@ -13,12 +13,13 @@
 | [`html-report`](skills/html-report/SKILL.md) | 마크다운 보고서·분석 결과·회의 정리를 연차보고서 수준의 단일 파일 HTML 문서로 렌더링하는 스킬입니다. |
 | [`human-tone`](skills/human-tone/SKILL.md) | 이미 작성된 한국어 사무 글(보고서·메일·기획서·공지)에서 AI 흔적을 걷어내는 후처리 스킬입니다. |
 | [`hwpx`](skills/hwpx/SKILL.md) | 한글 HWP·HWPX 문서 스킬입니다. |
+| [`imagegen`](skills/imagegen/SKILL.md) | 발표자료·블로그·문서용 이미지와 삽화를 품질 하한과 함께 만드는 스킬입니다. |
 | [`imagekit`](skills/imagekit/SKILL.md) | 이미지 조회·리사이즈·여백 크롭·DPI 변경·포맷 변환·회전을 단일 CLI로 처리하는 스킬입니다. |
 | [`pptx-shrink`](skills/pptx-shrink/SKILL.md) | 기존 PPTX 파일의 용량을 줄이는 스킬입니다. |
 
 > 브랜드 디자인 토큰과 Word·PPTX·Excel 신규 생성을 맡던 디자인 스킬 4종은 2026-09-27 제거했습니다(git 이력에는 남아 있음). 한글 문서는 `hwpx`, HTML 보고서는 `html-report` 가 만듭니다.
 
-> hyve 앱이 있어야만 동작하던 `imagegen`(이미지 생성)·`pptx-diff`(PPTX 버전 비교)는 2026-09-25 저장소 이관 때 빠졌습니다(git 이력에는 남아 있음).
+> `imagegen`(이미지 생성)은 2026-09-25 저장소 이관 때 빠졌다가 2026-09-28 itda-hyve 의 에이전트 작업(`agent_run`) 경로로 되살렸습니다. itda-hyve 0.10.0 이상이 필요하고, codex 는 itda-hyve 창의 에이전트 탭에서 설치·로그인합니다(ChatGPT 구독, 따로 설치한 codex 는 쓰지 않음). `pptx-diff`(PPTX 버전 비교)는 빠진 그대로입니다(git 이력에는 남아 있음).
 
 > hwpx 읽기는 동봉 Python native 변환기(`skills/hwpx/reader/hwpx_native`)로 동작합니다 — 외부 바이너리 동봉 계약은 없습니다(2026-09 R2 정리).
 

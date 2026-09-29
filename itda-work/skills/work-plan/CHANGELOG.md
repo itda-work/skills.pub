@@ -1,5 +1,14 @@
 # Changelog — work-plan
 
+## [0.14.0] — 2026-09-28 (itda-work/skills#23)
+
+### Changed
+
+- 메일·캘린더 계정을 환경변수로 안내하지 않는다. email·calendar·morning-brief·time-audit 은 계정을 itda-hyve 설정 창의 "계정" 화면에 등록하고 도구로만 쓰는데, ground check 는 `NAVER_EMAIL`·`NAVER_APP_PASSWORD`·`GOOGLE_*`·`DAUM_*` 를 알려진 환경변수로 통과시키고 메모 예시도 그렇게 적고 있었다.
+  - `ground_check.py`: 위 6개를 허용 목록에서 뺐다. 메일 계정 자격증명 이름(`<서비스>_EMAIL`·`<서비스>_APP_PASSWORD`·`IMAP_*` 등)이 메모에 오면 "itda-hyve 계정 화면에 등록" 경고로 내려보낸다. 계획에 계정이 필요한 스킬이 있으면 등록 안내 한 줄을 돌려주는 `account_notice()` 를 더했다 — 등록 여부는 스크립트가 판단하지 못하므로 안내 문구만 준다. 네이버 오픈API·검색광고 키(`NAVER_CLIENT_ID`·`NAVER_SEARCHAD_*`)는 그대로 통과한다.
+  - SKILL.md Stage 3·메모 틀, `references/ground-check-rules.md`(기본 표 6행 삭제 → "메일·캘린더 계정은 환경변수가 아니다" 절), GUIDE 메모 예시를 itda-hyve 계정 등록(제공자·이메일·앱 비밀번호 → 연결 테스트 → 저장)으로 바꿨다.
+  - 회귀: `tests/test_acceptance.py::TestAC07_*`(메일 계정 이름 거부·범위 밖 네이버 키 통과·안내 문구·계정 스킬 카탈로그 실재), 저장소 가드 `shared/tests/test_mail_account_env_guidance.py`(현행 문서·스크립트에 메일 계정 환경변수 이름 0).
+
 ## [0.13.4] — 2026-09-27
 
 ### Changed

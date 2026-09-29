@@ -1,5 +1,14 @@
 # Changelog — itda-audit
 
+## [1.0.3] - 2026-09-28
+
+### Changed
+
+- **brain-fixture 0.4.0 — 한글 문서 함정 4종 (#31)** — brain-build 0.4.0(#22)의 한글 읽기·문제파일 분류 계약을 처음부터 끝까지 검증할 데이터셋. 문서 type `hwpx`·`hwp5`(선택 `distribution`)·`hwp3` 과 함정 type `hangul-document`(정상 — 읽혀야 정답)·`ext-mismatch`(`.hwpx` 인데 내용은 HWP 5 — 내용으로 읽혀야 정답)·`hangul-unsupported`(HWP 3.x·배포용 보호 — "한글 리더 미지원 형식" 이 정답), 파일 **내용 서명**으로 판정하는 `format` marker 를 추가했다. 한글 파일은 스킬이 최소 구조(HWPX 패키지·OLE 복합 문서·HWP 3 머리)를 직접 조립한다 — 다른 팩 테스트 픽스처(실제 공공 문서)를 동봉하지 않고, 추가 런타임 의존성도 없으며(verify 의 CFB 판독은 표준 라이브러리), 같은 원장이면 같은 바이트다. 정답지에 「문제파일 기대 분류」 절(파일별 분류·사유·조치 + 적재 집계 기대값을 itda-doc 설치·미설치 두 경우로), `qa-key.json` 에 `file_status` 를 싣는다. 헬스케어 예시 원장에 한글 문서 4건·함정 T9~T12·두 한글 문서를 종합해야 풀리는 인사이트 I6 를 더했다(42문서). 회귀 `tests/test_hangul.py` — itda-doc 리더 실판정(HWPX·확장자 틀림 exit 0, 배포용·HWP 3 exit 2 와 형식 이름)·olefile 교차 판독·한컴 저장본 3종 판독 대조·뮤테이션 14종 RED.
+- **brain-build 0.4.0 — 한글 문서(HWP·HWPX) 읽기 경로 (#22)** — 관문2 형식 목록에 `.hwp`·`.hwpx`·`.hml` 을 넣고 `itda-doc:hwpx` 읽기 경로로 보낸다(원본은 작업 폴더 사본으로 변환, 산출물을 소스 폴더에 쓰지 않음, 근거는 원본 상대경로). 리더가 거부한 형식(HWP 3.x·HWPML·배포용 보호·암호 — exit 2 만이 아니라 **exit 0 이 아닌 모든 종료**)은 `문제파일.md` 에 리더가 말한 사유와 조치로 기록하고, kordoc 대체 경로는 자동 실행하지 않는다. `itda-doc` 미설치 시 조용히 건너뛰지 않고 "판독 도구 없음" 으로 기록·설치 안내(크로스플러그인 미설치 계약) — 적재 집계에 `판독 도구 없음 T` 추가. 회귀 테스트 `tests/test_hwp_read_path.py`(문서 계약 + 저장소 픽스처 8종 실변환·못 읽는 형식 5종 종료 코드).
+- **검수관·질답 규칙 정합 (#22)** — `agents/brain-auditor.md`: 한글 원본은 검수관이 재대조할 수 없으므로 그 원본에 기댄 주장은 `unverifiable` 로 올린다. `references/CLAUDE-template.md`: 빈손 답변 고지에 "판독 도구 없음" 건수도 함께.
+- **brain-ingest 0.2.5** — 사내 신규 문서 판독이 brain-build 관문2 형식 경로(한글 포함)를 따르고, 못 읽은 한글 문서는 `문제파일.md` 에 추가하며 기준선 전진(`--paths`)에 넣지 않는다고 명시(#22). 회귀 테스트 `tests/test_format_delegation.py`.
+
 ## [1.0.2] - 2026-09-27
 
 ### Changed

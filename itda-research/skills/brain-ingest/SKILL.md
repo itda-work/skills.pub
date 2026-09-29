@@ -10,12 +10,12 @@ allowed-tools: Read, Write, Bash, Glob, Grep, Agent, Skill, mcp__workspace__bash
 argument-hint: "[업무DB 폴더 경로] [새 문서 경로 또는 외부 산출물]"
 metadata:
   author: "Chinseok"
-  version: "0.2.4"
+  version: "0.2.5"
   category: "knowledge-base"
   status: "experimental"
   recommended: false
   created_at: "2026-07-14"
-  updated_at: "2026-09-25"
+  updated_at: "2026-09-28"
   tags: "knowledge-base, incremental, ingest, adapter, external-source, provenance, claim, verification, incubating, scaffold"
 ---
 
@@ -49,7 +49,7 @@ $env:SKILL_DIR = "$env:CLAUDE_PLUGIN_ROOT\skills\brain-ingest"  # 미설정이�
 
 ### 관문1 — 적재원 분류
 
-- **사내 신규 문서** — 소스 폴더에 새로 생긴 원본. brain-build 관문2 판독 → 해당 주제 위키에 반영.
+- **사내 신규 문서** — 소스 폴더에 새로 생긴 원본. brain-build 관문2 판독 → 해당 주제 위키에 반영. 형식별 경로는 brain-build 관문2 가 정본이다 — 한글 문서(`.hwp`·`.hwpx`·`.hml`)는 `itda-doc:hwpx` 읽기 경로로 판독하고, 리더가 거부한 파일(HWP 3.x·HWPML·배포용 보호·암호)과 **itda-doc 미설치로 못 읽은 한글 문서**는 조용히 건너뛰지 않고 `문제파일.md` 에 사유와 함께 추가한다(brain-build 의 크로스플러그인 미설치 계약 그대로). 못 읽은 파일은 적재한 것이 아니므로 관문3 기준선 전진(`--paths`)에 넣지 않는다 — 계속 stale 로 남아 다음 점검이 다시 잡는다.
 - **외부 스킬 산출물** — `itda-web:web-search`·`itda-gov:dart`·`itda-gov:kosis`·`itda-work:exchange-rate` 등이 수집한 자료. **`외부/` 폴더에 격리 적재**하고 `출처:`(어느 스킬·URL·API)·`수집일:`을 강제한다(사내 원본과 분리 — CLAUDE.md 적재 규칙 9).
 - **주장 해소 근거** (#1222, SPEC-BRAIN-CLAIM-001) — `검증대기.md`의 미결 주장에 대응해 도착한 실물(사내 문서·외부 수집물·승인된 구두확인서). 관문1.5 대조 게이트를 거친다.
 

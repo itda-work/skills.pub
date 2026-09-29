@@ -51,8 +51,8 @@ def _axis1_numbers(led: dict, out: Path, rep: Report):
     for doc in led["documents"]:
         dtype = doc["type"]
         path = bf.safe_join(out, doc["path"])
-        if dtype in ("broken", "lock"):
-            continue  # 구조적 함정 — 본문 재대조 대상 아님(④에서 검증)
+        if bf.is_structural(doc):
+            continue  # 구조적 함정(손상·잠금·HWP 3·배포용) — 본문 재대조 대상 아님(④에서 검증)
         parsed = bf.reparse(path, dtype)
         rep.ok("①수치정합")
         if not parsed.readable:
@@ -142,6 +142,12 @@ def _check_marker(out: Path, m: dict, type_by_path: dict, cache: dict) -> str | 
                 return f"{rel}: 손상 파일이어야 하나 정상 zip 으로 열림(함정 미렌더)."
             return f"{rel}: 정상 파일이어야 하나 열리지 않음(손상)."
         return None
+    if "format" in m:
+        # 확장자가 아니라 내용 서명으로 판정한다(.hwpx 인데 HWP 5 인 함정이 이 축의 존재 이유).
+        got = bf.sniff_format(path)
+        if got != m["format"]:
+            return f"{rel}: 내용 형식 '{got}' ≠ 선언 '{m['format']}'(함정 미렌더)."
+        return None
     if "name_prefix" in m:
         if not Path(rel).name.startswith(m["name_prefix"]):
             return f"{rel}: 파일명이 '{m['name_prefix']}' 로 시작하지 않음."
@@ -192,7 +198,7 @@ def _axis5_insights(led: dict, out: Path, rep: Report):
             cache[rel] = bf.reparse(bf.safe_join(out, rel), type_by_path[rel])
         return cache[rel]
 
-    rendered = [doc for doc in led["documents"] if doc["type"] not in ("broken", "lock")]
+    rendered = [doc for doc in led["documents"] if not bf.is_structural(doc)]
 
     for ins in led["insights"]:
         rep.ok("⑤합성강제")

@@ -10,12 +10,12 @@ allowed-tools: Read, Bash, Glob, Grep, mcp__workspace__bash
 argument-hint: "[xlsx/csv 경로 또는 검수 요청]"
 metadata:
   author: "Chinseok"
-  version: "0.3.0"
+  version: "0.4.0"
   category: "data-tidy"
   status: "experimental"
   recommended: false
   created_at: "2026-07-07"
-  updated_at: "2026-09-25"
+  updated_at: "2026-09-28"
   tags: "verify, reconcile, numbers, spreadsheet, openpyxl, integrity, incubating"
 ---
 
@@ -106,12 +106,24 @@ JSON 의 `verdict` 를 필드로 읽는다 — critical 1건이면 `FAIL` 이고
 - 통화/천단위/`%` 표기는 숫자로 파싱해 비교(`$1,200`→1200, `45%`→45 — 기호만 제거해 `45+55=100` 검산이 자연스럽게).
 - "동작함"이 아니라 "값이 실제와 일치함"으로 판정. 표본·눈대중 금지.
 
+## 입력 방어 (엑셀 파일)
+열기 전에 시트의 병합 목록을 먼저 읽는다(`scripts/xlsx_guard.py`, 원본 불변).
+- **거꾸로 적힌 병합**(`B1:A1`)은 openpyxl 이 파일 전체를 못 여는 원인이라 빼고 읽는다.
+- **거대한 병합**(병합 하나 1만 칸 초과, 시트 합계 20만 칸 초과)은 빼고 읽는다 — 열 전체 병합 하나로 수십 초·수백 MB 가 들었다.
+- **겹친 병합**·**병합에 가려진 값**(왼쪽 위가 아닌 칸의 값 — openpyxl 은 조용히 버린다)은 알린다.
+- 위 네 가지는 모두 종류 `입력` · Warning 발견으로 보고에 실린다. 조용히 넘기지 않는다.
+- 값 grid 는 값이 있는 범위까지만 만든다 — 먼 칸에 서식만 남은 시트(행 20만)도 즉시 끝난다.
+- date1904(맥 엑셀) 워크북의 날짜는 openpyxl 이 보정해 읽는다(테스트 고정).
+- 값이 꽉 찬 큰 시트는 여전히 무겁다: 10만 행×20열(200만 칸)에 약 6초·1.1GB.
+- 부동소수 잔차(`0.1+0.2` = 0.30000000000000004)는 허용오차 비교라 불일치로 잡지 않는다(테스트 고정).
+
 ## Prerequisites
 **파일 경로(크로스플랫폼)**: Python 3.10+ · openpyxl (`scripts/requirements.txt`).
 ```bash
 # Claude Code(플러그인 설치) = $CLAUDE_PLUGIN_ROOT / Cowork = 세션 마운트 탐색
 SKILL_DIR="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/skills/data-verify}"
-[ -n "$SKILL_DIR" ] || SKILL_DIR=$(find /sessions/*/mnt/.remote-plugins -type d -path '*/skills/data-verify' 2>/dev/null | head -1)
+# Cowork 는 플러그인 설치면 .remote-plugins, 단일 .skill 업로드면 .claude/skills 아래에 둔다
+[ -n "$SKILL_DIR" ] || SKILL_DIR=$(find /sessions/*/mnt/.remote-plugins /sessions/*/mnt/.claude/skills -type d -path '*/skills/data-verify' 2>/dev/null | head -1)
 # 둘 다 아니면(저장소 체크아웃 등) 이 SKILL.md 가 있는 디렉토리 절대경로를 그대로 사용
 ```
 ```powershell

@@ -40,12 +40,6 @@ DP-3 원칙: 검증 실패 시 abort(중단)가 아닌 downgrade(경고 표시)�
 
 | 환경변수명 | 사용하는 스킬 | 발급 방법 요약 |
 |-----------|------------|--------------|
-| NAVER_EMAIL | email, calendar | 네이버 계정 이메일 주소 |
-| NAVER_APP_PASSWORD | email, calendar | 네이버 앱 비밀번호 설정 → 이메일 항목 |
-| GOOGLE_EMAIL | email | 구글 계정 이메일 주소 |
-| GOOGLE_APP_PASSWORD | email | 구글 계정 → 2단계 인증 → 앱 비밀번호 발급 |
-| DAUM_EMAIL | email | 다음 카카오 계정 이메일 주소 |
-| DAUM_APP_PASSWORD | email | 카카오계정 → 보안 → 앱 비밀번호 발급 |
 | NAVER_SEARCHAD_ACCESS_KEY | blog-seo, eatery-trend | 네이버 검색광고 API 콘솔 → 액세스 키 |
 | NAVER_SEARCHAD_SECRET_KEY | blog-seo, eatery-trend | 네이버 검색광고 API 콘솔 → 시크릿 키 |
 | RONE_API_KEY | realty-price-stats | 한국부동산원 R-ONE 가입 후 발급 |
@@ -61,6 +55,25 @@ DP-3 원칙: 검증 실패 시 abort(중단)가 아닌 downgrade(경고 표시)�
 ```
 
 위 마커를 해당 항목 옆에 추가하고, 메모 상단에 경고 박스를 삽입한다.
+
+### 메일·캘린더 계정은 환경변수가 아니다
+
+email·calendar·morning-brief·time-audit 은 메일·캘린더 계정을 **itda-hyve(PC 에 설치하는 앱) 설정 창의
+"계정" 화면**에 등록해 두고 그 앱의 도구로만 쓴다. 비밀번호는 itda-hyve 안에만 있고 Claude 에게 오지 않는다.
+
+- 메모의 "필요한 키·접근 권한" 에 메일·캘린더 계정 이메일·앱 비밀번호를 **환경변수 이름으로 적지 않는다**.
+  대신 `ground_check.ACCOUNT_NOTICE` 한 줄(계정 화면 → 제공자·이메일·앱 비밀번호 → 연결 테스트 → 저장)을 적는다 —
+  계획에 위 스킬이 있으면 `ground_check.account_notice(스킬 이름들)` 가 그 줄을 돌려준다.
+- 앱 비밀번호 **발급** 절차는 서비스별 안내를 링크한다:
+  [네이버](https://itda.work/credentials/naver-app-password/) · [iCloud](https://itda.work/credentials/icloud-app-password/).
+  Gmail·다음/카카오·회사 메일은 email 스킬 GUIDE 의 서비스별 절차를 가리킨다.
+- 계정이 이미 등록돼 있는지는 스크립트가 판단하지 못한다(itda-hyve 도구만 안다). 메모는 등록 안내만 싣고,
+  확인은 실행 첫 단계에서 그 스킬이 한다.
+- 옛 이름(`<서비스>_EMAIL`·`<서비스>_APP_PASSWORD` 등)이 메모에 들어오면 `check_env_var` 가 등록 안내 마커로 내려보낸다:
+
+```
+⚠️ 확인 필요: '<서비스>_EMAIL' 는 쓰지 않습니다 — 메일·캘린더 계정은 itda-hyve 설정 창의 "계정" 화면에 등록합니다.
+```
 
 ---
 

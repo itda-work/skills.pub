@@ -100,17 +100,76 @@ def _expected_audit(led: dict) -> list[str]:
     traps = led.get("traps", []) or []
     baits = led.get("baits", []) or []
     ndoc = len(led["documents"])
-    nbroken = sum(1 for d in led["documents"] if d["type"] in ("broken", "lock"))
+    tally = intake_tally(led)
     out = ["## 기대 검수 결과 (체크리스트)", ""]
     out.append("| 항목 | 기준 |")
     out.append("|------|------|")
-    out.append(f"| 전수성 | 원본 {ndoc}개 전건 커버, 문제파일 {nbroken}개(손상/잠금) 기록 |")
+    out.append(
+        f"| 전수성 | 원본 {ndoc}개 전건 커버, 읽기 불가 {tally['installed']['unreadable']}개 문제파일 기록"
+        " (분류는 아래 「문제파일 기대 분류」) |"
+    )
     if traps:
         must = ", ".join(t["id"] for t in traps)
         out.append(f"| 함정 검출 | {must} 전부 검출 |")
     if baits:
         out.append(f"| 오탐 경계 | {', '.join(b['id'] for b in baits)} 를 모순으로 오인하지 않아야 함 |")
     out.append("")
+    return out
+
+
+def intake_tally(led: dict) -> dict:
+    """적재 집계 기대값 — itda-doc 설치/미설치 두 환경(brain-build 적재 집계 줄과 대조)."""
+    docs = led["documents"]
+    intakes = [bf.expected_intake(d) for d in docs]
+    ok = sum(1 for i in intakes if i["status"] == bf.INTAKE_OK)
+    unreadable = sum(1 for i in intakes if i["status"] == bf.INTAKE_UNREADABLE)
+    hangul = sum(1 for i in intakes if i["hangul"])
+    hangul_ok = sum(1 for i in intakes if i["hangul"] and i["status"] == bf.INTAKE_OK)
+    hangul_bad = hangul - hangul_ok
+    return {
+        "total": len(docs),
+        "hangul": hangul,
+        "installed": {"ok": ok, "unreadable": unreadable, "no_tool": 0},
+        # 미설치면 리더를 못 돌려 형식 판정도 못 한다 — 한글 파일은 전부 '판독 도구 없음'.
+        "not_installed": {"ok": ok - hangul_ok, "unreadable": unreadable - hangul_bad, "no_tool": hangul},
+    }
+
+
+def _problem_files(led: dict) -> list[str]:
+    """brain-build 가 `문제파일.md` 에 무엇을 어떤 분류로 적어야 정답인가(#31)."""
+    out = ["## 문제파일 기대 분류 (brain-build `문제파일.md` 대조)", ""]
+    rows = []
+    for d in led["documents"]:
+        it = bf.expected_intake(d)
+        if it["status"] == bf.INTAKE_OK and not it["hangul"]:
+            continue
+        rows.append((d["path"], it))
+    if not rows:
+        out.append("_(손상·잠금·한글 문서 없음 — 전건 정상 적재가 정답)_")
+        out.append("")
+        return out
+    out.append("| 파일 | 기대 분류 | 사유(리더가 말하는 형식) | 조치 |")
+    out.append("|------|-----------|--------------------------|------|")
+    for path, it in rows:
+        out.append(f"| {_md_escape(path)} | **{it['status']}** | {_md_escape(it['reason']) or '—'} | {_md_escape(it['action'])} |")
+    out.append("")
+    t = intake_tally(led)
+    if t["hangul"]:
+        ins, nin = t["installed"], t["not_installed"]
+        out.append("적재 집계 기대값 (원본 총 N / 정상 적재 M / 읽기 불가 K / 판독 도구 없음 T):")
+        out.append("")
+        out.append(f"- itda-doc 설치: 원본 총 {t['total']} / 정상 적재 {ins['ok']} / 읽기 불가 {ins['unreadable']} / 판독 도구 없음 {ins['no_tool']}")
+        out.append(
+            f"- itda-doc 미설치: 원본 총 {t['total']} / 정상 적재 {nin['ok']} / 읽기 불가 {nin['unreadable']} / 판독 도구 없음 {nin['no_tool']}"
+            " — 한글 문서는 형식과 무관하게 전부 **판독 도구 없음 — itda-doc 미설치** 가 정답"
+        )
+        out.append("")
+        out.append(
+            "> 오답 신호: 정상 적재여야 할 한글 문서(확장자가 틀린 것 포함)를 읽기 불가로 적음 · 미지원 형식을 사유 없이"
+            " '손상' 으로 뭉뚱그림 · 한글 문서를 문제파일에 남기지 않고 조용히 건너뜀. HWP 3·배포용 파일의 본문 자리는"
+            " 의사난수라 kordoc 같은 대체 도구로도 본문이 나오지 않는다(대체 경로 결과는 채점 대상 아님)."
+        )
+        out.append("")
     return out
 
 
@@ -194,6 +253,7 @@ def build_answer_sheet(ledger_path: str) -> str:
     lines += _traps_table(led)
     lines += _canon_numbers(led)
     lines += _expected_audit(led)
+    lines += _problem_files(led)
     lines += _bait_boundary(led)
     lines += _insights_section(led)
     return "\n".join(lines).rstrip() + "\n"

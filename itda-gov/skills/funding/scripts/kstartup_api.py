@@ -87,7 +87,7 @@ def load_key(cli_arg=None):
 
     탐색은 itda-skills 공용 규약(shared/env_loader.py)에 위임한다:
     CLI 인자 > os.environ > ~/.claude/settings.json env > .env 계열 파일
-    (`.env`·`.env.txt`·`env.txt`·`환경변수.txt` — itda_path.find_env_files()).
+    (`.env`·`.env.txt`·`환경변수.txt` — itda_path.find_env_files()).
     env_loader 가 해석 성공 시 stderr 에 `[자격증명] KO_DATA_API_KEY ← <출처>`
     를 1회 표시한다(값은 비노출).
 

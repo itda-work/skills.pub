@@ -11,11 +11,11 @@ allowed-tools: Read, Write, Bash, mcp__workspace__bash
 argument-hint: "[요구사항 또는 메모 첨부]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "0.13.4"
+  version: "0.14.0"
   category: "productivity"
   status: "experimental"
   created_at: "2026-05-21"
-  updated_at: "2026-09-27"
+  updated_at: "2026-09-28"
   aliases: "계획세우기, 실행계획, 구현계획"
   tags: "Cowork, work-plan, plan work, action-plan"
 ---
@@ -84,6 +84,7 @@ work-find 메모 첨부 시: 트랙(A/B/혼합), 문제 정의 한 줄, 관련 �
 2. mirror-back 결과를 단계별로 쪼개 각 단계마다 어떤 스킬이 수행하는지 매핑한다.
 3. 각 단계에서 사용자가 미리 준비해야 하는 자료를 식별한다 (자료명 / 내용 / 형식 / 보관 위치).
 4. 필요한 API 키·환경변수를 식별하고 발급 방법을 한 줄로 안내한다.
+5. 계획에 메일·캘린더 계정을 쓰는 스킬(email·calendar·morning-brief·time-audit)이 있으면 "필요한 키·접근 권한" 에 **환경변수가 아니라 itda-hyve 계정 등록** 한 줄을 적는다(`ground_check.account_notice` 문구 — 설정 창 "계정" 화면 → 제공자·이메일·앱 비밀번호 → 연결 테스트 → 저장). 등록 여부는 스크립트가 판단하지 못하므로 안내만 하고, 확인은 실행 첫 단계에서 그 스킬이 한다. 메일 계정 이메일·앱 비밀번호를 환경변수 이름으로 적지 않는다.
 
 [HARD] Ground-check 두 가지:
 - 메모에 쓰는 모든 itda-* 스킬 이름이 `references/skill-catalog.md`에 실제로 존재해야 한다.
@@ -144,7 +145,7 @@ Human-tone 정제:
 [자료 이름 / 자료 설명 / 자료 형식 (엑셀 파일·텍스트 메모 등) / 보관 위치 (GUI 수준 안내)]
 
 ## 필요한 키·접근 권한
-[환경변수명: 발급 방법 한 줄 + 어디에 등록하는지 자연어 안내]
+[환경변수명: 발급 방법 한 줄 + 어디에 등록하는지 자연어 안내. 메일·캘린더 계정은 환경변수가 아니라 itda-hyve 계정 화면 등록 한 줄]
 
 ## 다음 세션에서 시작하기
 [Claude를 켰을 때 바로 따라 칠 수 있는 자연어 발화 예시 2~3개]

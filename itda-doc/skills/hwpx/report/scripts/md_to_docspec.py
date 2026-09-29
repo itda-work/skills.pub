@@ -506,13 +506,13 @@ def convert_markdown(
         normalized: list[list[str]] = []
         rich_rows: list[list[dict]] = []
         any_format = False
-        truncated = False
+        dropped: list[str] = []
         for raw_row in raw_body:
             if len(raw_row) < ncol:
                 raw_row = raw_row + [""] * (ncol - len(raw_row))
             elif len(raw_row) > ncol:
+                dropped.extend(c.strip() for c in raw_row[ncol:] if c.strip())
                 raw_row = raw_row[:ncol]
-                truncated = True
             plain_cells: list[str] = []
             rich_cells: list[dict] = []
             for cell in raw_row:
@@ -524,8 +524,9 @@ def convert_markdown(
             normalized.append(plain_cells)
             rich_rows.append(rich_cells)
 
-        if truncated:
-            warnings.append("표의 일부 행이 헤더 열 수를 초과해 절단했습니다.")
+        if dropped:
+            shown = ", ".join(f"'{c}'" for c in dropped[:3]) + (f" 외 {len(dropped) - 3}칸" if len(dropped) > 3 else "")
+            warnings.append(f"표의 일부 행이 헤더 열 수({ncol})를 초과해 절단했습니다 — 버린 칸: {shown}. 헤더에 열을 더하세요.")
 
         # 구분선의 열 정렬(:--/--:/:-:)을 캡처해 본문 셀 정렬에 반영한다.
         # `---`(콜론 없음)만 있는 표는 정렬 필드를 생략해 기존 출력을 보존한다.
@@ -797,6 +798,14 @@ def convert_markdown(
     return docspec, warnings
 
 
+# 원고 내용을 버린 경고 — --strict 에서는 산출하지 않고 실패한다(#11). 유효한 HWPX 가 나와도 내용이 빠졌다.
+CONTENT_LOSS_MARKERS = ("절단했습니다", "건너뛰었습니다", "버렸습니다")
+
+
+def content_loss(warnings: list[str]) -> list[str]:
+    return [w for w in warnings if any(m in w for m in CONTENT_LOSS_MARKERS)]
+
+
 def _main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(
         description="마크다운 보고서를 DocSpec(build_report 입력 JSON)으로 변환합니다.",
@@ -809,6 +818,8 @@ def _main(argv: list[str]) -> int:
     parser.add_argument("--layout", choices=("report", "press-release", "official-letter", "briefing", "ai-report"), default="report",
                         help="대상 템플릿 조판 — 항목 계층 상한·번호 섹션 승격 여부를 함께 정한다")
     parser.add_argument("--max-level", type=int, help="항목 계층 상한(1~4). 미지정 시 layout 기본값(report 2, 그 외 4)")
+    parser.add_argument("--strict", action="store_true",
+                        help="원고 내용을 버리는 경고(표 칸 절단·표 건너뜀·제목 줄 버림)가 있으면 DocSpec 을 쓰지 않고 exit 2")
     parser.add_argument("--field", action="append", metavar="KEY=VALUE",
                         help="템플릿 추가 필드(org·receiver·via·sender·drafter·reviewer·approver·doc_no·address·phone·email). 반복 가능")
     args = parser.parse_args(argv)
@@ -841,6 +852,13 @@ def _main(argv: list[str]) -> int:
         number_sections=(args.layout != "official-letter"),
         keep_prose=(args.layout in ("ai-report", "press-release")),  # 보도자료 리드문·인용문은 산문(#1652 D-5)
     )
+
+    lost = content_loss(warnings)
+    if args.strict and lost:
+        for warning in warnings:
+            sys.stderr.write(f"[경고] {warning}\n")
+        sys.stderr.write(f"[strict] 원고 내용을 버리는 경고 {len(lost)}건 — DocSpec 을 쓰지 않았습니다. 원고를 고친 뒤 다시 실행하세요.\n")
+        return 2
 
     payload = json.dumps(docspec, ensure_ascii=False, indent=2) + "\n"
     if args.output:

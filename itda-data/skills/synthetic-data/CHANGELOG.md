@@ -1,5 +1,20 @@
 # Changelog — synthetic-data
 
+## 0.1.3 (2026-09-28)
+
+- **hwpx 양식 입력 가드 (#27)** — `fill_hwpx` 가 양식을 상한 없이 풀던 것을 `scripts/safe_archive.py`(itda-doc hwpx 와 같은 파일)로 바꿨다.
+  엔트리 수(EOCD, 목록 전)·단일/합계 비압축 크기(선언 + 실제 바이트)·압축 방식·크기 위조·경로 탐색 이름·XML DOCTYPE 을 거부한다.
+  `generate` 는 data.json 을 쓰기 전에, `render` 는 기존 산출을 덮기 전에 양식을 한 번 끝까지 풀어 보고 exit 2(SpecError)로 멈춘다 —
+  부분 산출이 남지 않는다. ZIP 이 아닌 양식도 트레이스백 대신 exit 2. 테스트 10건 · 뮤테이션 5종 RED.
+
+## 0.1.2 (2026-09-27)
+
+- **hwpx 채우기 결함 3종 수정 (#4)** — kordoc 대조(#1)·gpt-6-astra 리뷰에서 재현.
+  - 연쇄 치환 제거 — 키를 차례로 `replace` 하던 탓에 넣은 값 안의 다른 placeholder 가 다시 바뀌었다(`{{A}}→{{B}}` 가 `{{B}}` 의 값이 됨). 원문 기준 한 번에(긴 키 우선) 치환한다.
+  - 리포트 집계를 항목 단위로 — `(항목명)` 만 세서 `{{항목명}}` 양식은 치환이 돼도 "0건 · placeholder 없음" 경고가 떴다. 두 표기를 합쳐 한 항목으로 센다.
+  - 글자 서식이 갈린 run 에 걸친 placeholder 를 리포트에 드러낸다 — 속성이 같은 run 만 합쳐지므로 `{{환자` + `명}}` 은 조용히 0회였다. 문단 글자를 이어 붙여 남은 키를 찾아 ⚠️ 로 알린다.
+  - 뮤테이션 3종(연쇄 치환 복원·구 집계 복원·잔존 탐지 제거) RED 실측.
+
 ## 0.1.1 (2026-09-06)
 
 - **Windows cp949 stdout 크래시 수정 (#1647)** — Parallels Windows 11 + Python 3.13 실측에서 `show`·`validate`·`generate` 가 파이프·파일 리다이렉트 시 `UnicodeEncodeError: 'cp949' codec can't encode '\u2014'` 로 rc=1(산출물은 만들어진 뒤라 비개발자에게 실패로 보였다). `synth.py` 가 stdout/stderr 를 UTF-8(`errors=replace`)로 고정 — `-X utf8` 없이 `py -3` 만으로 전 명령 rc=0. 회귀 `test_stdio_is_utf8_even_when_locale_is_cp949`(`PYTHONIOENCODING=cp949` 로 OS 무관 재현, 뮤테이션 RED 실측).

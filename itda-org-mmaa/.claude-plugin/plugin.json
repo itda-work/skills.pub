@@ -1,7 +1,7 @@
 {
   "name": "itda-org-mmaa",
   "description": "군인공제회 전용 스킬팩 — 복지포털 스냅샷 Q&A(mmaa-welfare): 복지부조·회원콘도·유익한 정보를 출처 URL·수집일과 함께 답한다. 조직 전용 팩(itda-org-*) 첫 사례.",
-  "version": "12.0.1",
+  "version": "13.0.0",
   "author": {
     "name": "스킬.잇다",
     "url": "https://github.com/itda-work"

@@ -1,8 +1,8 @@
 ---
 name: data-prep
 description: >
-  엉망인 CSV·엑셀을 진단하고 원본은 그대로 둔 채 깔끔한 정돈본을 새 파일로 만들어주는 스킬입니다. 공백·날짜·중복은 물론 대소문자 혼재(usa/USA)·깨진 인코딩(mojibake)·통화표기($1,200)까지 정제하고, 숫자에 텍스트가 섞인 열은 경고합니다. "이 엑셀 정리해줘", "제목 행이 위에 있는데 정리해줘", "소계 행 빼고 깔끔하게", "대소문자 통일해줘", "중복 제거해줘"처럼 말하면 됩니다.
-  진단 → [가설] 제시 → 사용자 확인 → 정돈본 산출의 4단계로 안전하게 동작하며, cp949 한국 엑셀도 그대로 읽습니다.
+  엉망인 CSV(엑셀에서 CSV로 저장한 표 포함)를 진단하고 원본은 그대로 둔 채 깔끔한 정돈본을 새 파일로 만들어주는 스킬입니다. 공백·날짜·중복은 물론 대소문자 혼재(usa/USA)·깨진 인코딩(mojibake)·통화표기($1,200)까지 정제하고, 숫자에 텍스트가 섞인 열은 경고합니다. "이 엑셀 정리해줘", "제목 행이 위에 있는데 정리해줘", "소계 행 빼고 깔끔하게", "대소문자 통일해줘", "중복 제거해줘"처럼 말하면 됩니다.
+  진단 → [가설] 제시 → 사용자 확인 → 정돈본 산출의 4단계로 안전하게 동작하며, cp949 한국 엑셀 CSV도 그대로 읽습니다. 엑셀 원본(.xlsx·.xls)은 읽지 않으니 CSV로 저장해 넣어야 합니다.
 license: MIT
 compatibility: "Python 3.10+"
 user-invocable: true
@@ -10,12 +10,12 @@ allowed-tools: Read, Bash, Write, Glob, Grep, mcp__workspace__bash
 argument-hint: "[CSV 경로 또는 정돈 요청]"
 metadata:
   author: "Chinseok"
-  version: "0.2.2"
+  version: "0.2.3"
   category: "data-tidy"
   status: "experimental"
   recommended: false
   created_at: "2026-06-25"
-  updated_at: "2026-07-26"
+  updated_at: "2026-09-28"
   tags: "csv, tidy, cleanup, header, subtotal, mojibake, casing, stdlib, incubating"
 ---
 
@@ -67,6 +67,9 @@ res = emit.emit_tidy(source_path, grid, diag)
 ## 범위 (현재) / 범위 외
 - 현재: 헤더 행 추정 · 소계/빈 행 제거 · 빈 열 제거 · 값 정제(공백·날짜·중복·mojibake 복구·대소문자 통일·통화/천단위 숫자화) · mixed-type 열 경고([가설]) · 가로 전개(wide→long melt) · 다중 표 경계 감지.
 - 모든 변환은 [가설]로 제시 후 사용자 확인을 거쳐 적용한다(단정 금지).
+- 입력: CSV·TSV(구분자 자동 감지, utf-8·utf-16·cp949). **엑셀 원본(.xlsx·.xls)은 읽지 않는다** — `loader.read_grid` 가
+  첫 바이트로 알아보고 `ExcelInputError`("CSV UTF-8 로 저장해 달라")를 낸다. 사용자에게 그 문장대로 저장을 부탁하고,
+  시트가 여럿이면 어느 시트를 정리할지 함께 묻는다. (stdlib 전용·`data-ask` 도 CSV 전용이라 xlsx 읽기를 들이지 않았다 — itda-work/skills#30)
 - 범위 외: 통계 분석·질의 → `data-ask`. 원본 수정.
 
 ## Prerequisites
@@ -74,7 +77,8 @@ res = emit.emit_tidy(source_path, grid, diag)
 ```bash
 # Claude Code(플러그인 설치) = $CLAUDE_PLUGIN_ROOT / Cowork = 세션 마운트 탐색
 SKILL_DIR="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/skills/data-prep}"
-[ -n "$SKILL_DIR" ] || SKILL_DIR=$(find /sessions/*/mnt/.remote-plugins -type d -path '*/skills/data-prep' 2>/dev/null | head -1)
+# Cowork 는 플러그인 설치면 .remote-plugins, 단일 .skill 업로드면 .claude/skills 아래에 둔다
+[ -n "$SKILL_DIR" ] || SKILL_DIR=$(find /sessions/*/mnt/.remote-plugins /sessions/*/mnt/.claude/skills -type d -path '*/skills/data-prep' 2>/dev/null | head -1)
 # 둘 다 아니면(저장소 체크아웃 등) 이 SKILL.md 가 있는 디렉토리 절대경로를 그대로 사용
 ```
 
@@ -87,7 +91,7 @@ Python 3.10+ 표준 라이브러리만(설치 불요). 위 모듈들은 CLI 엔�
 ## 스크립트 모듈
 | 모듈 | 역할 |
 |---|---|
-| `loader.py` | cp949·utf-8 원시 그리드 로드 |
+| `loader.py` | cp949·utf-8 원시 그리드 로드 · 엑셀 원본 거부(명시 에러) |
 | `diagnose.py` | 헤더·소계·빈 열 [가설] 진단 |
 | `cleanse.py` | 값 정제(공백·날짜·중복·mojibake·casing·통화숫자화) |
 | `wide.py` | 가로 전개 감지 + long melt |

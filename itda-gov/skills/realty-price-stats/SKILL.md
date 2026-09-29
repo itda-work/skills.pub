@@ -11,11 +11,11 @@ allowed-tools: Bash, Read, Write, mcp__workspace__bash
 argument-hint: "지수 유형 + 기간 (예: 주간 가격지수 2026년 1~6월 / 강남구 아파트 매매 통계 2026년 1월)"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "0.9.9"
+  version: "0.9.10"
   category: "domain"
   status: "active"
   created_at: "2026-05-15"
-  updated_at: "2026-09-01"
+  updated_at: "2026-09-28"
   tags: "R-ONE, price index, statistics, realestate, reb"
 ---
 
@@ -30,9 +30,9 @@ metadata:
 | `RONE_API_KEY` | 한국부동산원 R-ONE Open API ([reb.or.kr](https://www.reb.or.kr/r-one/openapi/)) | 한국부동산원 R-ONE 회원가입 후 Open API 활용신청.<br>https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do |
 | `KO_DATA_API_KEY` (선택) | 공공데이터포털 ([data.go.kr](https://www.data.go.kr)) — derive 서브커맨드 필요 | derive 서브커맨드로 실거래가 파생 통계 산출 시 필요.<br>realty-deals 스킬과 동일한 키 사용. |
 
-**권장 (비개발자 포함 모든 사용자) — 작업 폴더 `.env`에 키 등록:** 작업 폴더(Cowork 연결 폴더 / Claude Code 프로젝트 루트, 연결한 폴더가 여러 개면 아무 폴더나) 루트에 `.env` 파일을 만들고 `RONE_API_KEY=발급받은_키` (derive 통계까지 쓰면 `KO_DATA_API_KEY=발급받은_키`도) 한 줄씩 넣어 두면 스킬이 자동으로 찾아 읽습니다. 파일명 별칭 `.env.txt`·`env.txt`·`환경변수.txt` 도 동일하게 탐색된다. 셸 환경변수나 `~/.claude/settings.json` 의 `env` 로 설정해도 되며(로더가 자동 탐색), `.env` 가 없으면 그 값을 사용합니다.
+**권장 (비개발자 포함 모든 사용자) — 작업 폴더 `.env`에 키 등록:** 작업 폴더(Cowork 연결 폴더 / Claude Code 프로젝트 루트, 연결한 폴더가 여러 개면 아무 폴더나) 루트에 `.env` 파일을 만들고 `RONE_API_KEY=발급받은_키` (derive 통계까지 쓰면 `KO_DATA_API_KEY=발급받은_키`도) 한 줄씩 넣어 두면 스킬이 자동으로 찾아 읽습니다. 파일명 별칭 `.env.txt`·`환경변수.txt` 도 동일하게 탐색된다. 셸 환경변수나 `~/.claude/settings.json` 의 `env` 로 설정해도 되며(로더가 자동 탐색), `.env` 가 없으면 그 값을 사용합니다.
 
-> **키 주입 (Claude 실행 규칙):** 자격증명 유무를 `ls`/`find` 등으로 **사전 점검하지 않는다** — 스크립트가 `.env`·`.env.txt`·`env.txt`·`환경변수.txt` 를 스스로 탐색하므로 **우선 실행**한다(셸 glob·검색 패턴은 별칭을 놓쳐 오탐한다: `.env*`→env.txt 누락, `*env*`→환경변수.txt 누락). 실행이 자격증명 누락으로 실패하면, 사용자 지침("Claude 지침"·`CLAUDE.md`)에 해당 변수가 선언돼 있는 경우 그 값을 환경변수로 전달해 재시도한다 — 예: `RONE_API_KEY=<키> python3 "$SKILL_DIR/scripts/price_stats_cli.py" ...`. 지침에도 없으면 GUIDE의 발급 안내를 제시한다. 수동 확인이 꼭 필요하면 파일명 4종(`.env`·`.env.txt`·`env.txt`·`환경변수.txt`)을 그대로 나열해 확인한다.
+> **키 주입 (Claude 실행 규칙):** 자격증명 유무를 `ls`/`find` 등으로 **사전 점검하지 않는다** — 스크립트가 `.env`·`.env.txt`·`환경변수.txt` 를 스스로 탐색하므로 **우선 실행**한다(셸 glob·검색 패턴은 별칭을 놓쳐 오탐한다: `.env*`·`*env*` 는 `환경변수.txt` 를, `*.env` 는 `.env.txt` 를 놓친다). 실행이 자격증명 누락으로 실패하면, 사용자 지침("Claude 지침"·`CLAUDE.md`)에 해당 변수가 선언돼 있는 경우 그 값을 환경변수로 전달해 재시도한다 — 예: `RONE_API_KEY=<키> python3 "$SKILL_DIR/scripts/price_stats_cli.py" ...`. 지침에도 없으면 GUIDE의 발급 안내를 제시한다. 수동 확인이 꼭 필요하면 파일명 3종(`.env`·`.env.txt`·`환경변수.txt`)을 그대로 나열해 확인한다.
 
 > **출처 표시 (Claude 실행 규칙):** 스크립트 stderr 에 `[자격증명] KEY ← 출처` 줄이 나오면, 그 내용을 사용자에게 짧게 알린다(예: "환경변수.txt 의 RONE_API_KEY 를 사용했습니다") — 사용자가 어느 설정파일이 쓰였는지 인지하게 하는 계약이다. 값은 어디에도 표시하지 않는다.
 

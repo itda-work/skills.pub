@@ -7,19 +7,22 @@ stdlib only (re, json, sys, os, argparse). 외부 의존 없음.
   1. 결정론 로컬 우선 — raw를 LLM에 먼저 넣지 않는다. 정규식/룰로 먼저 가린다.
   2. 재현율 우선 — 누락(PII 유출) < 과제거(본문 훼손). 단 카드/계좌처럼 충돌이
      큰 유형은 강한 구조 또는 문맥이 없으면 마스킹을 '보류'하고 리포트에 투명 기록.
-  3. 체크섬은 필터가 아니라 confidence 태그 — 주민번호 mod11·카드 Luhn 실패해도
-     마스킹은 하되 confidence를 낮춘다(틀린 번호라고 유출을 허용하지 않는다).
+  3. 체크섬은 필터가 아니라 confidence 태그 — 카드 Luhn 실패해도 마스킹은 하되
+     confidence를 낮춘다(틀린 번호라고 유출을 허용하지 않는다). 주민번호는 2020-10
+     이후 뒷자리가 임의 번호라 mod11 체크섬을 신뢰도에 쓰지 않는다 — 세기 반영
+     생년월일 유효성으로 거르고, 하이픈 구분자·라벨 문맥으로 confidence를 정한다.
   4. 마스킹 = 플레이스홀더([전화_1]) + 문서 내 일관 가명화(같은 값→같은 토큰).
 
 제공 함수:
   redact_text(text, ...)  — 비식별 텍스트 + 마스킹 리포트 dict
   detect(text)            — 매치 목록 [{type, start, end, raw, confidence}]
-  rrn_checksum_ok(digits) — 주민번호 mod11 체크섬
+  rrn_checksum_ok(digits) — 주민번호 mod11 체크섬(참고용 — 판정에 쓰지 않는다)
   luhn_ok(digits)         — 카드 Luhn 체크섬
 """
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import os
 import re
@@ -53,6 +56,7 @@ _ACCOUNT_CTX = ("계좌", "입금", "환불", "송금", "예금주", "이체", "
                 "토스", "새마을", "수협", "씨티", "sc제일", "케이뱅크")
 _BIZ_CTX = ("사업자", "사업자등록", "법인", "대표자")
 _PASSPORT_CTX = ("여권", "passport")
+_RRN_CTX = ("주민", "외국인등록", "등록번호", "생년월일")
 # 부정 문맥 — 주문/접수/배송 식별자는 PII 아님(과탐 방지)
 _NEG_CTX = ("주문", "접수", "송장", "운송장", "예약", "티켓", "문의번호",
             "상품코드", "수량", "재고", "버전")
@@ -61,7 +65,11 @@ _NEG_CTX = ("주문", "접수", "송장", "운송장", "예약", "티켓", "문�
 # ── 체크섬 ───────────────────────────────────────────────────
 
 def rrn_checksum_ok(digits: str) -> bool:
-    """주민등록번호 13자리 mod11 체크섬. 가중치 [2..9,2..5]."""
+    """주민등록번호 13자리 mod11 체크섬. 가중치 [2..9,2..5].
+
+    2020-10 이후 발급 번호는 뒷자리가 임의 번호라 이 체크섬이 맞지 않는다.
+    그래서 detect()는 이 값을 confidence 근거로 쓰지 않는다(외부 호출자용 참고 함수).
+    """
     if len(digits) != 13 or not digits.isdigit():
         return False
     weights = [2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5]
@@ -86,9 +94,22 @@ def luhn_ok(digits: str) -> bool:
     return total % 10 == 0
 
 
-def _valid_rrn_date(yy: str, mm: str, dd: str) -> bool:
-    m, d = int(mm), int(dd)
-    return 1 <= m <= 12 and 1 <= d <= 31
+def _valid_rrn_date(yy: str, mm: str, dd: str, gender: str,
+                    today: datetime.date | None = None) -> bool:
+    """앞 6자리가 실제 생년월일인지 — 성별 자리로 세기를 정해 달력으로 확인한다.
+
+    성별(뒷자리 첫 숫자) 1·2·5·6 → 1900년대, 3·4·7·8 → 2000년대(5~8 은 외국인등록번호).
+    존재하지 않는 날짜(2월 30일·4월 31일·평년 2월 29일)와 오늘 이후 날짜는 거부한다.
+    """
+    g = int(gender)
+    if not 1 <= g <= 8:
+        return False
+    year = (2000 if g in (3, 4, 7, 8) else 1900) + int(yy)
+    try:
+        born = datetime.date(year, int(mm), int(dd))
+    except ValueError:  # 월 범위 밖·월별 일수 초과·평년 2월 29일
+        return False
+    return born <= (today or datetime.date.today())
 
 
 def _has_context(text: str, start: int, end: int, keywords, window: int = 20) -> bool:
@@ -100,7 +121,12 @@ def _has_context(text: str, start: int, end: int, keywords, window: int = 20) ->
 
 # ── 정규식 ───────────────────────────────────────────────────
 # 숫자 경계: 한국어 인접을 허용하되 숫자 런 중간 매칭은 막는다.
-_RRN = re.compile(r"(?<!\d)(\d{2})(\d{2})(\d{2})[- ]?([1-8])(\d{6})(?!\d)")
+_RRN = re.compile(r"(?<!\d)(\d{2})(\d{2})(\d{2})([- ]?)([1-8])(\d{6})(?!\d)")
+# 뒷자리 일부만 가린 형태(900101-1******, 900101-1234***) — 앞 6자리 생년월일이 남아 있다.
+# 하이픈 필수, 가림 문자 1개 이상(전부 숫자면 _RRN 몫).
+_RRN_PARTIAL = re.compile(
+    r"(?<!\d)(\d{2})(\d{2})(\d{2})-([1-8])([0-9*●○◯×xX#]{6})(?![A-Za-z0-9_*●○◯×#])")
+_RRN_MASK_CHARS = set("*●○◯×xX#")
 
 _PHONE = re.compile(
     r"(?<![\d])"
@@ -167,14 +193,27 @@ def detect(text: str) -> list:
         out.append({"type": t, "start": s, "end": e,
                     "raw": text[s:e], "confidence": conf})
 
-    # 주민등록번호
+    # 주민·외국인등록번호 — 생년월일(세기 반영)이 유효할 때만. 체크섬은 보지 않는다
+    # (2020-10 이후 번호는 뒷자리가 임의라 맞지 않는다). 하이픈 구분자 또는 라벨 문맥 = high.
+    def rrn_conf(m, sep):
+        # 주문·접수 같은 부정 문맥이면 구분자가 있어도 약한 신호다(마스킹은 한다 — 재현율 우선)
+        if _has_context(text, m.start(), m.end(), _NEG_CTX) and not _has_context(text, m.start(), m.end(), _RRN_CTX):
+            return "candidate"
+        if sep == "-" or _has_context(text, m.start(), m.end(), _RRN_CTX):
+            return "high"
+        return "candidate"
+
     for m in _RRN.finditer(text):
+        yy, mm, dd, sep, g, _rest = m.groups()
+        if _valid_rrn_date(yy, mm, dd, g):
+            add("rrn", m, rrn_conf(m, sep))
+        elif _has_context(text, m.start(), m.end(), _RRN_CTX):
+            # 날짜가 불가능해도 주민번호 라벨이 붙어 있으면 오타 난 실번호일 수 있다 — 가린다(재현율 우선)
+            add("rrn", m, "candidate")
+    for m in _RRN_PARTIAL.finditer(text):
         yy, mm, dd, g, rest = m.groups()
-        if not _valid_rrn_date(yy, mm, dd):
-            continue
-        digits = yy + mm + dd + g + rest
-        conf = "high" if rrn_checksum_ok(digits) else "candidate"
-        add("rrn", m, conf)
+        if _RRN_MASK_CHARS & set(rest) and _valid_rrn_date(yy, mm, dd, g):
+            add("rrn", m, "high")
 
     # 전화
     for m in _PHONE.finditer(text):

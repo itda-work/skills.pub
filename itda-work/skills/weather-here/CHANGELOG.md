@@ -1,5 +1,32 @@
 # Changelog — itda-work/weather-here
 
+## [0.14.0] — 2026-09-28 (itda-work/skills#37)
+
+### Changed
+
+- **현재 위치를 itda-hyve `location` 도구로** — IP 서비스 한 곳(ipapi.co)이 대전 KT 회선을 성남으로 잡았다(itda-work/itda-hyve#12 실측). itda-hyve 0.9.3 의 `location`(OS 위치 서비스 → IP 서비스 6곳 합의)을 1순위로 쓴다. 순서: 지역명 → `location` → (location 이 없는 0.9.0~0.9.2) `http_request` IP 한 곳 → 로컬 직접 IP.
+- 날씨 줄 첫머리를 출처별로 — `os` 는 장소 이름(예 "대전광역시 중구"), `ip_consensus` 는 "(시·도 기준)", `ip`·`accuracy=low` 와 IP 한 곳 경로(받은 ipapi.co·ipwho.is 응답·로컬 직접 조회)는 "(대략·IP 기준)". 합의가 안 났을 때 itda-hyve 의 `note`(다른 후보)를 stderr `위치 참고:` 로 낸다.
+- Cowork 에서 위치 입력 없이 멈출 때 안내가 `location` 도구(0.9.3)를 먼저 가리킨다.
+
+### Added
+
+- `--geo-input` 이 `location` 응답(저장 파일 또는 batch 로 받은 파일)을 받는다. 도구 실패 기록 `{"error": …}` 은 사유(`code`·`message`)를 남기고 다음 파일로, 저장 요약(`saved_path`·`source` 만)은 위치가 아니라 거부한다.
+- `allowed-tools` 에 `mcp__remote-devices__itda-hyve__location`.
+
+## [0.13.0] — 2026-09-28 (itda-work/skills#33)
+
+### Changed
+
+- **Cowork 에서 현재 위치를 itda-hyve 로** — Cowork 작업 공간은 클라우드에서 돌아 스크립트의 IP 위치가 사용자 위치가 아니었다(morning-brief 날씨 절이 샌프란시스코를 받은 실측). 위치를 말하지 않은 요청은 itda-hyve `http_request` 로 `ipapi.co`(실패 시 `ipwho.is`)를 받아 스크립트에 넘긴다 — 사용자 PC 네트워크로 나가므로 그 PC 위치가 잡힌다.
+- 스크립트가 `/sessions/<id>/…`(Cowork 마운트) 아래에서 돌면 **직접 IP 조회를 하지 않고 exit 3 으로 멈춘다**. 틀린 위치로 날씨를 내지 않는다. 로컬(Claude Code 등)은 지금처럼 직접 조회한다.
+- 위치를 확정하지 못한 경우의 종료 코드를 `1` → `3` 으로 나눴다(`1` 은 지역명 미수록·날씨 조회 실패).
+
+### Added
+
+- `--lat`·`--lon`(받아 둔 위경도), `--geo-input <파일>`(itda-hyve 가 `save_as` 로 저장한 ipapi.co·ipwho.is 응답 또는 도구 응답 전체 `status`·`body`, 여러 번 가능 — 버린 파일은 사유를 남긴다).
+- `--weather-request`(Open-Meteo 를 itda-hyve 로 부를 `url`·`params` JSON 출력)·`--weather-input <파일>`(저장한 응답을 읽음, 응답 좌표가 요청 위치와 0.5° 넘게 어긋나면 거부). 날씨 기본 경로는 스크립트 직접 호출 그대로다 — 좌표를 인자로 주므로 어디서 돌든 같은 값이고, 막힌 환경에서만 이 경로를 쓴다.
+- `references/netbridge.md`(itda-hyve 규약 사본). Windows 콘솔 UTF-8 출력 재설정.
+
 ## [0.12.6] — 2026-09-27
 
 ### Changed

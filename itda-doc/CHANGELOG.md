@@ -3,6 +3,41 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/) 형식을 따르며,
 [Semantic Versioning](https://semver.org/lang/ko/)을 준수합니다.
 
+## [6.1.0] - 2026-09-29
+
+### Added
+
+- **`imagegen` 1.0.0 되살림 (itda-hyve#8·#16)** — 2026-09-25 저장소 이관 때 뺀 이미지 생성 스킬을 이 팩에 되살렸다. 생성은 itda-hyve 의 에이전트 작업 도구(`accounts_list`·`agent_run`·`job_status`, recipe `codex.imagegen`)로 한다 — codex 는 itda-hyve 창의 에이전트 탭에서 설치한 관리형 codex 만 쓰고(사용자가 따로 설치한 codex 는 쓰지 않는다), 사용자는 같은 탭에서 ChatGPT 구독으로 로그인한다(터미널 없음). 케이스 카드 9종·5층 공식·실측 썸네일을 그대로 가져오고, 5종을 codex-cli 0.157.0 으로 다시 실측했다. 설치·로그인이 없으면 `accounts_list` 의 `available`·`logged_in` 으로 생성 전에 알아챈다. 8 → 9종.
+  **배포 순서**: itda-hyve 0.10.0 설치본 공개 뒤에 배포한다 — 0.9.x 에는 `agent_run` 이 없다(스킬은 `server_version` 을 보고 업데이트를 안내하고 멈춘다).
+
+### Changed
+
+- 팩 description·keywords·README 에 이미지 생성을 더했다.
+
+## [6.0.0] - 2026-09-28
+
+### BREAKING
+
+- **자격증명 파일 별칭에서 `env.txt` 를 뺐다** (itda-work/skills#26, 사용자 결정 2026-09-28). 스킬이 읽는 파일명은 `.env`·`.env.txt`·`환경변수.txt` 세 가지다. `env.txt` 에 키를 두었다면 **`환경변수.txt` 또는 `.env` 로 이름을 바꾼다** — 그대로 두면 키를 못 찾는다. 스킬은 `env.txt` 라는 파일을 더 이상 알아보지 못하며 별도 안내도 하지 않는다. 대상 스킬: `blog-seo` 0.10.10(파일명 별칭 안내·키 주입 규칙을 3종으로).
+
+## [5.1.0] - 2026-09-28
+
+### Added
+
+- `hwpx` 1.4.0 — 공문서 표기법 검사 `lint_notation.py`(날짜·시각·금액 한글 병기·쌍점·물결표·`붙임:` 을 경고만, #14), 레이아웃 틀 표 풀기 `--unwrap-layout-tables`(옵트인, #13), 생성 매퍼 `--strict`(원고 내용을 버리는 경고면 산출하지 않음, #11), 파일 머리로 형식을 가르고 HWP 3.x·HWPML 은 kordoc 대체 경로를 안내(#16).
+- `pdf-context-refinery` 1.3.0 — 전 페이지 텍스트층 판정 `page_quality.py`. 첫 3쪽 샘플이 아니라 쪽별 판정으로 스캔 쪽을 가르고, 비전으로도 못 읽은 쪽은 "미검증 쪽" 으로 결과에 남긴다(#5).
+- `pdf-context-refinery` 1.4.0 — ToUnicode 가 깨진 한글 쪽(엉뚱한 음절)을 받침 분포로 판정해 비전 경로로 보내고, 문서 단위 권고 `doc_needs_ocr` 를 싣는다(#28).
+
+### Fixed
+
+- `hwpx` 1.3.2·1.3.3·1.4.0 — HWP5 표 셀 주소를 잘못 읽어 표가 한 행으로 뭉치던 결함(#2, #3), HWP5 글상자 텍스트 누락·밑줄 섞인 강조 잔재(#6, #7), 원문 별표(`*`) 이스케이프(#8), 채우기 `--residue` 가 값의 자리·횟수까지 대조(#9), 구조 검증기에 `secCnt`·manifest 검사를 더하고 채우기 결과에도 돌림(#10), 없는 입력 파일·암호·배포용 보호 HWP 5 에 트레이스백 대신 무엇인지와 조치를 안내(exit 2, #16 후속·#22).
+- `hwpx` 1.4.1 — 사용자 HWPX·HWP 입력의 압축 폭탄·XXE(DOCTYPE)·경로 탐색을 풀기 전·푸는 중에 막고 명시 오류로 알린다(상한 `ITDA_MAX_UNZIP_MB`·`ITDA_MAX_ZIP_ENTRIES`, #27).
+- `hwpx` 1.4.2 — 잘리거나 깨진 HWP·HWPX, olefile 이 없는 환경이 트레이스백 대신 exit 2 와 조치 안내(오류 종류 코드 포함, #29·#32). 개발 도구로 벤치 게이트·fuzz 게이트.
+
+### Changed
+
+- `hwpx` 1.4.0 — 예시 원고의 공문서 표기를 정리하고 GUIDE 그림을 다시 구웠다(#15).
+
 ## [5.0.0] - 2026-09-27
 
 ### BREAKING

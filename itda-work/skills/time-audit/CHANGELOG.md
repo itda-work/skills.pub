@@ -1,5 +1,35 @@
 # Changelog — time-audit
 
+## [0.3.0] — 2026-09-28 (itda-work/skills#34)
+
+### Changed
+
+- itda-hyve 가 `calendar_events` 응답을 입력 폴더에 **직접** 쓴다 — `collect_events.py --plan` 이 인자에 `save_dir`(입력 폴더의
+  호스트 경로 — 새 인자 `--save-dir`)·`save_as`·`overwrite: true` 를 싣는다. 모델은 요약(`saved_path`·`count`)만 받고 응답 JSON 을
+  옮겨 적지 않는다(몇 주치 일정이면 수십 KB 였다). `--save-dir` 없는 `--plan` 은 `save_dir_required`(exit 2).
+- 최소 itda-hyve **0.9.2**(0.9.1 은 공개하지 않는다). Cowork 는 연결 폴더가 필요하다. `itda_hyve_outdated` 문구도 0.9.2 로.
+
+## [0.2.0] — 2026-09-28 (itda-work/skills#19)
+
+### Changed
+
+- 네이버·아이클라우드·CalDAV 소스를 **itda-hyve `calendar_events`** 경로로 옮겼다. 옛 경로(calendar 스킬의
+  `scripts/list_events.py` 를 실행해 CalDAV 서버에 직접 접속)는 calendar 스크립트 제거(#19)와 함께 사라졌다.
+  최소 itda-hyve 0.9.1.
+- `source` 값 `itda-calendar` → `itda-hyve`.
+
+### Added
+
+- `scripts/collect_events.py` — morning-brief 0.3.0 과 같은 `--plan`/`--input` 방식. 계획이 호출(도구·인자·저장 파일)과
+  조회 창(요청 기간 그대로)을 정하고, 저장된 응답에서 `timelog.json` 초안(`provisional: true`, 미배정)을 쓴다.
+  네트워크·자격증명·환경변수를 쓰지 않는다(stdlib only).
+- 부분본 차단: 계정 조회 실패·응답 누락·`truncated`·캘린더 일부 실패·전개 못 한 반복 규칙이 하나라도 있으면
+  파일을 쓰지 않고 exit 1 로 전부 나열한다. 요청 기간 0건은 exit 3(파일 없음 — 다른 기간으로 대체하지 않는다).
+- 서버가 전개하지 않은 반복 마스터(네이버)를 창 안 회차로 펼친다 — morning-brief `gather.py` 와 바이트 동일한
+  사본이며 테스트가 동일성을 강제한다. 회차 수정본(recurrence_id)은 그 회차를 대신한다.
+- `references/netbridge.md` 사본 동봉, 테스트 `tests/test_collect_events.py`(픽스처는 지어낸 `@sample.example.com` 응답).
+- SKILL_DIR 확정 블록에 단일 `.skill` 업로드 경로(`.claude/skills`) 추가.
+
 ## [0.1.4] — 2026-07-28 (이슈 #1319)
 
 ### Changed

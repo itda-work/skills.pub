@@ -2,20 +2,24 @@
 """itda-work morning-brief: verify.py — 정적 검증이 이 스킬의 판정 정본.
 
 Cowork 샌드박스에는 playwright·chromium 이 없다(Phase 0 확정). 시각 축은
-INCONCLUSIVE 로 보고하고, 아래 ①~⑦ 을 코드가 집행한다.
+INCONCLUSIVE 로 보고하고, 아래 ①~⑨ 를 코드가 집행한다(itda-work/skills#38 구성).
 
-  ① state(역할 준비) × items(항목 수) 두 축의 필수 요소
-  ② content 각 항목의 anchor 가 candidates 의 **정확히 한 후보**와 일치하고
-     quote 가 그 후보 문자열과 **바이트 동일**(연속 부분문자열)이며,
-     그 후보가 그 목록(needs/resolved)에 올 수 있는 버킷에서 왔는가
-  ③ seed 에 원본 필드(from·subject·본문·주소·제목)의 정규화 12자+ 부분문자열 0
+  ① 상태(역할 준비) × 세 목록 — 오늘 일정 수·일정별 관련 메일 수·미회신 수가 candidates 와 같고,
+     빈 목록·미연결은 한 줄로 말한다. 대량 발송 메일은 계정 소절·종류·발신자·제목 수와 합, 메일 계정이
+     둘 이상이면 계정 배지(#41)
+  ② 요약 — content 의 요약이 「일정과 무관한 미회신」 후보와 **1:1**(앵커 정확 일치, 빠짐·남음·중복 0),
+     요약 문장이 페이지에 그대로 있다. 날씨·환율 절은 수집한 것만
+  ③ seed 에 원본 필드(보낸 사람·제목·본문·주소·일정 제목)의 정규화 12자+ 부분문자열 0
   ④ 버튼 href 재파싱 — origin·path·query 키 정확 일치
   ⑤ 외부 자산 0
   ⑥ controls.buttons=false 인데 버튼이 있으면 RED
-  ⑦ error 역할 경고가 있으면 그 사실을 말하는 한 줄이 페이지에 있어야 함
-  ⑧ 「출처」 절 — 원본 수 == 후보 수(접기 후), 목록 항목마다 실재하는 출처 링크
+  ⑦ error·degraded 경고가 있으면 그 사실을 말하는 한 줄이 페이지에 있어야 함
+  ⑧ 「출처」 절 — 원본 수 == 후보 앵커 수, 목록 행마다 실재하는 출처 링크
   ⑨ 샘플 모드 — sample 이면 상시 띠 + 전 앵커 provider 가 sample,
      아니면 띠 0 + sample 앵커 0 (상호 배타)
+
+스타일(timeline·memo·desk·print, itda-work/skills#42)은 배치만 다르다 — 위 검사는 스타일과 무관하게 같다.
+페이지가 아는 스타일 하나를 선언했는지(`--style` 을 주면 그 스타일인지)만 따로 본다.
 """
 from __future__ import annotations
 
@@ -28,17 +32,15 @@ import unicodedata
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 BUTTON_ORIGIN = "https://claude.ai"
 BUTTON_PATH = "/new"
 BUTTON_QUERY_KEYS = {"q", "surface", "composer"}
 SEED_NGRAM = 12
 SAMPLE_TOKEN = "sample"
-
-CANDIDATE_GROUPS = (
-    ("calendar", ("today", "tomorrow", "prep", "cancelled")),
-    ("email", ("unreplied", "replied_then_new")),
-)
+READY_STATES = ("ready", SAMPLE_TOKEN)
+STATES = ("all-ready", "calendar-only", "email-only", "none")
+STYLES = ("timeline", "memo", "desk", "print")
 
 for _stream in (sys.stdout, sys.stderr):
     if _stream.encoding and _stream.encoding.lower() not in ("utf-8", "utf8"):
@@ -62,49 +64,45 @@ def normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def iter_candidates(candidates: dict):
-    """(group, bucket, candidate) 를 훑는다. 동일 후보 중복은 호출자가 접는다."""
-    for group, buckets in CANDIDATE_GROUPS:
-        section = candidates.get(group) or {}
-        for bucket in buckets:
-            for item in section.get(bucket) or []:
-                if isinstance(item, dict):
-                    yield group, bucket, item
+def events_of(candidates: dict) -> list[dict]:
+    return [e for e in (candidates.get("calendar") or {}).get("today") or []
+            if isinstance(e, dict)]
 
 
-def folded_candidates(candidates: dict) -> list[dict]:
-    """후보를 훑되 **완전 동일한 후보**는 하나로 접는다(prep/cancelled 는
-    today/tomorrow 의 같은 이벤트를 다시 담는다). 접힌 항목은 자기가 나타난
-    버킷을 **전부** 들고 있어야 한다 — 목록↔버킷 대조(②)가 그것을 본다.
+def unreplied_of(candidates: dict) -> list[dict]:
+    return [m for m in (candidates.get("email") or {}).get("unreplied") or []
+            if isinstance(m, dict)]
 
-    반환 순서는 `render.folded_candidates` 와 같아야 하며, 그 순서가 곧
-    출처 번호(`mb-src-N`)다. 두 구현의 일치는 테스트가 대조한다."""
+
+def iter_items(candidates: dict):
+    """(group, item) — 일정, 일정의 관련 메일, 무관 미회신을 모두 훑는다."""
+    for ev in events_of(candidates):
+        yield "calendar", ev
+        for mail in ev.get("related") or []:
+            if isinstance(mail, dict):
+                yield "email", mail
+    for mail in unreplied_of(candidates):
+        yield "email", mail
+
+
+def source_entries(candidates: dict) -> list[dict]:
+    """출처 번호의 정본 순서 — `render.source_entries` 와 같은 규칙(테스트가 대조)."""
     out: list[dict] = []
-    by_body: dict[str, dict] = {}
-    seen: dict[str, set[str]] = {}
-    for group, bucket, item in iter_candidates(candidates):
+    seen: set[str] = set()
+    ordered = [("calendar", e) for e in events_of(candidates)]
+    ordered += [("email", m) for e in events_of(candidates)
+                for m in e.get("related") or [] if isinstance(m, dict)]
+    ordered += [("email", m) for m in unreplied_of(candidates)]
+    for group, item in ordered:
         anchor = item.get("anchor")
         if not isinstance(anchor, dict) or not anchor:
             continue
         key = canon(anchor)
-        body = canon(item)
-        if body in seen.setdefault(key, set()):
-            by_body[body]["buckets"].append((group, bucket))
+        if key in seen:
             continue
-        seen[key].add(body)
-        entry = {"key": key, "group": group, "buckets": [(group, bucket)],
-                 "item": item}
-        by_body[body] = entry
-        out.append(entry)
+        seen.add(key)
+        out.append({"group": group, "item": item, "key": key})
     return out
-
-
-def build_anchor_index(candidates: dict) -> dict[str, list[dict]]:
-    """anchor 키 → 서로 다른 후보 entry 목록(버킷 보존)."""
-    index: dict[str, list[dict]] = {}
-    for entry in folded_candidates(candidates):
-        index.setdefault(entry["key"], []).append(entry)
-    return index
 
 
 def strings_of(obj, skip_keys: tuple[str, ...] = ()) -> list[str]:
@@ -122,15 +120,21 @@ def strings_of(obj, skip_keys: tuple[str, ...] = ()) -> list[str]:
     return out
 
 
-# 샘플 역할은 실데이터가 아니지만 **레이아웃은 완전판**이다 — 형식을 미리 보는 것이
-# 목적이므로 all-ready 로 해석한다.
-READY_STATES = ("ready", SAMPLE_TOKEN)
+def role_state(candidates: dict, role: str) -> str:
+    return str(((candidates.get("roles") or {}).get(role) or {}).get("state") or "")
+
+
+def multi_account(candidates: dict) -> bool:
+    """메일 계정이 둘 이상인가 — `render.multi_account` 와 같은 규칙(샘플은 하나)."""
+    if (candidates.get("controls") or {}).get("sample"):
+        return False
+    accounts = ((candidates.get("roles") or {}).get("email") or {}).get("accounts") or []
+    return len([a for a in accounts if isinstance(a, dict)]) > 1
 
 
 def expected_state(candidates: dict) -> str:
-    roles = candidates.get("roles") or {}
-    cal = (roles.get("calendar") or {}).get("state") in READY_STATES
-    mail = (roles.get("email") or {}).get("state") in READY_STATES
+    cal = role_state(candidates, "calendar") in READY_STATES
+    mail = role_state(candidates, "email") in READY_STATES
     if cal and mail:
         return "all-ready"
     if cal:
@@ -156,131 +160,160 @@ class Report:
         return [c for c in self.checks if not c["ok"]]
 
 
-def check_structure(rep: Report, content: dict, candidates: dict,
-                    page: str) -> None:
-    state = content.get("state")
-    rep.add("①-state-declared", state in
-            ("all-ready", "calendar-only", "email-only", "none"), str(state))
+def check_structure(rep: Report, candidates: dict, page: str) -> None:
     want = expected_state(candidates)
-    rep.add("①-state-matches-roles", state == want,
-            f"content={state} roles={want}")
-    rep.add("①-state-in-html", f'data-mb-state="{state}"' in page, str(state))
+    m = re.search(r'data-mb-state="([^"]*)"', page)
+    got = m.group(1) if m else ""
+    rep.add("①-state-matches-roles", got == want, f"html={got} roles={want}")
 
-    has_terrain = 'data-mb-terrain="1"' in page
-    n_acts = page.count('data-mb-act="1"')
+    events = events_of(candidates)
+    n_events = page.count('data-mb-event="1"')
+    n_related = page.count('data-mb-related="1"')
     n_items = page.count('data-mb-item="1"')
-    has_none = 'data-mb-none="1"' in page
-    has_empty_line = 'data-mb-empty-lists="1"' in page
+    want_related = sum(len(e.get("related") or []) for e in events)
+    unreplied = unreplied_of(candidates)
 
-    if state == "none":
-        rep.add("①-none-two-sentences", has_none, "data-mb-none 부재")
-        rep.add("①-none-no-terrain", not has_terrain, "지형은 그리지 않는다")
-        rep.add("①-none-no-items", n_items == 0, f"items={n_items}")
-    else:
-        rep.add("①-dateline", 'data-mb-dateline="1"' in page, "")
-        rep.add("①-headline", 'data-mb-headline="1"' in page, "")
+    if want == "none":
+        rep.add("①-none-two-sentences", 'data-mb-none="1"' in page, "data-mb-none 부재")
+        rep.add("①-none-no-rows", n_events + n_related + n_items == 0,
+                f"events={n_events} related={n_related} items={n_items}")
+        return
+    rep.add("①-dateline", 'data-mb-dateline="1"' in page, "")
+    rep.add("①-schedule-part", 'data-mb-part="schedule"' in page, "오늘 일정 절 부재")
+    rep.add("①-unreplied-part", 'data-mb-part="unreplied"' in page, "미회신 절 부재")
 
-    if state in ("all-ready", "calendar-only"):
-        rep.add("①-terrain-single-stroke", has_terrain and page.count("<path ") >= 1,
-                "지형 한 획 부재")
-        # 상류 계약은 "세 act" 다 — 일정이 오전에만 있어도 오후·저녁 칸은 비었다는
-        # 관찰로 채운다. content 쪽도 함께 재서 4개를 넣고 하나가 잘리는(render 가
-        # [:3] 로 자른다) 무음 누락까지 막는다.
-        n_content_acts = len(content.get("acts") or [])
-        rep.add("①-acts-exactly-three", n_acts == 3 and n_content_acts == 3,
-                f"html={n_acts} content={n_content_acts}")
-    if state == "calendar-only":
-        rep.add("①-calendar-only-one-line", has_empty_line, "목록 자리 한 줄 부재")
-        rep.add("①-calendar-only-no-items", n_items == 0, f"items={n_items}")
-    if state == "email-only":
-        rep.add("①-email-only-no-terrain", not has_terrain, "지형 생략 계약")
-        rep.add("①-email-only-no-acts", n_acts == 0, f"acts={n_acts}")
+    cal_ready = role_state(candidates, "calendar") in READY_STATES
+    mail_ready = role_state(candidates, "email") in READY_STATES
+    rep.add("①-events-rendered", n_events == (len(events) if cal_ready else 0),
+            f"html={n_events} candidates={len(events)}")
+    if not cal_ready or not events:
+        rep.add("①-schedule-empty-line", 'data-mb-empty="schedule"' in page,
+                "빈 일정·미연결 한 줄 부재")
+    related_expected = want_related if (want == "all-ready") else 0
+    rep.add("①-related-rendered", n_related == related_expected,
+            f"html={n_related} candidates={related_expected}")
+    if want == "all-ready" and events and not want_related:
+        rep.add("①-related-empty-line", 'data-mb-empty="related"' in page,
+                "관련 메일 없음 한 줄 부재")
+    rep.add("①-unreplied-rendered", n_items == (len(unreplied) if mail_ready else 0),
+            f"html={n_items} candidates={len(unreplied)}")
+    if not mail_ready or not unreplied:
+        rep.add("①-unreplied-empty-line", 'data-mb-empty="unreplied"' in page,
+                "빈 미회신·미연결 한 줄 부재")
+    # 대량 발송 메일 절(itda-work/skills#40) — 메일이 준비됐고 센 수가 있으면 그 수 그대로 정확히 한 번, 아니면 없다.
+    bulk = (candidates.get("email") or {}).get("bulk") or {}
+    n_bulk = int(bulk.get("count") or 0)
+    bulk_lines = re.findall(r'data-mb-bulk="(\d+)"', page)
+    want_bulk = [str(n_bulk)] if (mail_ready and n_bulk) else []
+    rep.add("①-bulk-line", bulk_lines == want_bulk, f"html={bulk_lines} candidates={want_bulk}")
+    # 계정 소절(#41) — 계정 값의 합이 전체이고, 계정마다 종류 합·종류 묶음 합이 그 계정 수다. 메일 계정이 둘 이상이면
+    # 계정마다 소절이 정확히 하나(그 수 그대로), 하나면 소절 머리가 없다.
+    accounts = [a for a in bulk.get("accounts") or [] if isinstance(a, dict)] if want_bulk else []
+    acct_counts = [int(a.get("count") or 0) for a in accounts]
+    rep.add("①-bulk-accounts-sum", not want_bulk or sum(acct_counts) == n_bulk,
+            f"계정 합={sum(acct_counts)} 전체={n_bulk}")
+    for a in accounts:
+        kinds_sum = sum(int(v or 0) for v in (a.get("kinds") or {}).values())
+        groups_sum = sum(int(g.get("count") or 0) for g in a.get("groups") or [] if isinstance(g, dict))
+        rep.add("①-bulk-account-consistent", int(a.get("count") or 0) == kinds_sum == groups_sum,
+                f"{a.get('account')}: count={a.get('count')} kinds={kinds_sum} groups={groups_sum}")
+    html_accounts = [int(x) for x in re.findall(r'data-mb-bulk-account="(\d+)"', page)]
+    want_accounts = acct_counts if multi_account(candidates) else []
+    rep.add("①-bulk-account-sections", html_accounts == want_accounts,
+            f"html={html_accounts} candidates={want_accounts}")
+    if want_bulk and not multi_account(candidates):
+        rep.add("①-bulk-single-account", len(accounts) <= 1, f"계정 {len(accounts)}곳인데 메일 계정은 하나")
+    # 발신자 줄·제목 수가 candidates 와 같고, 싣지 못한 것까지 더하면 전체 수다(묶다가 흘린 메일이 없다).
+    groups = [g for a in accounts for g in a.get("groups") or [] if isinstance(g, dict)]
+    senders = [x for g in groups for x in g.get("senders") or [] if isinstance(x, dict)]
+    html_senders = [int(x) for x in re.findall(r'data-mb-bulk-sender="(\d+)"', page)]
+    rep.add("①-bulk-senders", html_senders == [int(x.get("count") or 0) for x in senders],
+            f"html={html_senders} candidates={[x.get('count') for x in senders]}")
+    n_subjects = sum(len(x.get("subjects") or []) for x in senders)
+    html_subjects = page.count('data-mb-bulk-subject="1"')
+    rep.add("①-bulk-subjects", html_subjects == n_subjects,
+            f"html={html_subjects} candidates={n_subjects}")
+    accounted = sum(int(x.get("count") or 0) for x in senders) \
+        + sum(int(g.get("senders_more_count") or 0) for g in groups)
+    rep.add("①-bulk-accounted", not want_bulk or accounted == n_bulk or not senders,
+            f"발신자 합={accounted} 전체={n_bulk}")
+    # 계정 배지(#41) — 메일 계정이 둘 이상이면 관련 메일·미회신 줄마다 앵커의 계정 이름 그대로, 하나면 0.
+    want_acct: list[str] = []
+    if multi_account(candidates):
+        if want == "all-ready":
+            want_acct += [str((m.get("anchor") or {}).get("account") or "") for e in events
+                          for m in e.get("related") or [] if isinstance(m, dict)]
+        if mail_ready:
+            want_acct += [str((m.get("anchor") or {}).get("account") or "") for m in unreplied]
+    html_acct = [html_mod.unescape(x) for x in re.findall(r'data-mb-acct="([^"]*)"', page)]
+    rep.add("①-account-badges", html_acct == want_acct, f"html={html_acct} candidates={want_acct}")
+    n_more = page.count('data-mb-more="1"')
+    want_more = (sum(1 for e in events if e.get("related_more")) if want == "all-ready" else 0) \
+        + (1 if mail_ready and (candidates.get("email") or {}).get("unreplied_more") else 0)
+    rep.add("①-more-lines", n_more == want_more, f"html={n_more} candidates={want_more}")
 
-    needs = content.get("needs_attention") or []
-    resolved = content.get("resolved") or []
-    total = len(needs) + len(resolved)
-    rep.add("①-items-rendered", n_items == total,
-            f"html={n_items} content={total}")
-    if state in ("all-ready", "email-only") and total == 0:
-        rep.add("①-empty-lists-line", has_empty_line, "빈 목록 한 줄 부재")
-    if needs:
-        rep.add("①-needs-list", 'data-mb-list="needs"' in page, "")
-    if resolved:
-        rep.add("①-resolved-list", 'data-mb-list="resolved"' in page, "")
+
+def check_style(rep: Report, page: str, expect_style: str | None) -> None:
+    got = re.findall(r'data-mb-style="([^"]*)"', page)
+    rep.add("style-declared", len(got) == 1 and got[0] in STYLES, f"html={got}")
+    if expect_style is not None:
+        rep.add("style-matches", got == [expect_style], f"html={got} 기대={expect_style}")
 
 
-# 목록마다 올 수 있는 후보 버킷. 이미 답한 스레드가 "지금 필요한 일" 에 서거나
-# 미회신이 "정리된 일" 에 서면 앵커가 실재해도 페이지가 거짓말을 한다.
-BUCKETS_FOR_LIST = {
-    "needs_attention": {("email", "unreplied"), ("calendar", "prep")},
-    "resolved": {("email", "replied_then_new"), ("calendar", "cancelled")},
-}
-
-
-def check_anchors(rep: Report, content: dict, candidates: dict,
-                  page: str) -> None:
-    index = build_anchor_index(candidates)
-    for key in ("needs_attention", "resolved"):
-        allowed = BUCKETS_FOR_LIST[key]
-        for item in content.get(key) or []:
-            title = str(item.get("title") or "?")
-            anchor = item.get("anchor")
-            if not isinstance(anchor, dict) or not anchor:
-                rep.add("②-anchor-present", False, title)
-                continue
-            matches = index.get(canon(anchor), [])
-            rep.add("②-anchor-exactly-one", len(matches) == 1,
-                    f"{title}: {len(matches)}건")
-            if len(matches) == 1:
-                buckets = set(matches[0]["buckets"])
-                hit = buckets & allowed
-                rep.add("②-anchor-bucket", bool(hit),
-                        f"{title}: {sorted(f'{g}.{b}' for g, b in buckets)} "
-                        f"∉ {sorted(f'{g}.{b}' for g, b in allowed)}")
-            quote = item.get("quote")
-            if not isinstance(quote, str) or not quote:
-                continue
-            if len(matches) != 1:
-                rep.add("②-quote-byte-identical", False, f"{title}: 후보 미상")
-                continue
-            fields = strings_of(matches[0]["item"], skip_keys=("anchor",))
-            rep.add("②-quote-byte-identical",
-                    any(quote in field for field in fields), title)
-            rep.add("②-quote-in-html",
-                    html_mod.escape(quote, quote=True) in page, title)
-
-
-def check_sections(rep: Report, content: dict, candidates: dict) -> None:
-    """content 의 섹션은 **수집된 것만** — 앵커·인용과 같은 '지어내지 않는다' 축.
-
-    render 는 content 의 섹션을 그대로 그리므로, 수집되지 않은 절을 content 가
-    적으면 없는 날씨·환율이 사실처럼 실린다. 날씨가 기본이 된 뒤로는 회차마다
-    수집 집합이 달라져 이 어긋남이 더 쉽게 난다."""
-    collected = set(candidates.get("sections") or {})
-    for sec in content.get("sections") or []:
-        if not isinstance(sec, dict):
+def check_summaries(rep: Report, content: dict, candidates: dict, page: str) -> None:
+    rows = content.get("summaries")
+    if not isinstance(rows, list):
+        rep.add("②-summaries-present", False, "summaries 배열 부재")
+        return
+    wanted = {canon(m.get("anchor")): m for m in unreplied_of(candidates)
+              if isinstance(m.get("anchor"), dict)}
+    seen: dict[str, int] = {}
+    for row in rows:
+        anchor = row.get("anchor") if isinstance(row, dict) else None
+        if not isinstance(anchor, dict) or not anchor:
+            rep.add("②-summary-anchor-present", False, str(row)[:60])
             continue
-        heading = str(sec.get("heading") or "")
-        if not heading:
-            continue
-        rep.add("②-section-from-candidates", heading in collected,
-                f"{heading}: 수집분 {sorted(collected)}")
+        key = canon(anchor)
+        seen[key] = seen.get(key, 0) + 1
+        rep.add("②-summary-anchor-known", key in wanted,
+                f"uid={anchor.get('uid')}: 「일정과 무관한 미회신」 후보가 아니다")
+        text = row.get("summary")
+        if isinstance(text, str) and text.strip():
+            rep.add("②-summary-in-html", html_mod.escape(text, quote=True) in page,
+                    f"uid={anchor.get('uid')}")
+        else:
+            rep.add("②-summary-text", False, f"uid={anchor.get('uid')}: 빈 요약")
+    for key, mail in wanted.items():
+        rep.add("②-summary-exactly-one", seen.get(key, 0) == 1,
+                f"uid={mail['anchor'].get('uid')}: {seen.get(key, 0)}건")
+    n_summary = page.count('data-mb-summary="1"')
+    want_summary = len(wanted) if role_state(candidates, "email") in READY_STATES else 0
+    rep.add("②-summary-rendered", n_summary == want_summary,
+            f"html={n_summary} candidates={want_summary}")
+
+
+def check_sections(rep: Report, candidates: dict, page: str) -> None:
+    """날씨·환율 절은 candidates 에 수집된 것만 — render 가 그것만 그린다."""
+    collected = [k for k, v in (candidates.get("sections") or {}).items()
+                 if isinstance(v, dict) and str(v.get("text") or "").strip()]
+    n = page.count('data-mb-section="1"')
+    want = len(collected) if expected_state(candidates) != "none" else 0
+    rep.add("②-sections-from-candidates", n == want, f"html={n} candidates={want}")
 
 
 def check_seeds(rep: Report, content: dict, candidates: dict) -> None:
     originals: list[str] = []
-    for _group, _bucket, item in iter_candidates(candidates):
+    for _group, item in iter_items(candidates):
         originals.extend(strings_of(item))
     normalized = [normalize_text(s) for s in originals]
     normalized = [s for s in normalized if len(s) >= SEED_NGRAM]
-
-    for item in content.get("needs_attention") or []:
-        button = item.get("button")
+    for row in content.get("summaries") or []:
+        button = row.get("button") if isinstance(row, dict) else None
         if not isinstance(button, dict):
             continue
         seed = str(button.get("seed") or "")
-        title = str(item.get("title") or "?")
-        rep.add("③-seed-length", len(seed) <= 600, f"{title}: {len(seed)}자")
+        uid = str((row.get("anchor") or {}).get("uid"))
+        rep.add("③-seed-length", len(seed) <= 600, f"uid={uid}: {len(seed)}자")
         norm_seed = normalize_text(seed)
         hit = ""
         for field in normalized:
@@ -292,26 +325,22 @@ def check_seeds(rep: Report, content: dict, candidates: dict) -> None:
             if hit:
                 break
         rep.add("③-seed-no-thirdparty-fragment", not hit,
-                f"{title}: “{hit}”" if hit else "")
+                f"uid={uid}: “{hit}”" if hit else "")
 
 
-def check_buttons(rep: Report, content: dict, candidates: dict,
-                  page: str) -> None:
+def check_buttons(rep: Report, content: dict, candidates: dict, page: str) -> None:
     allowed = bool((candidates.get("controls") or {}).get("buttons"))
     hrefs = re.findall(r'data-mb-button="1"\s+href="([^"]*)"', page)
-    content_buttons = sum(1 for item in content.get("needs_attention") or []
-                          if isinstance(item.get("button"), dict))
-
+    content_buttons = sum(1 for row in content.get("summaries") or []
+                          if isinstance(row, dict) and isinstance(row.get("button"), dict))
     if not allowed:
         rep.add("⑥-no-buttons-without-phrase", not hrefs and content_buttons == 0,
                 f"html={len(hrefs)} content={content_buttons}")
         return
     rep.add("⑥-buttons-rendered", len(hrefs) == content_buttons,
             f"html={len(hrefs)} content={content_buttons}")
-
     for raw in hrefs:
-        href = html_mod.unescape(raw)
-        parsed = urlparse(href)
+        parsed = urlparse(html_mod.unescape(raw))
         origin = f"{parsed.scheme}://{parsed.netloc}"
         rep.add("④-button-origin", origin == BUTTON_ORIGIN, origin)
         rep.add("④-button-path", parsed.path == BUTTON_PATH, parsed.path)
@@ -325,8 +354,7 @@ BANNED_TAGS = ("script", "link", "iframe", "img", "embed", "object",
 
 def check_assets(rep: Report, page: str) -> None:
     """자산 검사는 **태그 영역**에서만 한다 — 이스케이프된 본문에 `<img src=` 같은
-    글자가 텍스트로 들어 있는 것은 정상이고, 그것을 위반으로 세면 악성 픽스처가
-    거짓 RED 를 만든다."""
+    글자가 텍스트로 들어 있는 것은 정상이다."""
     tags = re.findall(r"<[^>]*>", page)
     for tag in tags:
         lowered = tag.lower()
@@ -336,16 +364,12 @@ def check_assets(rep: Report, page: str) -> None:
         if re.search(r"\ssrc\s*=", lowered):
             rep.add("⑤-no-external-asset", False, tag[:80])
     rep.add("⑤-no-external-asset", True, f"tags={len(tags)}")
-
     style = "".join(re.findall(r"<style[^>]*>(.*?)</style>", page, re.S))
     for token in ("@import", "@font-face", "url("):
         rep.add("⑤-no-external-css", token not in style.lower(), token)
-
     for tag in tags:
         for href in re.findall(r'href="([^"]*)"', tag):
             url = html_mod.unescape(href)
-            # 같은 문서 안의 출처 앵커(`#mb-src-N`)는 외부 자산이 아니다.
-            # 허용은 딱 두 형태뿐 — `javascript:`·`http:` 는 그대로 RED.
             ok = url.startswith("https://") or url.startswith("#")
             rep.add("⑤-href-https", ok, url[:80])
 
@@ -354,11 +378,6 @@ SURFACED_SEVERITIES = ("error", "degraded")
 
 
 def check_warnings(rep: Report, candidates: dict, page: str) -> None:
-    """오류(error)와 결손(degraded) 둘 다 페이지가 말해야 한다.
-
-    `degraded` 는 역할이 ready 인데 판정을 못 해 후보가 빈 경우다
-    (예: `sent_folder_not_found`). 그것을 조용한 빈 목록으로 두면 "오늘 아침은
-    당신을 기다리는 일이 없어요" 가 거짓말이 된다."""
     warns = [w for w in candidates.get("warnings") or []
              if isinstance(w, dict) and w.get("severity") in SURFACED_SEVERITIES]
     if not warns:
@@ -368,63 +387,40 @@ def check_warnings(rep: Report, candidates: dict, page: str) -> None:
             f"표면화 대상 {len(warns)}건")
 
 
-def check_sources(rep: Report, content: dict, candidates: dict, page: str,
-                  expect_sources: bool) -> None:
-    """⑧ 출처 절 — 원본 수가 후보 수와 같고, 목록 항목마다 실재하는 링크."""
+def check_sources(rep: Report, candidates: dict, page: str, expect_sources: bool) -> None:
     present = 'data-mb-sources="1"' in page
     if not expect_sources:
-        # `--no-sources` 로 렌더했다고 말했는데 절이 있으면 둘이 어긋난 것이다.
         rep.add("⑧-sources-absent", not present, "출처 절이 남아 있다")
-        rep.add("⑧-no-dangling-ref", 'data-mb-src-ref="1"' not in page,
-                "대상 없는 출처 링크")
+        rep.add("⑧-no-dangling-ref", 'data-mb-src-ref="1"' not in page, "대상 없는 출처 링크")
         return
-
     rep.add("⑧-sources-present", present, "data-mb-sources 부재")
-
     ids = re.findall(r'id="mb-src-(\d+)"', page)
-    expected = len(folded_candidates(candidates))
-    rep.add("⑧-source-count", len(ids) == expected,
-            f"html={len(ids)} candidates={expected}")
-
-    items = list(content.get("needs_attention") or []) \
-        + list(content.get("resolved") or [])
+    expected = len(source_entries(candidates))
+    rep.add("⑧-source-count", len(ids) == expected, f"html={len(ids)} candidates={expected}")
+    rows = (page.count('data-mb-event="1"') + page.count('data-mb-related="1"')
+            + page.count('data-mb-item="1"'))
     refs = re.findall(r'data-mb-src-ref="1"\s+href="#mb-src-(\d+)"', page)
-    rep.add("⑧-every-item-has-ref", len(refs) == len(items),
-            f"refs={len(refs)} items={len(items)}")
-
-    id_set = set(ids)
-    missing = sorted(set(refs) - id_set)
+    rep.add("⑧-every-row-has-ref", len(refs) == rows, f"refs={len(refs)} rows={rows}")
+    missing = sorted(set(refs) - set(ids))
     rep.add("⑧-ref-targets-exist", not missing, f"미상 대상 {missing}")
-
     used = page.count('data-mb-used="1"')
-    # 서로 다른 항목이 같은 후보를 가리키면(② 가 따로 보는 축) 표시는 한 번이다.
-    rep.add("⑧-used-marks-match", used == len(set(refs)),
-            f"used={used} refs={len(set(refs))}")
+    rep.add("⑧-used-marks-match", used == len(set(refs)), f"used={used} refs={len(set(refs))}")
 
 
 def check_sample(rep: Report, candidates: dict, page: str) -> None:
-    """⑨ 샘플과 실데이터는 섞이지 않는다.
-
-    샘플이 실데이터로 읽히면 없는 일정에 사람이 움직이고, 실데이터에 sample
-    앵커가 섞이면 진짜 항목이 픽션으로 보인다 — 양방향 모두 막는다."""
+    """⑨ 샘플과 실데이터는 섞이지 않는다 — 양방향 모두 막는다."""
     sample = bool((candidates.get("controls") or {}).get("sample"))
     banner = 'data-mb-sample="1"' in page
-
-    anchors = [a for a in (
-        item.get("anchor") for _g, _b, item in iter_candidates(candidates))
-        if isinstance(a, dict)]
-    sample_anchors = [a for a in anchors
-                      if str(a.get("provider") or "") == SAMPLE_TOKEN]
-
+    anchors = [item.get("anchor") for _g, item in iter_items(candidates)
+               if isinstance(item.get("anchor"), dict)]
+    sample_anchors = [a for a in anchors if str(a.get("provider") or "") == SAMPLE_TOKEN]
     if sample:
         rep.add("⑨-sample-banner", banner, "상시 띠 부재")
         rep.add("⑨-sample-anchors-all", len(sample_anchors) == len(anchors),
                 f"sample={len(sample_anchors)} 전체={len(anchors)}")
-        roles = candidates.get("roles") or {}
-        states = {r: str((roles.get(r) or {}).get("state") or "")
-                  for r in ("calendar", "email")}
-        rep.add("⑨-sample-role-state",
-                all(v == SAMPLE_TOKEN for v in states.values()), str(states))
+        states = {r: role_state(candidates, r) for r in ("calendar", "email")}
+        rep.add("⑨-sample-role-state", all(v == SAMPLE_TOKEN for v in states.values()),
+                str(states))
     else:
         rep.add("⑨-no-sample-banner", not banner, "실데이터에 샘플 띠")
         rep.add("⑨-no-sample-anchors", not sample_anchors,
@@ -432,38 +428,38 @@ def check_sample(rep: Report, candidates: dict, page: str) -> None:
 
 
 def check_sample_seeds(rep: Report, content: dict, candidates: dict) -> None:
-    """샘플 버튼의 seed 는 새 세션에 **샘플임을 먼저** 말해야 한다 — 그 세션은
-    candidates 를 못 보고 seed 문장만 읽는다."""
+    """샘플 버튼의 seed 는 새 세션에 **샘플임을 먼저** 말해야 한다."""
     if not (candidates.get("controls") or {}).get("sample"):
         return
-    for item in content.get("needs_attention") or []:
-        button = item.get("button")
+    for row in content.get("summaries") or []:
+        button = row.get("button") if isinstance(row, dict) else None
         if not isinstance(button, dict):
             continue
         seed = str(button.get("seed") or "")
         rep.add("⑨-sample-seed-prefix", seed.startswith("샘플 시나리오의"),
-                f'{item.get("title")}: {seed[:20]}…')
+                f"uid={(row.get('anchor') or {}).get('uid')}: {seed[:20]}…")
 
 
 # --------------------------------------------------------------------------
 # CLI
 # --------------------------------------------------------------------------
 
-def run(candidates: dict, content: dict, page: str,
-        expect_sources: bool = True) -> Report:
+def run(candidates: dict, content: dict, page: str, expect_sources: bool = True,
+        expect_style: str | None = None) -> Report:
     rep = Report()
     rep.add("schema-candidates", candidates.get("schema_version") == SCHEMA_VERSION,
             str(candidates.get("schema_version")))
     rep.add("schema-content", content.get("schema_version") == SCHEMA_VERSION,
             str(content.get("schema_version")))
-    check_structure(rep, content, candidates, page)
-    check_anchors(rep, content, candidates, page)
-    check_sections(rep, content, candidates)
+    check_style(rep, page, expect_style)
+    check_structure(rep, candidates, page)
+    check_summaries(rep, content, candidates, page)
+    check_sections(rep, candidates, page)
     check_seeds(rep, content, candidates)
     check_buttons(rep, content, candidates, page)
     check_assets(rep, page)
     check_warnings(rep, candidates, page)
-    check_sources(rep, content, candidates, page, expect_sources)
+    check_sources(rep, candidates, page, expect_sources)
     check_sample(rep, candidates, page)
     check_sample_seeds(rep, content, candidates)
     return rep
@@ -475,9 +471,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--content", required=True)
     ap.add_argument("--html", required=True)
     ap.add_argument("--no-sources", action="store_true",
-                    help="`render.py --no-sources` 로 만든 페이지 — ⑧ 을 건너뛴다")
+                    help="`render.py --no-sources` 로 만든 페이지 — ⑧ 을 그에 맞춰 본다")
+    ap.add_argument("--style", choices=STYLES,
+                    help="`render.py --style` 로 만든 페이지 — 그 스타일인지도 본다")
     args = ap.parse_args(argv)
-
     try:
         candidates = json.loads(Path(args.candidates).read_text(encoding="utf-8"))
         content = json.loads(Path(args.content).read_text(encoding="utf-8"))
@@ -486,8 +483,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"status": "error", "error": "input_unreadable",
                           "detail": str(exc)[:300]}, ensure_ascii=False))
         return 2
-
-    rep = run(candidates, content, page, expect_sources=not args.no_sources)
+    rep = run(candidates, content, page, expect_sources=not args.no_sources, expect_style=args.style)
     failures = rep.failures
     print(json.dumps({
         "status": "fail" if failures else "pass",

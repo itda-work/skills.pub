@@ -10,10 +10,10 @@ user-invocable: true
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash, mcp__workspace__bash
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "1.2.3"
+  version: "1.4.0"
   category: "domain"
   created_at: "2026-03-21"
-  updated_at: "2026-07-26"
+  updated_at: "2026-09-28"
   tags: "pdf, markdown, ocr, knowledge-base, rag, conversion"
   triggers-keywords: "pdf to markdown, pdf to md, knowledge base, 마크다운 변환, 지식베이스, OCR cleanup, PDF 변환, PDF 정제"
   triggers-agents: "expert-backend, expert-refactoring"
@@ -30,12 +30,13 @@ PDF 원문 추출은 깨진 결과물을 만든다: 띄어쓰기 누락, 테이�
 
 poppler-utils (`pdftotext`, `pdfinfo`, `pdftoppm`) 필요. Claude Cowork: 기본 설치됨. Ubuntu: `apt-get install -y poppler-utils`. macOS: `brew install poppler`.
 
-Step 6 검증 스크립트가 쓸 스킬 디렉토리 경로를 `SKILL_DIR` 로 확정합니다:
+Step 1 페이지 판정·Step 6 검증 스크립트가 쓸 스킬 디렉토리 경로를 `SKILL_DIR` 로 확정합니다:
 
 ```bash
 # Claude Code(플러그인 설치) = $CLAUDE_PLUGIN_ROOT / Cowork = 세션 마운트 탐색
 SKILL_DIR="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/skills/pdf-context-refinery}"
-[ -n "$SKILL_DIR" ] || SKILL_DIR=$(find /sessions/*/mnt/.remote-plugins -type d -path '*/skills/pdf-context-refinery' 2>/dev/null | head -1)
+# Cowork 는 플러그인 설치면 .remote-plugins, 단일 .skill 업로드면 .claude/skills 아래에 둔다
+[ -n "$SKILL_DIR" ] || SKILL_DIR=$(find /sessions/*/mnt/.remote-plugins /sessions/*/mnt/.claude/skills -type d -path '*/skills/pdf-context-refinery' 2>/dev/null | head -1)
 # 둘 다 아니면(저장소 체크아웃 등) 이 SKILL.md 가 있는 디렉토리 절대경로를 그대로 사용
 ```
 
@@ -51,6 +52,7 @@ PDF → Analyze → Plan → Extract → Transform → Assemble → Verify
 
 ```bash
 pdfinfo "<pdf_path>" | grep Pages
+python3 "$SKILL_DIR/scripts/page_quality.py" "<pdf_path>" > .itda-skills/page_quality.json   # 전 페이지 텍스트층 판정
 pdftotext -f 1 -l 3 "<pdf_path>" .itda-skills/sample.txt
 wc -c .itda-skills/sample.txt
 pdftotext -f 1 -l 10 -layout "<pdf_path>" .itda-skills/toc.txt
@@ -73,7 +75,19 @@ pdftotext -f 1 -l 10 -layout "<pdf_path>" .itda-skills/toc.txt
 - 동률이면 README.md 매핑표 순서 기준 첫 번째 선택
 - 임계값 미달 → `Domain: not detected (max match count < 3)` 로그, references 미로드
 
-`sample.txt`가 거의 0바이트면 스캔(이미지 전용) PDF다. `pdftoppm`으로 페이지를 PNG 이미지로 변환한 뒤, Claude 비전으로 직접 읽는다.
+**어느 쪽을 비전으로 읽을지는 `page_quality.json` 의 `needs_vision` 이 정한다** — 첫 3쪽 샘플로 정하지 않는다.
+앞은 텍스트인데 뒤의 표·신청자격 쪽만 스캔인 문서가 실재하고(공고 첨부), 샘플 판정은 그 뒤쪽을 조용히 빠뜨린다.
+쪽마다 `empty`(글자 0 — 스캔)·`low_text`(글자 40 미만)·`garbled`(대체문자·PUA·제어문자 5% 초과 — 글꼴 매핑 손상)·
+`garbled_hangul`(한글 음절은 정상 영역인데 엉뚱한 글자 — ToUnicode 오매핑)·`ok` 로 판정한다. `needs_vision` 의 쪽은
+`pdftoppm`으로 PNG 로 바꿔 Claude 비전으로 읽고, 나머지는 텍스트 경로로 간다.
+**`garbled_hangul` 쪽의 텍스트는 정리해서 살릴 수 없다** — "뽩 쪀싪텖" 같은 글자는 원문과 대응이 끊긴 것이라 문맥으로 고치면
+지어낸 글이 된다. 반드시 비전으로 읽는다. 판정 근거는 쪽별 `hangul_chars`·`no_batchim_ratio`·`rare_batchim_ratio` 에 있다
+(한글 30음절 이상에서 받침 없음 < 0.15 이고 겹받침·ㅋㅌㅍ 받침 ≥ 0.15). `doc_needs_ocr: true`(판정 쪽의 30% 이상이
+`needs_vision`)면 쪽을 골라 읽지 말고 문서 전체를 비전으로 읽는다.
+`sample.txt` 는 언어·도메인 감지용으로만 쓴다.
+
+**비전으로도 읽지 못한 쪽은 결과 머리에 "미검증 쪽: p.N, …" 으로 남긴다** — 다른 스킬(`itda-gov:funding` 등)이
+이 목록을 그대로 한계 고지에 옮긴다. `page_quality.py` 가 exit 2(pdftotext 없음·열기 실패)면 그 오류를 그대로 전달한다.
 
 ## Step 2: Plan
 

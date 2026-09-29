@@ -4,12 +4,12 @@
 리포트의 모든 수치(카테고리·난이도별 합계, 주별 추이, 미배정 비율)는 이 스크립트의
 출력에서만 인용한다 — 에이전트가 시간을 암산·어림하지 않는다(환각 차단).
 
-입력 계약(timelog.json) — 소스(캘린더 MCP 커넥터·itda-work:calendar·파일)와 무관하게
+입력 계약(timelog.json) — 소스(캘린더 MCP 커넥터·itda-hyve 캘린더·파일)와 무관하게
 에이전트가 이 스키마로 정규화한다:
 
     {
       "period": {"from": "2026-06-29", "to": "2026-07-12"},
-      "source": "calendar-mcp | itda-calendar | file",
+      "source": "calendar-mcp | itda-hyve | file",
       "categories": {
         "보고서 작성": {"difficulty": "상"},
         "회의":       {"difficulty": "중"}

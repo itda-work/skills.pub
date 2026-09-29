@@ -1,7 +1,7 @@
 """work-plan 스킬 — Ground-check 유틸리티.
 
 AC-6: 스킬명 검증 (카탈로그에 실제 존재하는지)
-AC-7: 환경변수명 검증 (알려진 목록에 있는지)
+AC-7: 환경변수명 검증 (알려진 목록에 있는지 — 메일·캘린더 계정 자격증명 이름은 itda-hyve 등록 안내로 내려보냄)
 DP-3: 실패 시 abort 아닌 downgrade-with-warning (⚠️ 확인 필요 마커)
 
 DP-1 Hybrid: 정적 skill-catalog.md 큐레이션 목록 + 호출 시 sanity check
@@ -26,12 +26,6 @@ _REPO_ROOT = Path(__file__).parent.parent.parent.parent.parent  # skills/
 
 _KNOWN_ENV_VARS: frozenset[str] = frozenset({
     # itda-work
-    "NAVER_EMAIL",
-    "NAVER_APP_PASSWORD",
-    "GOOGLE_EMAIL",
-    "GOOGLE_APP_PASSWORD",
-    "DAUM_EMAIL",
-    "DAUM_APP_PASSWORD",
     "NAVER_SEARCHAD_ACCESS_KEY",
     "NAVER_SEARCHAD_SECRET_KEY",
     "GEMINI_API_KEY",
@@ -56,6 +50,42 @@ def _catalog_env_vars() -> frozenset[str]:
     for entry in load_skill_catalog():
         names.update(_ENV_TOKEN_RE.findall(entry["env_vars"]))
     return frozenset(names)
+
+
+# ---------------------------------------------------------------------------
+# 메일·캘린더 계정 (itda-work/skills#23)
+# ---------------------------------------------------------------------------
+# 메일·캘린더 계정은 환경변수가 아니라 itda-hyve(로컬 MCP 서버) 설정 창의 "계정" 화면에 등록한다.
+# 등록 여부는 itda-hyve 도구(accounts_list)만 알고 이 스크립트는 판단하지 못한다 — 그래서 안내 문구만 돌려준다.
+
+# 옛 직접 접속 스크립트가 읽던 메일 계정 자격증명 이름. 허용 목록에서 빠졌고, 메모에 오면 등록 안내로 내려보낸다.
+# 네이버 오픈API(NAVER_CLIENT_ID)·검색광고(NAVER_SEARCHAD_*) 키는 메일 계정이 아니라 걸리지 않게 좁힌다.
+_MAIL_ACCOUNT_ENV_RE = re.compile(
+    r"^(?:(?:NAVER|GOOGLE|GMAIL|DAUM|KAKAO|ICLOUD|OUTLOOK)(?:_(?:MAIL|IMAP|SMTP|CALDAV))?"
+    r"_(?:EMAIL|USER|USERNAME|PASSWORD|APP_PASSWORD)"
+    r"|(?:IMAP|SMTP|CALDAV)_[A-Z0-9_]+)$"
+)
+
+# 계획에 들어가면 itda-hyve 계정 등록이 필요한 스킬.
+ACCOUNT_SKILLS: frozenset[str] = frozenset({"email", "calendar", "morning-brief", "time-audit"})
+
+ACCOUNT_NOTICE = (
+    "메일·캘린더 계정: 환경변수가 아니라 itda-hyve 설정 창의 \"계정\" 화면에 등록합니다 — "
+    "제공자·이메일·앱 비밀번호를 넣고 연결 테스트가 성공하면 저장하세요. "
+    "비밀번호는 Claude 대화창에 붙여 넣지 않습니다."
+)
+
+
+def is_mail_account_env_var(var_name: str) -> bool:
+    """메일·캘린더 계정 자격증명을 가리키는 환경변수 이름이면 True."""
+    return bool(_MAIL_ACCOUNT_ENV_RE.match(var_name))
+
+
+def account_notice(skill_names: list[str] | set[str] | tuple[str, ...]) -> str | None:
+    """계획에 itda-hyve 계정이 필요한 스킬이 있으면 '필요한 키·접근 권한' 에 넣을 안내 한 줄을 돌려준다."""
+    if ACCOUNT_SKILLS & set(skill_names):
+        return ACCOUNT_NOTICE
+    return None
 
 
 def get_known_env_vars() -> list[str]:
@@ -160,6 +190,13 @@ def check_env_var(var_name: str) -> GroundCheckResult:
     Returns:
         GroundCheckResult (실패 시 warning_marker 포함).
     """
+    if is_mail_account_env_var(var_name):
+        marker = (
+            f"⚠️ 확인 필요: '{var_name}' 는 쓰지 않습니다 — 메일·캘린더 계정은 "
+            "itda-hyve 설정 창의 \"계정\" 화면에 등록합니다."
+        )
+        return GroundCheckResult(is_valid=False, name=var_name, warning_marker=marker)
+
     if var_name in _KNOWN_ENV_VARS or var_name in _catalog_env_vars():
         return GroundCheckResult(is_valid=True, name=var_name)
 

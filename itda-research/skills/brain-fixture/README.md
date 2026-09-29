@@ -1,15 +1,16 @@
 # brain-fixture
 
-함정(모순·버전지옥·규정이중화·손상파일 등)을 의도적으로 심은 **가상 회사 연습용 데이터셋**을
+함정(모순·버전지옥·규정이중화·손상파일·한글 문서 등)을 의도적으로 심은 **가상 회사 연습용 데이터셋**을
 만드는 스킬. brain-build 검증·데모·강의 실습용이다. 원장(ledger) SSoT 에서 문서를 결정론
 렌더하고, 생성 직후 원장 ↔ 생성물을 재대조해 정합을 구조로 보장한 뒤, 강사용 정답지까지
 자동 생성한다. (SPEC-BRAIN-FIXTURE-001, #1201)
 
 ## 무엇을 만드나
 
-- **데이터셋 폴더** — docx·xlsx·pptx·pdf·txt·csv + 손상/잠금 파일. mtime = 문서 내부 날짜.
+- **데이터셋 폴더** — docx·xlsx·pptx·pdf·hwpx·hwp·txt·csv + 손상/잠금 파일. mtime = 문서 내부 날짜.
+  한글 함정 4종: 정상 HWPX · 확장자가 틀린 한글(`.hwpx` 인데 HWP 5) · HWP 3.x 서명 파일 · 배포용 보호 HWP 5 — 스킬이 직접 조립(외부 파일 무의존, 같은 원장 → 같은 바이트).
 - **원장 `ledger.json`** — 단일 진실 소스. 재생성·업종 변형의 근거.
-- **정답지 `.md`** — 강사용(비공개): 함정 표·정본 숫자·기대 검수 결과·오탐 경계·인사이트(3계단 질답 모범답안).
+- **정답지 `.md`** — 강사용(비공개): 함정 표·정본 숫자·기대 검수 결과·문제파일 기대 분류(brain-build `문제파일.md` 대조 — itda-doc 설치/미설치)·오탐 경계·인사이트(3계단 질답 모범답안).
 
 원장 3축: **함정**(잘못된 것) · **미끼**(잘못 아닌 것) · **인사이트**(여러 문서를 종합해야만 보이는 것 — verify 제5축 "합성 강제"가 스포일러 금지로 "단일 문서엔 정답 없음"을 보장).
 
@@ -20,7 +21,7 @@
    ▼  에이전트: 세계관·수치 대장·함정을 ledger.json 으로 저작   ← 창의 구간
    ▼  scripts/generate.py  (결정론 렌더)                     ← 기계 구간
 데이터셋 폴더
-   ▼  scripts/verify.py    (자기 검증 게이트 — 4축 재대조)     ← 기계 구간
+   ▼  scripts/verify.py    (자기 검증 게이트 — 5축 재대조)     ← 기계 구간
 PASS → scripts/answer_sheet.py (정답지)  |  FAIL → 원장 보정 후 재생성
 ```
 
@@ -36,7 +37,7 @@ python3 scripts/answer_sheet.py <ledger.json> --out <정답지.md>  # 정답지
 python3 scripts/qa_sheet.py <ledger.json> --out-dir <폴더>     # 질답 실사격 — qa-questions.md(응답자)·qa-key.json(채점자)
 ```
 
-원장 저작 가이드는 `references/ledger-schema.md`, 질답 채점 절차는 `references/qa-protocol.md`, 참조 모범은 `examples/healthcare-ledger.json`(헬스케어 기기 업체 38문서·함정 8종·인사이트 5개), 개인형 씨앗은 `presets/{freelancer,household,club}.json`.
+원장 저작 가이드는 `references/ledger-schema.md`, 질답 채점 절차는 `references/qa-protocol.md`, 참조 모범은 `examples/healthcare-ledger.json`(헬스케어 기기 업체 42문서·함정 12종(한글 4종)·인사이트 6개), 개인형 씨앗은 `presets/{freelancer,household,club}.json`.
 
 질답 실사격(REQ-060): `qa_sheet.py` 가 인사이트에서 응답자용 질문지와 채점자용 키를 분리 산출하고, **질문지에 정답 수치·근거 경로가 누출되면 exit 2**로 막는다(스포일러 금지의 질답판). 응답자는 업무DB 폴더만 연 zero-context 에이전트.
 
@@ -52,4 +53,4 @@ python3 scripts/verify.py   examples/healthcare-ledger.json /tmp/hc   # exit 0
 
 ## 의존성
 
-`python-docx`·`openpyxl`·`python-pptx`·`reportlab`(한글 텍스트 레이어 PDF)·`pypdf`(PDF 재파싱). `requirements.txt` 참조. 환경 변수·외부 API 없음. hyve 무의존(길 X thin skill).
+`python-docx`·`openpyxl`·`python-pptx`·`reportlab`(한글 텍스트 레이어 PDF)·`pypdf`(PDF 재파싱). `requirements.txt` 참조. 한글 문서(HWPX·HWP 5·HWP 3) 렌더·재파싱은 표준 라이브러리만 쓴다(추가 의존성 없음 — 테스트는 olefile·itda-doc 리더로 교차 검증). 환경 변수·외부 API 없음. hyve 무의존(길 X thin skill).

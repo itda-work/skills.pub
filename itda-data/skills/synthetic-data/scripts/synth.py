@@ -29,6 +29,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import identifiers as ident  # noqa: E402
+from safe_archive import Budget, UnsafeArchiveError, open_zip, read_entry  # noqa: E402  — #27 가드
 
 SKILL_DIR = Path(__file__).resolve().parent.parent
 PRESETS_DIR = SKILL_DIR / "presets"
@@ -556,29 +557,35 @@ def _fill_xml(xml: str, mapping: dict[str, str]) -> tuple[str, dict[str, int]]:
         prev = xml
         xml = _RUN_MERGE_RE.sub(lambda m: f"<hp:run{m.group(1)}><hp:t>{m.group(2)}{m.group(3)}</hp:t></hp:run>", xml)
     counts = {k: 0 for k in mapping}
+    if not mapping:
+        return xml, counts
+    # 원문 기준 한 번에 치환한다 — 키를 차례로 replace 하면 넣은 값 안의 다른 placeholder 가 다시
+    # 치환된다(`{{A}}→{{B}}` 가 `{{B}}` 의 값으로 바뀜, #4). 긴 키 우선으로 겹침을 가른다.
+    by_escaped = {_xml_escape(k): k for k in mapping}
+    pattern = re.compile("|".join(re.escape(e) for e in sorted(by_escaped, key=len, reverse=True)))
+
+    def sub_key(m: re.Match) -> str:
+        key = by_escaped[m.group(0)]
+        counts[key] += 1
+        return _xml_escape(mapping[key])
 
     def rep(m):
-        text = m.group(2)
-        for k, v in mapping.items():
-            ke = _xml_escape(k)
-            if ke in text:
-                counts[k] += text.count(ke)
-                text = text.replace(ke, _xml_escape(v))
-        return m.group(1) + text + m.group(3)
+        return m.group(1) + pattern.sub(sub_key, m.group(2)) + m.group(3)
     return _TEXT_RE.sub(rep, xml), counts
 
 
 def fill_hwpx(template: Path, out: Path, mapping: dict[str, str]) -> dict[str, int]:
     """(항목명)·{{항목명}} placeholder 를 값으로 치환. mimetype 첫 엔트리·STORED 보존. 원본은 건드리지 않는다."""
     total = {k: 0 for k in mapping}
-    with zipfile.ZipFile(template) as zin, zipfile.ZipFile(out, "w") as zout:
+    with open_zip(template) as zin, zipfile.ZipFile(out, "w") as zout:
+        budget = Budget()
         names = zin.namelist()
         if "mimetype" in names:
-            zout.writestr(zipfile.ZipInfo("mimetype"), zin.read("mimetype"), compress_type=zipfile.ZIP_STORED)
+            zout.writestr(zipfile.ZipInfo("mimetype"), read_entry(zin, "mimetype", budget), compress_type=zipfile.ZIP_STORED)
         for n in names:
             if n == "mimetype":
                 continue
-            data = zin.read(n)
+            data = read_entry(zin, n, budget)
             if _SECTION_RE.match(n):
                 xml, counts = _fill_xml(data.decode("utf-8"), mapping)
                 for k, c in counts.items():
@@ -586,6 +593,42 @@ def fill_hwpx(template: Path, out: Path, mapping: dict[str, str]) -> dict[str, i
                 data = xml.encode("utf-8")
             zout.writestr(n, data, compress_type=zipfile.ZIP_DEFLATED)
     return total
+
+
+def check_hwpx_template(template: Path) -> None:
+    """양식을 끝까지 한 번 풀어 본다 — 압축 폭탄·위조 CD·경로 탐색·DOCTYPE 이면 SpecError(exit 2, #27)."""
+    try:
+        with open_zip(template) as zin:
+            budget = Budget()
+            for info in zin.infolist():
+                read_entry(zin, info, budget)
+    except UnsafeArchiveError as exc:
+        raise SpecError(f"hwpx 양식을 안전하게 열 수 없습니다: {template} — {exc}") from exc
+    except zipfile.BadZipFile as exc:
+        raise SpecError(f"hwpx 양식이 ZIP(HWPX) 이 아니거나 손상됐습니다: {template} — {exc}") from exc
+
+
+_PARA_RE = re.compile(r"<hp:p[ >].*?</hp:p>", re.DOTALL)
+
+
+def split_placeholders(path: Path, keys: list[str]) -> set[str]:
+    """치환 뒤에도 문단 글자에 남은 placeholder — 글자모양이 다른 run 에 걸쳐 쪼개져 못 바꾼 것(#4).
+
+    run 병합은 속성이 같은 run 에만 적용되므로 `{{이` + `름}}` 처럼 서식이 갈린 자리는 조용히 0회가 된다.
+    문단 안 `<hp:t>` 를 이어 붙인 글자에서 키를 다시 찾아 그 사실을 드러낸다.
+    """
+    found: set[str] = set()
+    with zipfile.ZipFile(path) as z:
+        for n in z.namelist():
+            if not _SECTION_RE.match(n):
+                continue
+            xml = z.read(n).decode("utf-8")
+            for para in _PARA_RE.findall(xml):
+                text = "".join(m.group(2) for m in _TEXT_RE.finditer(para))
+                for k in keys:
+                    if _xml_escape(k) in text:
+                        found.add(k)
+    return found
 
 
 def hwpx_mapping(row: dict) -> dict[str, str]:
@@ -601,6 +644,8 @@ def render_outputs(spec: dict, rows: list[dict], seed: int, out: Path, unmodifie
                    xlsx_template: str | None, hwpx_template: str | None, hwpx_rows: int) -> tuple[dict, list[str]]:
     """data.json 은 호출자가 이미 썼다고 가정. csv·정의표·xlsx·hwpx·report 를 만든다. 원본 양식은 읽기만."""
     fields = [f["name"] for f in spec["fields"]]
+    if hwpx_template and Path(hwpx_template).exists():
+        check_hwpx_template(Path(hwpx_template))  # 산출을 쓰기 전에 — 폭탄 양식이 부분 산출을 남기지 않게(#27)
     res = verify_rows(spec, rows)
     write_csv(out / "data.csv", rows, fields)
     (out / "field-definitions.md").write_text(field_definitions_md(spec), encoding="utf-8")
@@ -625,11 +670,16 @@ def render_outputs(spec: dict, rows: list[dict], seed: int, out: Path, unmodifie
         tmp = dst.with_suffix(".hwpx.part")
         counts = fill_hwpx(Path(hwpx_template), tmp, mapping)
         tmp.replace(dst)
-        hit = sum(1 for k, c in counts.items() if c and k.startswith("(") and k != "(한계고지)")
+        # 항목은 `(항목명)`·`{{항목명}}` 두 표기를 합쳐 한 필드로 센다 — 한쪽만 쓰는 양식이 정상이다(#4)
+        hit = sum(1 for f in rows[i] if counts.get(f"({f})", 0) + counts.get(f"{{{{{f}}}}}", 0))
         notice_hit = counts["(한계고지)"] + counts["{{한계고지}}"]
+        split = split_placeholders(dst, list(mapping))
         line = f"{dst.name} — placeholder 치환 {hit}/{len(rows[i])} 항목"
-        if hit == 0:
-            line += " ⚠️ 0건: 양식에 (항목명) placeholder 가 없음"
+        if hit == 0 and not split:
+            line += " ⚠️ 0건: 양식에 (항목명)·{{항목명}} placeholder 가 없음"
+        if split:
+            line += (" ⚠️ 치환 못 한 placeholder " + ", ".join(sorted(split))
+                     + " — 글자 서식이 갈린 곳에 걸쳐 있다. 한글에서 그 자리 서식을 하나로 맞추거나 다시 입력하세요")
         if notice_hit == 0:
             line += " ⚠️ 한계 고지 미기입: 양식에 (한계고지) placeholder 가 없어 hwpx 안에는 고지가 없다 — report.md 와 함께 전달"
         extra.append(line)
@@ -647,6 +697,8 @@ def cmd_generate(a) -> int:
     errs = validate_spec(spec)
     if errs:
         print("스펙 검증 RED:\n  " + "\n  ".join(errs), file=sys.stderr); return 1
+    if a.hwpx_template and Path(a.hwpx_template).exists():
+        check_hwpx_template(Path(a.hwpx_template))  # data.json 도 쓰기 전에(#27)
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
     rows = generate_rows(spec, a.rows, a.seed)
     unmodified = is_unmodified_preset(spec) or resolve_spec_path(a.spec).resolve().is_relative_to(PRESETS_DIR.resolve())

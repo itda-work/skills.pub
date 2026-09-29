@@ -1,5 +1,11 @@
 # Changelog — itda-realty/realty-meta
 
+## [0.9.5] — 2026-09-28 (itda-work/skills#26)
+
+### Changed
+
+- **자격증명 파일 별칭에서 `env.txt` 제거** (itda-work/skills#26) — 읽는 파일명은 `.env`·`.env.txt`·`환경변수.txt` 세 가지다. `env.txt` 로 키를 두었다면 `환경변수.txt` 또는 `.env` 로 이름을 바꾼다. SKILL.md 의 파일명 별칭 안내·키 주입 규칙(파일명 3종·셸 glob 오탐 설명)을 맞췄다.
+
 ## [0.9.4] — 2026-07-26 (이슈 #1284)
 
 ### Fixed

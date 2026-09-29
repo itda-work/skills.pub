@@ -1,5 +1,21 @@
 # Changelog — itda-gov/funding
 
+## [1.0.2] — 2026-09-28 (itda-work/skills#26)
+
+### Changed
+
+- **자격증명 파일 별칭에서 `env.txt` 제거** (itda-work/skills#26) — 읽는 파일명은 `.env`·`.env.txt`·`환경변수.txt` 세 가지다. `env.txt` 로 키를 두었다면 `환경변수.txt` 또는 `.env` 로 이름을 바꾼다. SKILL.md 의 파일명 별칭 안내·키 주입 규칙(파일명 3종·셸 glob 오탐 설명)을 맞췄다.
+
+## [1.0.1] — 2026-09-27 (#5)
+
+### Fixed
+
+- PDF 첨부 변환 계약 — `itda-doc:pdf-context-refinery` 가 돌려주는 "미검증 쪽" 목록(스캔이라 못 읽은 쪽)을 공고별로 한계 고지에 옮긴다.
+  첫 3쪽 샘플로 스캔 여부를 정하던 refinery 가 뒤쪽 스캔 표를 조용히 빠뜨릴 수 있었다(refinery 1.3.0 과 짝).
+- 첨부 변환 스킬 소속 표기 정정 — pdf-context-refinery 는 `itda-research` 가 아니라 `itda-doc` 소속이다(SKILL·GUIDE·설치 안내 문구).
+- HWP 첨부 변환 정확도는 `itda-doc:hwpx` 1.3.2 의 HWP5 표 파싱 수정(#2)에 기댄다 — 실제 공고 첨부 표본은 hwpx 테스트
+  `tests/reader/fixtures/hwp5_real/` 가 지킨다(구 리더는 그 공고의 지원내용 표를 전치했다).
+
 ## [1.0.0] — 2026-07-28 (이슈 #1320) — **BREAKING**
 
 키워드 검색 스킬에서 **전수 수집 → 로컬 보존 → 변경 트래킹 → 원문 검증 → A/B/C 판정** 워크플로 스킬로 전면 전환.

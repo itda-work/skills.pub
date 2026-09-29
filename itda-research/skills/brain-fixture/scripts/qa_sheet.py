@@ -9,7 +9,8 @@
 산출:
   - qa-questions.md : 응답자용. tier 오름차순, 각 항목은 번호·tier·surface_question **만**.
                       결론·수치·evidence·derivation 일절 미포함.
-  - qa-key.json     : 채점자용. insight 별 {id, tier, question, expected{conclusion, result, evidence, derivation}}.
+  - qa-key.json     : 채점자용. insight 별 {id, tier, question, expected{conclusion, result, evidence, derivation}}
+                      + file_status(문제파일 기대 분류 — 손상·잠금·한글 문서, brain-build `문제파일.md` 대조용).
 
 정답 미누출 자체검증(스포일러 금지의 질답판): 질문 문구에 ① result 수치(정수 인코딩+소수 표기)
 ② evidence 경로 문자열이 있으면 exit 2 명시 에러(해당 insight id·누출 토큰 명시 — surface_question 을 고치라는 지시).
@@ -115,6 +116,12 @@ def build_qa(ledger_path: str) -> tuple[str, dict]:
                 },
             }
             for _, ins in ordered
+        ],
+        # 문제파일 기대 분류 — 질답과 별개로 채점자가 업무DB 의 `문제파일.md` 를 대조한다(#31).
+        "file_status": [
+            {"path": d["path"], **it}
+            for d in led["documents"]
+            if (it := bf.expected_intake(d))["status"] != bf.INTAKE_OK or it["hangul"]
         ],
     }
     return questions_md, key

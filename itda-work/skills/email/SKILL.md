@@ -12,9 +12,9 @@ metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
   recommended: true
-  version: "0.35.1"
+  version: "0.38.0"
   created_at: "2026-03-18"
-  updated_at: "2026-09-27"
+  updated_at: "2026-09-28"
   tags: "email, smtp, imap, naver, gmail, google, daum, kakao, icloud, multi-account, itda-hyve, mailbox, search, unread, flagged, attachments, save-attachment, attachment-summary, html, reply, in-reply-to, phishing, send-confirmation"
 ---
 
@@ -63,7 +63,7 @@ Claude Desktop 연결을 안내하고 멈춘다(다른 서버의 도구·내장 
 | 인자 | 타입 | 뜻 |
 |---|---|---|
 | `account` | string, 필수 | `accounts_list` 의 name |
-| `mailbox` | string | 메일함 이름. 기본 `INBOX`. 한글 이름 그대로(예: `"보낸메일함"`) |
+| `mailbox` | string | 메일함 이름. 기본 `INBOX`. 한글 이름 그대로(예: `"보낸메일함"`). 보낸·임시·휴지통·스팸 메일함은 이름 대신 특수 용도 `"\\Sent"`·`"\\Drafts"`·`"\\Trash"`·`"\\Junk"` 로 지목할 수 있다(itda-hyve 0.9.2 — 응답 `mailbox` 에 실제 이름, `special_use` 에 준 이름). 서버가 못 찾으면 `special_use_not_found` |
 | `since` / `before` | string `YYYY-MM-DD` | 이 날짜 이후(포함) / 이전(미포함) 수신 |
 | `from` / `to` / `subject` / `text` | string | 부분 일치(`text` 는 제목·본문 전체) |
 | `unseen` / `flagged` | bool | 안 읽은 것만 / 별표만 |
@@ -93,7 +93,9 @@ Claude Desktop 연결을 안내하고 멈춘다(다른 서버의 도구·내장 
 - **읽음 표시를 바꾸지 않는다**(PEEK). 사용자가 읽었다고 해서 서버 상태가 바뀌지 않는다는 것을 알면 된다.
 - 모호한 요청("네이버 메일 읽어줘")은 먼저 `imap_search` 목록을 보여 주고, 사용자가 고른 것만 `imap_fetch` 한다. 여러 통을 한꺼번에 열지 않는다.
 - `text_truncated: true` 면 잘렸다고 알린다. 전문이 필요하면 `max_body_chars` 를 키워 다시 연다.
-- 메일함 이름이 불확실하면 `imap_list_mailboxes`(`{"account": "naver"}`, 개수까지 필요하면 `"with_status": true`)로 확인하고 `name` 을 그대로 쓴다.
+- "보낸메일함 보여줘" 처럼 보낸·임시·휴지통·스팸 메일함이면 이름을 찾지 말고 `"mailbox": "\\Sent"` 식 특수 용도 이름으로 바로 부른다(`imap_list_mailboxes` 한 번이 줄어든다).
+  `invalid_input`·`not_found` 가 오면 itda-hyve 가 0.9.2 보다 옛 판이다 — 아래처럼 이름을 확인해 쓰고 업데이트를 한 줄 안내한다.
+- 그 밖에 메일함 이름이 불확실하면 `imap_list_mailboxes`(`{"account": "naver"}`, 개수까지 필요하면 `"with_status": true`)로 확인하고 `name` 을 그대로 쓴다.
 
 ## 계약 2 — 발송은 2단계 (`smtp_send`)
 
@@ -181,7 +183,12 @@ itda-hyve 가 강제한다. 1차 호출은 **보내지 않는다.**
   폴더를 연결해 달라고 요청한다. 저장만 원하면 `save_dir` 없이 itda-hyve 기본 저장 폴더에 받고 그 위치를 알린다.
 - 같은 이름이 이미 있으면 itda-hyve 가 「이름 (1).확장자」 로 저장한다 — 읽을 때는 반드시 응답의 `saved_path` 를 쓴다.
 - 파일 이름은 itda-hyve 가 정리한다(한글 NFC·제어 문자·경로 구분자 등). 읽음 표시는 바뀌지 않는다(PEEK).
-- PDF 는 텍스트 추출, XLSX·CSV 는 시트·표로, DOCX·HWPX 는 문서 텍스트로 읽는다. 샌드박스에 해당 라이브러리가 있으면 그것을 쓴다.
+- XLSX·CSV 는 시트·표로, DOCX 는 문서 텍스트로 읽는다. 샌드박스에 해당 라이브러리가 있으면 그것을 쓴다.
+- **HWP·HWPX(한글)** 는 `itda-doc:hwpx` 스킬의 읽기 경로로 마크다운으로 바꿔 읽는다 — 병합·중첩 표와 글상자를 살린다.
+  직접 XML 을 긁으면 표가 뭉개지고 `.hwp`(바이너리)는 아예 못 읽는다.
+- **PDF** 는 텍스트층부터 읽되, 글자가 거의 안 나오는 쪽(스캔)이 있으면 `itda-doc:pdf-context-refinery` 의 쪽별 판정으로 그 쪽만 이미지로 읽는다.
+- 그 스킬이 설치돼 있지 않으면 **읽은 척하지 않는다** — "이 첨부는 한글(HWP) 문서라 itda-doc 플러그인이 있어야 내용을 읽을 수 있습니다" 처럼
+  무엇을 못 읽었는지 요약에 적는다. 스캔이라 못 읽은 PDF 쪽도 "p.N 은 스캔이라 읽지 못함" 으로 남긴다.
 
 ### 거부·경고를 사용자에게 알린다
 

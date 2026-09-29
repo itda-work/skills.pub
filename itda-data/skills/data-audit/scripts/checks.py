@@ -303,6 +303,19 @@ def check_hidden(view: loader.SheetView) -> list[Finding]:
     return out
 
 
+def check_input_notes(view: loader.SheetView) -> list[Finding]:
+    """입력 방어(xlsx_guard)가 한 일을 발견으로 싣는다 — 조용히 넘기지 않는다(#30).
+
+    같은 범위의 알림(겹침 + 가려진 값)은 한 발견으로 합친다 — run_all 의 (sheet, cell, category)
+    중복 제거가 둘째 알림을 버리지 않게."""
+    by_ref: dict[str, list[str]] = {}
+    for n in getattr(view, "input_notes", []):
+        by_ref.setdefault(n.ref, []).append(n.message)
+    return [Finding(view.name, ref, "Warning", "입력", " · ".join(msgs),
+                    "엑셀에서 병합을 확인·정리한 뒤 다시 감사하세요.")
+            for ref, msgs in by_ref.items()]
+
+
 _SEV_ORDER = {"Critical": 0, "Warning": 1, "Info": 2}
 
 
@@ -318,6 +331,7 @@ def run_all(views: list[loader.SheetView], all_names: list[str]) -> list[Finding
         findings += check_broken_links(v, all_names)
         findings += check_unit_mismatch(v)
         findings += check_hidden(v)
+        findings += check_input_notes(v)
     # dedup (sheet, cell, category)
     seen, out = set(), []
     for f in findings:

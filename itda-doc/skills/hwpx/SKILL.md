@@ -17,10 +17,10 @@ argument-hint: "<hwp/hwpx 파일 경로 또는 보고서 마크다운 경로>"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   tags: "hwp, hwpx, document, convert, markdown, html, template, fill, report, government, profile"
-  version: "1.3.1"
+  version: "1.4.2"
   category: "document"
   created_at: "2026-07-28"
-  updated_at: "2026-09-25"
+  updated_at: "2026-09-28"
   status: "experimental"
   recommended: true
 ---
@@ -53,6 +53,7 @@ metadata:
 | `.hwpx` 빈칸/안내문 양식 | 채우기(`--dump → --check → 채움 --strict → --residue`) | 안내문 잔존은 `--residue` 가 exit 2 로 차단 |
 | `.hwpx` 참고 문서 + 새 내용 | 프로파일 추출 → `--template-dir` 생성 → `compare --ref` 확인 | 다중 섹션·표지·결재란·머리말/꼬리말은 경고 후 **본문 서식만** 근사 |
 | `.hwp` | 스킬 단독으로는 **읽기만**. 채우기·서식 추출은 한글에서 `.hwpx` 로 저장한 뒤 | `.hwp` 를 직접 채우려 하지 않는다 |
+| HWP 3.x·`.hml`(HWPML) | 리더 미지원 — 한글에서 HWPX 저장 또는 kordoc 대체 경로(아래 §읽기 — 못 읽는 형식) | 사용자 동의 없이 외부 패키지를 실행하지 않는다 |
 | PDF·스캔·스크린샷 서식 | **미지원을 말한다** — 구조(제목·절·표 유무)를 물어 내장 조판으로 폴백 | "비슷하게" 를 약속하지 않는다(OCR·치수 추정 비목표) |
 | 말로만("우리 기관 스타일로") | 확인 질문 1회(참고 파일 유무·용지·번호 체계) → 내장 조판 | — |
 
@@ -91,7 +92,32 @@ python3 -m hwpx_native convert .itda-skills/<파일명> -o .itda-skills/<파일�
 ```
 
 - 본문만(이미지 제외): `--no-extract-images` / HTML: `--format html`
+- 공고·안내문처럼 본문 전체가 테두리 표 하나에 들어 있어 결과가 한 칸짜리 표 덩어리면 `--unwrap-layout-tables` 로 다시 변환한다(옵트인 — 표 틀만 풀고 글자는 그대로).
 - 표 평탄화 지침·이미지 캡션 옵션 등 상세: [reader/USAGE.md](reader/USAGE.md)
+
+### 읽기 — 이 리더가 못 읽는 형식 (HWP 3.x·HWPML)
+
+형식은 확장자가 아니라 **파일 내용**으로 판정한다 — 확장자가 틀린 공고(`.hwpx` 인데 실제로는 HWP 5)도 그대로 읽는다.
+리더가 읽는 것은 **HWP 5.x·HWPX** 이고, 그 밖이면 exit 2 와 함께 무엇인지 알린다(HWP 3.x·HWPML(.hml)·Word/Excel 등).
+잘리거나 깨진 파일도 exit 2 「손상된 … 문서입니다」로 끝난다 — 한글에서 열어 다시 저장한 파일을 받는다.
+
+HWP 3.x·HWPML 은 다음 순서로 안내한다.
+
+1. **한글(한컴오피스)에서 열어 HWPX 로 저장**해 달라고 한다 — 가장 정확하고 외부 도구가 필요 없다.
+2. 한글이 없으면 **kordoc**(npm, MIT, github.com/chrisryugj/kordoc)으로 읽는다. 외부 패키지를 내려받아 실행하므로 **사용자에게 먼저 묻고**,
+   버전을 고정한다:
+
+   ```bash
+   npx -y kordoc@4.15.7 .itda-skills/<파일> -o .itda-skills/<파일>.md
+   ```
+
+   - 요건: Node.js 20+ · npm 레지스트리 접속. 첫 실행은 약 450MB·25초(Cowork 실측 2026-09-28), 이후 캐시로 1초대.
+     Cowork 는 대화마다 캐시가 사라질 수 있어 매번 첫 실행 비용이 든다.
+   - HWP 3.x(한글 97 등)·HWPML 읽기를 실측으로 확인했다. 결과 마크다운은 kordoc 형식이다(병합 표는 HTML) — 이 스킬의
+     품질 게이트 밖이므로 그 사실을 사용자에게 말한다.
+   - Cowork(x86_64)에서는 kordoc 의 선택 의존 설치가 NuGet 차단으로 실패해 **이미지 OCR·PNG 렌더가 안 된다** — 이 스킬의 대체 경로(HWP 3.x·HWPML 읽기)에는
+     필요 없다. 그 기능까지 써야 하면 `ONNXRUNTIME_NODE_INSTALL=skip npx -y kordoc@4.15.7 …` 로 설치한다(원인·우회 실측: 능력 지도 §3.8).
+   - npm 에 닿지 않으면 그 오류를 그대로 전하고 1번으로 돌아간다 — 다른 경로로 우회하지 않는다.
 
 ## 채우기 — 양식 서식 유지 + placeholder·빈 칸 채움
 
@@ -119,7 +145,8 @@ python3 "${SKILL_DIR}/scripts/fill_hwpx.py" .itda-skills/양식.hwpx -o .itda-sk
 #    매핑 JSON 예: {"(부서명)": "내부감사팀", "본문 안내 문구": ["첫째", "둘째"]} ← 같은 키가 여러 번이면 배열로 순차 치환
 
 # 3) 잔재 대조 — 원본의 안내문 후보(마커·"…하세요/바랍니다" 명령형 문단)와 매핑 키가 결과에 남았는지 + 매핑 값이
-#    결과에 실제로 들어갔는지(커버리지). 어긋나면 exit 2
+#    원래 그 키가 있던 **같은 문단의 같은 순서 자리**에 들어갔는지(커버리지 — 자리가 뒤바뀌면 value_misplaced,
+#    없으면 value_missing, 문단 수가 달라지면 structure). 어긋나면 exit 2
 python3 "${SKILL_DIR}/scripts/fill_hwpx.py" .itda-skills/결과.hwpx --residue .itda-skills/양식.hwpx \
   --map .itda-skills/채움값.fixed.json --keep "작성 후 제출"     # 의도적으로 남기는 법정·고정 문구는 --keep
 ```
@@ -140,7 +167,7 @@ python3 "${SKILL_DIR}/scripts/fill_hwpx.py" .itda-skills/결과.hwpx --residue .
   `--json` 을 주면 `--check`·`--residue` 결과가 JSON 으로 stdout 에 나온다(사람용 줄은 stderr) — 판정은 exit code·JSON 으로 한다.
 - **옵트인 위생**(기본 꺼짐 — 한컴 macOS 실측 2026-09-07: 실 한컴 저장본을 텍스트만 치환해도 복구 경고 없음, 변형 4종 동일 렌더):
   `--strip-lineseg`(변경 문단의 줄 배치 캐시 제거), `--refresh-preview`(미리보기 텍스트 재생성). 한글이 "손상 파일 복구" 를 띄우는 문서를 만나면 이 둘을 켜서 다시 만들어 본다.
-- 검증: 치환 후 XML 정합성은 스크립트가 자체 확인한다. 내용 확인은 결과 파일을 **읽기 경로로 다시 열어** 교차 검증한다.
+- 검증: 치환 후 XML 정합성과 **구조 검사**(생성 경로와 같은 9검사 — mimetype·필수 파트·secCnt·manifest 등)를 스크립트가 자체 확인한다. 원본에서 통과하던 검사가 결과에서 실패하면 exit 1, 원본 양식부터 어긋난 항목은 경고만 낸다. 내용 확인은 결과 파일을 **읽기 경로로 다시 열어** 교차 검증한다.
 - 한계: 텍스트·셀 값·체크박스 전용. 표 행 추가·이미지 삽입·서식 변경은 지원하지 않는다
   (누름틀/필드 기반 채움·반복행 발행·행 추가는 범위 밖 — 이 스킬은 무의존 단독 동작이 원칙).
 
@@ -155,6 +182,8 @@ python3 "${SKILL_DIR}/scripts/fill_hwpx.py" .itda-skills/결과.hwpx --residue .
 | 표지·목차·섹션바가 있는 결재용 내부보고서(명시 요청 시만) | `briefing` | 장식형 — AI 친화 원칙과 상충하므로 사용자가 그 형태를 지목했을 때만 |
 
 ```bash
+# 0) 표기법 검사 — 날짜(2026. 9. 6.)·시각(15:20)·금액 한글 병기·쌍점·물결표·「붙임」. 경고만 한다(exit 1 = 경고 있음)
+python3 "${SKILL_DIR}/report/scripts/lint_notation.py" .itda-skills/report.md
 # 1) 마크다운 → DocSpec (layout 이 항목 계층 상한·번호 처리·표 제목 규칙을 정한다)
 python3 "${SKILL_DIR}/report/scripts/md_to_docspec.py" .itda-skills/report.md -o .itda-skills/spec.json --layout ai-report
 # 2) DocSpec → HWPX (template 은 layout 과 같은 이름)
@@ -164,7 +193,9 @@ PYTHONPATH="${SKILL_DIR}/report${PYTHONPATH:+:$PYTHONPATH}" \
 
 - 기안문은 `--layout official-letter` + `--template official-letter`. 수신·발신명의·기안자·붙임 같은 값은
   front-matter 한글 키(`수신:`, `발신명의:`, `붙임: A 1부. | B 1부.`)나 `--field receiver=…` 로 준다.
+- 표기법 경고(0단계)는 사용자에게 보여 주고 **고칠지 묻는다** — 스스로 원고를 고치지 않는다. 규정에 "특별한 사유가 있으면 다른 방법" 단서가 있어 판단은 사용자 몫이다.
 - 매퍼 경고(stderr)는 사용자에게 그대로 전달합니다 — 특히 ai-report 의 "표 제목 없음" 경고는 사용자에게 제목을 받아 채우는 것이 정본.
+- 원고 내용을 버리는 경고(표 칸 절단·표 건너뜀·제목 줄 버림)는 `--strict` 를 주면 DocSpec 을 쓰지 않고 exit 2 — 공고·신청서처럼 칸 하나가 빠지면 안 되는 문서는 `--strict` 로 돌린다. 절단 경고는 버린 칸 글자를 보여 준다.
 - 작성 규약·front-matter 키·조판별 상세·규격 근거: [report/USAGE.md](report/USAGE.md) · [report/references/document-style-rules.md](report/references/document-style-rules.md)
 - 현업 발화 예시·함정·점검표·경고 사전: [GUIDE.md](GUIDE.md) · 실제 케이스 소스 20종: [report/examples/cases/](report/examples/cases/README.md)
 
@@ -192,6 +223,17 @@ python3 "${SKILL_DIR}/report/scripts/derive_profile.py" compare .itda-skills/우
 - `--template` 은 내장 id 전용이고 경로를 주면 거부한다 — 프로파일은 반드시 `--template-dir`(프로파일 이름이 `ai-report` 여도 내장이 아니라 그 디렉토리를 쓴다).
   `compare` 결과의 `fallback_styles` 는 참고 문서가 아니라 합성 내장값과 일치한 스타일이다(`--strict` 면 비어 있지 않을 때 exit 2).
 - 지원 조판은 `ai-report`(기본)·`report` 두 종(기안문·briefing 비지원). 상세: [report/USAGE.md §참고 서식 프로파일](report/USAGE.md)
+
+## 입력 안전 한계 — 압축 폭탄·위조 ZIP·DOCTYPE
+
+읽기·채우기·참고 서식은 사용자가 받은 파일을 그대로 열므로, 풀기 **전에** 선언 크기로, 푸는 **동안** 실제 바이트로 잰다.
+다음이면 트레이스백 대신 무엇이 걸렸는지 말하고 멈춘다(읽기 exit 2 · 채우기 exit 1 · 참고 서식 exit 1, 쓰다 만 결과는 지운다).
+
+- ZIP 엔트리 500개 초과(정상 문서는 수십 개) · 압축을 푼 크기 256MB 초과(HWPX 합계, HWP 5 는 스트림 해제 합계)
+- 저장·deflate 가 아닌 압축 방식, 선언 크기 위조, 경로 탐색 이름(`..`·절대경로), XML 의 DOCTYPE(정상 한글 문서에 없다)
+
+정상 문서가 걸리면 상한을 올린다: `ITDA_MAX_UNZIP_MB`(MB, 최대 8192) · `ITDA_MAX_ZIP_ENTRIES`(최대 65535). 실 공고 첨부 164건
+(최대 78MB·33엔트리 — 77MB BMP 가 든 공고)에서 거짓 양성 0.
 
 ## 공통 마무리
 

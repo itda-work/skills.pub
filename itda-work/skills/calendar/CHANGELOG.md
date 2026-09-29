@@ -3,6 +3,13 @@
 All notable changes to the `calendar` skill are documented here.
 This skill follows the itda-skills SPEC workflow (SPEC-CALENDAR-001).
 
+## [0.7.0] — 2026-09-28 (itda-work/skills#19)
+
+### Removed
+
+- 옛 CalDAV 직접 접속 CLI `scripts/`(15개)·`requirements.txt`(caldav·icalendar)·`deps.json`·`tests/`(8개). 0.5.0 부터 이 스킬의 실행 경로가 아니었고, 마지막 사용처(morning-brief 0.3.0·time-audit 0.2.0)가 itda-hyve `calendar_events` 로 옮겨 갔다. 삭제 전 참조 조사: https://github.com/itda-work/skills/issues/19#issuecomment-5863283032
+- SKILL.md 의 "`scripts/` 는 실행 경로가 아니다" 문장, README 존치 사유 절 → "스크립트·의존성이 없다" 로.
+
 ## [0.6.2] — 2026-09-27
 
 ### Changed

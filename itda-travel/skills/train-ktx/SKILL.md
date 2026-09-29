@@ -18,10 +18,10 @@ argument-hint: "서울에서 부산 KTX / 수서에서 부산 / 금요일 저녁
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
-  version: "0.3.0"
+  version: "0.3.1"
   status: "experimental"
   created_at: "2026-06-05"
-  updated_at: "2026-09-01"
+  updated_at: "2026-09-28"
   tags: "ktx, korail, srt, train, booking, reservation, travel"
 ---
 
@@ -111,7 +111,7 @@ py -3 "$env:SKILL_DIR\scripts\install_skill_deps.py"
 
 **권장 (비개발자 포함 모든 사용자) — 작업 폴더 `.env`에 계정 등록:**
 
-작업 폴더(Cowork 연결 폴더 / Claude Code 프로젝트 루트) 루트에 `.env` 파일을 만들고 아래 두 줄을 넣어 두면 스킬이 자동으로 찾아 읽습니다. 파일명 별칭 `.env.txt`·`env.txt`·`환경변수.txt` 도 동일하게 탐색된다. `.env` 대신 셸 환경변수나 `~/.claude/settings.json` 의 `env` 로 설정해 두어도 로더가 자동으로 찾습니다. 비밀번호가 담긴 `.env` 파일은 작업 폴더 밖으로 공유하지 마세요.
+작업 폴더(Cowork 연결 폴더 / Claude Code 프로젝트 루트) 루트에 `.env` 파일을 만들고 아래 두 줄을 넣어 두면 스킬이 자동으로 찾아 읽습니다. 파일명 별칭 `.env.txt`·`환경변수.txt` 도 동일하게 탐색된다. `.env` 대신 셸 환경변수나 `~/.claude/settings.json` 의 `env` 로 설정해 두어도 로더가 자동으로 찾습니다. 비밀번호가 담긴 `.env` 파일은 작업 폴더 밖으로 공유하지 마세요.
 
 ```dotenv
 KORAIL_USER_ID=코레일 회원번호 또는 휴대폰번호 또는 이메일
@@ -121,7 +121,7 @@ KORAIL_PASSWORD=코레일 로그인 비밀번호
 등록을 마쳤으면 **"코레일 계정 확인해줘"** 라고 요청해 로그인 1회로 설정을
 검증할 수 있습니다(`check` — 규칙 7 참조).
 
-> **키 주입 (Claude 실행 규칙):** 자격증명 유무를 `ls`/`find` 등으로 **사전 점검하지 않는다** — 스크립트가 `.env`·`.env.txt`·`env.txt`·`환경변수.txt` 를 스스로 탐색하므로 **우선 실행**한다(셸 glob·검색 패턴은 별칭을 놓쳐 오탐한다: `.env*`→env.txt 누락, `*env*`→환경변수.txt 누락). 실행이 자격증명 누락으로 실패하면, 사용자 지침("Claude 지침"·`CLAUDE.md`)에 해당 변수가 선언돼 있는 경우 그 값을 환경변수로 전달해 재시도한다 — 예: `KORAIL_USER_ID=<ID> KORAIL_PASSWORD=<PW> python3 "$SKILL_DIR/scripts/main.py" ...`. 지침에도 없으면 fail-loud 안내를 제시한다. 주입한 값은 출력·요약·로그에 노출하지 않는다(SAFE-3). 수동 확인이 꼭 필요하면 파일명 4종(`.env`·`.env.txt`·`env.txt`·`환경변수.txt`)을 그대로 나열해 확인한다.
+> **키 주입 (Claude 실행 규칙):** 자격증명 유무를 `ls`/`find` 등으로 **사전 점검하지 않는다** — 스크립트가 `.env`·`.env.txt`·`환경변수.txt` 를 스스로 탐색하므로 **우선 실행**한다(셸 glob·검색 패턴은 별칭을 놓쳐 오탐한다: `.env*`·`*env*` 는 `환경변수.txt` 를, `*.env` 는 `.env.txt` 를 놓친다). 실행이 자격증명 누락으로 실패하면, 사용자 지침("Claude 지침"·`CLAUDE.md`)에 해당 변수가 선언돼 있는 경우 그 값을 환경변수로 전달해 재시도한다 — 예: `KORAIL_USER_ID=<ID> KORAIL_PASSWORD=<PW> python3 "$SKILL_DIR/scripts/main.py" ...`. 지침에도 없으면 fail-loud 안내를 제시한다. 주입한 값은 출력·요약·로그에 노출하지 않는다(SAFE-3). 수동 확인이 꼭 필요하면 파일명 3종(`.env`·`.env.txt`·`환경변수.txt`)을 그대로 나열해 확인한다.
 
 > **출처 표시 (Claude 실행 규칙):** 스크립트 stderr 에 `[자격증명] KEY ← 출처` 줄이 나오면, 그 내용을 사용자에게 짧게 알린다(예: "환경변수.txt 의 KORAIL_PASSWORD 를 사용했습니다") — 사용자가 어느 설정파일이 쓰였는지 인지하게 하는 계약이다. 값은 어디에도 표시하지 않는다.
 

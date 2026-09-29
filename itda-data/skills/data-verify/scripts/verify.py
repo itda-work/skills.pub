@@ -21,8 +21,12 @@ import verifiers
 
 def verify_workbook(path: str, config: dict | None = None) -> list[verifiers.Finding]:
     """워크북을 config 에 따라 검수해 Finding 리스트를 반환한다. 원본 불변."""
-    sheets = loader.load_sheets(path)
-    return verifiers.run(sheets, config or {})
+    sheets, notes = loader.load_sheets_with_notes(path)
+    # 입력 방어(xlsx_guard)가 한 일은 발견으로 싣는다 — 조용히 넘기지 않는다(#30).
+    found = [verifiers.Finding("입력", f"{n.sheet}!{n.ref}", "", "", "", "Warning", n.message)
+             for n in notes]
+    out = found + verifiers.run(sheets, config or {})
+    return sorted(out, key=lambda f: verifiers._SEV.get(f.severity, 9))
 
 
 def main(argv=None) -> int:

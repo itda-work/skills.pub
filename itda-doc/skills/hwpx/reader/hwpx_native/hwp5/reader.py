@@ -8,6 +8,7 @@ import struct
 import zlib
 
 from .. import document as docir
+from ..safe_archive import Budget, UnsafeArchiveError, inflate
 
 try:
     import olefile
@@ -40,6 +41,18 @@ HWPU_TO_MM = 25.4 / 7200.0
 HWP5_FLAG_COMPRESSED = 0x01
 HWP5_FLAG_ENCRYPTED = 0x02
 HWP5_FLAG_DISTRIBUTION = 0x04
+
+
+class Hwp5FormatError(ValueError):
+    """구조가 깨진 HWP5 — 헤더가 짧다·서명이 다르다·본문 섹션이 없다. convert 가 손상 오류(code=corrupt)로 알린다(#29)."""
+
+
+class Hwp5DependencyError(RuntimeError):
+    """olefile 이 없어 HWP5(OLE) 를 열 수 없다. convert 가 설치 안내(code=missing_dependency)로 알린다(#32).
+
+    Cowork 에는 olefile 이 선탑재돼 있지 않다 — 설치 정문을 건너뛴 채 읽으면 트레이스백 대신 무엇을 할지 말해야
+    호출 스킬(brain-build 등)이 사유를 옳게 적는다.
+    """
 
 
 def check_readable_flags(flags: int) -> None:
@@ -190,6 +203,8 @@ class CellDef:
     width: int = 0
     height: int = 0
     paragraphs: list[FormattedParagraph] = field(default_factory=list)
+    # 문단 뒤에 이어 붙는 셀 안 중첩 표 — (문단 인덱스, 표). 문단 순서대로 섞어 IR 로 옮긴다.
+    nested_tables: list[tuple[int, "ParsedTable"]] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -203,6 +218,7 @@ class ParsedTable:
     col_count: int = 0
     rows: list[ParsedTableRow] = field(default_factory=list)
     cell_margin_mm: float = 0.0
+    caption: list[FormattedParagraph] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -226,11 +242,12 @@ class ImageData:
 class HWP5File:
     def __init__(self, data: bytes) -> None:
         if olefile is None:
-            raise RuntimeError("olefile is required for HWP5 parsing")
+            raise Hwp5DependencyError("olefile is required for HWP5 parsing")
         self.ole = olefile.OleFileIO(BytesIO(data))
+        self.budget = Budget()  # 문서 하나의 zlib 해제 총량 상한(#27)
         self.file_header = self._parse_file_header()
         if not self.file_header.signature.startswith(b"HWP Document File"):
-            raise ValueError("not a valid HWP5 file")
+            raise Hwp5FormatError("not a valid HWP5 file")
         check_readable_flags(self.file_header.flags)
         self.doc_info_tables: DocInfoTables | None = None
         self.body_text_sections: list[bytes] = []
@@ -246,7 +263,7 @@ class HWP5File:
     def _parse_file_header(self) -> FileHeader:
         data = self._open_stream("FileHeader")
         if len(data) < 256:
-            raise ValueError("FileHeader too small")
+            raise Hwp5FormatError("FileHeader too small")
         version, flags = struct.unpack_from("<II", data, 32)
         return FileHeader(signature=data[:32], version=version, flags=flags)
 
@@ -255,7 +272,7 @@ class HWP5File:
             return
         data = self._open_stream("DocInfo")
         if self.is_compressed:
-            data = self.decompress(data)
+            data = self.decompress(data, "DocInfo")
         try:
             self.doc_info_tables = parse_doc_info_stream(data)
         except Exception:
@@ -273,22 +290,25 @@ class HWP5File:
             data = self._open_stream(["BodyText", name])
             if self.is_compressed:
                 try:
-                    data = self.decompress(data)
+                    data = self.decompress(data, name)
+                except UnsafeArchiveError:
+                    raise  # 폭탄은 건너뛸 손상이 아니다 — 부분 처리 대신 명시 오류(#27)
                 except Exception:
                     continue
             self.body_text_sections.append(data)
         if not self.body_text_sections:
-            raise ValueError("no BodyText sections found")
+            raise Hwp5FormatError("no BodyText sections found")
 
     @property
     def is_compressed(self) -> bool:
         return bool(self.file_header.flags & 0x01)
 
-    def decompress(self, data: bytes) -> bytes:
+    def decompress(self, data: bytes, what: str = "stream") -> bytes:
+        # 출력 상한을 건 해제 — 작은 스트림이 수 GB 로 부푸는 zlib 폭탄을 그 자리에서 멈춘다(#27)
         try:
-            return zlib.decompress(data, -15)
+            return inflate(data, -15, self.budget, what)
         except zlib.error:
-            return zlib.decompress(data)
+            return inflate(data, zlib.MAX_WBITS, self.budget, what)
 
     def resolve_bin_data(
         self,
@@ -335,7 +355,9 @@ class HWP5File:
         should_decompress = ref.compressed == 1 or (ref.compressed == 0 and self.is_compressed)
         if should_decompress:
             try:
-                extracted = self.decompress(stream_data)
+                extracted = self.decompress(stream_data, stream_name)
+            except UnsafeArchiveError:
+                raise
             except Exception:
                 extracted = stream_data
 
@@ -351,7 +373,7 @@ def read_hwp5_file(path: str | Path) -> docir.Document:
 
 def parse_hwp5_to_document(data: bytes) -> docir.Document:
     if len(data) < 8 or data[:8] != b"\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1":
-        raise ValueError("invalid HWP file format")
+        raise Hwp5FormatError("invalid HWP file format")
     hwp5 = HWP5File(data)
     return convert_hwp5_to_formatted_ir(hwp5)
 
@@ -562,12 +584,45 @@ def convert_ctrl_record(
         table = parse_table_from_record(record, doc_info)
         if table is None:
             return []
-        blocks: list[docir.Block] = [convert_parsed_table(table)]
+        blocks: list[docir.Block] = [convert_formatted_paragraph(p) for p in table.caption if p.text.strip()]
+        blocks.append(convert_parsed_table(table))
         blocks.extend(extract_nested_images(record, doc_info, hwp5))
         return blocks
     if type_name == "gso ":
-        return [convert_image_data(image) for image in extract_images_from_tree([record], doc_info, hwp5)]
+        blocks = [convert_formatted_paragraph(p) for p in extract_textbox_paragraphs(record, doc_info) if p.text.strip()]
+        blocks.extend(convert_image_data(image) for image in extract_images_from_tree([record], doc_info, hwp5))
+        return blocks
     return []
+
+
+def extract_textbox_paragraphs(
+    record: Record,
+    doc_info: DocInfoTables | None,
+    depth: int = 0,
+) -> list[FormattedParagraph]:
+    """그리기 개체(`gso `)의 캡션·글상자 문단 (#6).
+
+    저장 구조: `CTRL_HEADER gso` → [캡션 LIST_HEADER + 문단] → SHAPE_COMPONENT → [LIST_HEADER + 글상자 문단 …]
+    이고, 묶음 개체는 SHAPE_COMPONENT 안에 SHAPE_COMPONENT 가 중첩된다. 구 리더는 그림만 꺼내고 이 글자를
+    버렸다(실 공고 `gso` 64개 문서에서 임원 명단·일시 줄이 통째로 빠짐).
+    """
+    if depth >= MAX_TABLE_DEPTH:
+        return []
+    paragraphs: list[FormattedParagraph] = []
+    in_list = False
+    for child in record.children:
+        if child.tag_id == HWPTAG_LIST_HEADER:
+            in_list = True
+            paragraphs.extend(extract_paragraphs_from_cell(child, doc_info))
+        elif child.tag_id == HWPTAG_PARA_HEADER and in_list:
+            paragraphs.append(extract_formatted_paragraph_from_record(child, doc_info))
+            for grandchild in child.children:
+                if grandchild.tag_id == HWPTAG_CTRL_HEADER and parse_ctrl_type_name(grandchild.data) == "gso ":
+                    paragraphs.extend(extract_textbox_paragraphs(grandchild, doc_info, depth + 1))
+        elif child.tag_id == HWPTAG_SHAPE_COMPONENT:
+            in_list = False
+            paragraphs.extend(extract_textbox_paragraphs(child, doc_info, depth + 1))
+    return paragraphs
 
 
 def extract_nested_images(
@@ -730,26 +785,52 @@ def build_formatted_spans(
     return spans
 
 
-def parse_table_from_record(record: Record, doc_info: DocInfoTables | None) -> ParsedTable | None:
+MAX_TABLE_DEPTH = 8
+
+
+def parse_table_from_record(
+    record: Record,
+    doc_info: DocInfoTables | None,
+    depth: int = 0,
+) -> ParsedTable | None:
+    """표 컨트롤(CTRL_HEADER 'tbl ') → ParsedTable.
+
+    직계 자식의 저장 순서는 `[캡션 LIST_HEADER + 문단] → TABLE → (셀 LIST_HEADER + 문단)*` 다.
+    TABLE **앞**의 LIST_HEADER 는 캡션이고 **뒤**의 것만 셀이다(rhwp·kordoc 과 같은 규칙, #2).
+    셀 문단이 품은 표 컨트롤은 재귀로 읽어 셀 안 중첩 표로 보존한다.
+    """
+    if depth >= MAX_TABLE_DEPTH:
+        return None
+    table_index = -1
     table_def = None
-    for child in record.children:
+    for index, child in enumerate(record.children):
         if child.tag_id == HWPTAG_TABLE:
             table_def = parse_table_def(child.data)
+            table_index = index
             break
     if table_def is None:
         return None
 
+    caption: list[FormattedParagraph] = []
+    for child in record.children[:table_index]:
+        if child.tag_id == HWPTAG_LIST_HEADER:
+            caption.extend(extract_paragraphs_from_cell(child, doc_info))
+        elif child.tag_id == HWPTAG_PARA_HEADER:
+            caption.append(extract_formatted_paragraph_from_record(child, doc_info))
+
     cell_defs: list[CellDef] = []
     current_cell: CellDef | None = None
-    for child in record.children:
+    for child in record.children[table_index + 1 :]:
         if child.tag_id == HWPTAG_LIST_HEADER:
             if current_cell is not None:
                 cell_defs.append(current_cell)
             current_cell = parse_cell_def(child.data)
             if current_cell is not None:
-                current_cell.paragraphs = extract_paragraphs_from_cell(child, doc_info)
+                for paragraph_record in child.children:
+                    if paragraph_record.tag_id == HWPTAG_PARA_HEADER:
+                        _append_cell_paragraph(current_cell, paragraph_record, doc_info, depth)
         elif child.tag_id == HWPTAG_PARA_HEADER and current_cell is not None:
-            current_cell.paragraphs.append(extract_formatted_paragraph_from_record(child, doc_info))
+            _append_cell_paragraph(current_cell, child, doc_info, depth)
     if current_cell is not None:
         cell_defs.append(current_cell)
 
@@ -760,7 +841,24 @@ def parse_table_from_record(record: Record, doc_info: DocInfoTables | None) -> P
         col_count=table_def["col_count"],
         rows=organize_cells_into_rows(cell_defs, table_def["row_count"]),
         cell_margin_mm=min_margin * HWPU_TO_MM,
+        caption=caption,
     )
+
+
+def _append_cell_paragraph(
+    cell: CellDef,
+    paragraph_record: Record,
+    doc_info: DocInfoTables | None,
+    depth: int,
+) -> None:
+    cell.paragraphs.append(extract_formatted_paragraph_from_record(paragraph_record, doc_info))
+    for grandchild in paragraph_record.children:
+        if grandchild.tag_id == HWPTAG_CTRL_HEADER and parse_ctrl_type_name(grandchild.data) == "gso ":
+            cell.paragraphs.extend(p for p in extract_textbox_paragraphs(grandchild, doc_info, depth + 1) if p.text.strip())
+        if grandchild.tag_id == HWPTAG_CTRL_HEADER and parse_ctrl_type_name(grandchild.data) == "tbl ":
+            nested = parse_table_from_record(grandchild, doc_info, depth + 1)
+            if nested is not None:
+                cell.nested_tables.append((len(cell.paragraphs) - 1, nested))
 
 
 def parse_table_def(data: bytes) -> dict[str, object] | None:
@@ -770,10 +868,19 @@ def parse_table_def(data: bytes) -> dict[str, object] | None:
     return {"row_count": row_count, "col_count": col_count, "margins": [left, right, top, bottom]}
 
 
+# 셀 LIST_HEADER: paraCount(u16)@0 · listAttr(u32)@2 · u16@6(bit 2 = 제목 셀) · col(u16)@8 · row(u16)@10
+# · colSpan(u16)@12 · rowSpan(u16)@14 · width(u32)@16 · height(u32)@20.
+# 한컴 공식 문서(5.0 rev1.3 표 65)는 리스트 헤더를 6바이트로 적어 offset 6 으로 읽게 만든다 — 실제 저장본은
+# 셀 주소가 8 부터다(원바이트 실측·rhwp·kordoc 일치, #2). offset 6 으로 읽으면 col←u16@6, row←col,
+# colSpan←row, rowSpan←colSpan 으로 한 칸씩 밀려 표가 무너진다.
+CELL_ADDRESS_OFFSET = 8
+CELL_DEF_MIN_LEN = CELL_ADDRESS_OFFSET + 16
+
+
 def parse_cell_def(data: bytes) -> CellDef | None:
-    if len(data) < 22:
+    if len(data) < CELL_DEF_MIN_LEN:
         return None
-    col, row, col_span, row_span, width, height = struct.unpack_from("<HHHHII", data, 6)
+    col, row, col_span, row_span, width, height = struct.unpack_from("<HHHHII", data, CELL_ADDRESS_OFFSET)
     return CellDef(row=row, col=col, col_span=col_span, row_span=row_span, width=width, height=height)
 
 
@@ -786,6 +893,11 @@ def extract_paragraphs_from_cell(record: Record, doc_info: DocInfoTables | None)
 
 
 def organize_cells_into_rows(cells: list[CellDef], row_count: int) -> list[ParsedTableRow]:
+    """셀을 행 주소로 묶고 행 안에서는 **열 주소 순**으로 둔다.
+
+    저장 순서가 열 순서와 같다는 보장은 없다 — 레코드 순서대로 붙이면 병합 셀이 섞인 표에서
+    칸이 뒤바뀐다(#2). HTML 표는 행 안 셀 순서 + span 으로 배치되므로 열 정렬이면 충분하다.
+    """
     if not cells:
         return [ParsedTableRow() for _ in range(row_count)]
     max_row = row_count
@@ -794,6 +906,8 @@ def organize_cells_into_rows(cells: list[CellDef], row_count: int) -> list[Parse
     rows = [ParsedTableRow() for _ in range(max_row)]
     for cell in cells:
         rows[cell.row].cells.append(cell)
+    for row in rows:
+        row.cells.sort(key=lambda cell: cell.col)
     return rows
 
 
@@ -862,7 +976,7 @@ def convert_parsed_table(table: ParsedTable) -> docir.Table:
     for row in table.rows:
         cells: list[docir.TableCell] = []
         for cell in row.cells:
-            children = [convert_formatted_paragraph(paragraph) for paragraph in cell.paragraphs]
+            children = _cell_children(cell)
             cells.append(
                 docir.TableCell(
                     children=children,
@@ -873,6 +987,19 @@ def convert_parsed_table(table: ParsedTable) -> docir.Table:
             )
         rows.append(docir.TableRow(cells=cells))
     return docir.Table(rows=rows, cell_padding_mm=table.cell_margin_mm)
+
+
+def _cell_children(cell: CellDef) -> list[docir.Block]:
+    nested_after: dict[int, list[ParsedTable]] = {}
+    for paragraph_index, nested in cell.nested_tables:
+        nested_after.setdefault(paragraph_index, []).append(nested)
+    children: list[docir.Block] = []
+    for index, paragraph in enumerate(cell.paragraphs):
+        # 표만 담은 문단은 빈 문단으로 남는다 — 표 자리 표시라 본문으로 옮기지 않는다
+        if paragraph.text.strip() or index not in nested_after:
+            children.append(convert_formatted_paragraph(paragraph))
+        children.extend(convert_parsed_table(nested) for nested in nested_after.get(index, []))
+    return children
 
 
 def convert_image_data(image: ImageData) -> docir.Image:

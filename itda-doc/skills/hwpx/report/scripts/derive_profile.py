@@ -43,6 +43,9 @@ if str(REPORT_DIR) not in sys.path:
 from hwpx_report.models import DocSpec  # noqa: E402
 from hwpx_report.profile import OWPML_NS  # noqa: E402
 from hwpx_report.report import HWPXReportError, build_report, load_report_template_dir  # noqa: E402
+from hwpx_report.validator import _load_safe_archive  # noqa: E402
+
+guard = _load_safe_archive()  # 사용자 참고 문서의 압축 폭탄·위조 CD·DOCTYPE 가드(#27)
 
 SUPPORTED_LAYOUTS = ("ai-report", "report")
 
@@ -595,13 +598,23 @@ def analyze_reference(ref_path: Path, layout: str) -> Analysis:
     if layout not in SUPPORTED_LAYOUTS:
         raise ProfileError(f"지원하지 않는 layout: {layout} (지원: {', '.join(SUPPORTED_LAYOUTS)})")
     try:
-        zf = zipfile.ZipFile(ref_path)
+        zf = guard.open_zip(ref_path)
     except (OSError, zipfile.BadZipFile) as exc:
         raise ProfileError(f"참고 문서를 열 수 없다: {ref_path}: {exc}") from exc
+    except guard.UnsafeArchiveError as exc:
+        raise ProfileError(f"참고 문서를 안전하게 열 수 없다: {ref_path}: {exc}") from exc
+    budget = guard.Budget()
+
+    def _read(name: str) -> str:
+        try:
+            return guard.read_entry(zf, name, budget).decode("utf-8")
+        except guard.UnsafeArchiveError as exc:
+            raise ProfileError(f"참고 문서를 안전하게 열 수 없다: {ref_path}: {exc}") from exc
+
     names = zf.namelist()
     if "Contents/header.xml" not in names or "Contents/section0.xml" not in names:
         raise ProfileError(f"참고 문서에 Contents/header.xml·section0.xml 이 없다: {ref_path}")
-    header_xml = zf.read("Contents/header.xml").decode("utf-8")
+    header_xml = _read("Contents/header.xml")
     sha12 = hashlib.sha256(ref_path.read_bytes()).hexdigest()[:12]
     warnings: list[str] = []
     fallback: list[str] = []
@@ -614,7 +627,7 @@ def analyze_reference(ref_path: Path, layout: str) -> Analysis:
         (n for n in names if re.match(r"Contents/section\d+\.xml$", n)),
         key=lambda n: int(re.search(r"\d+", n).group()),
     )
-    section_texts = {n: zf.read(n).decode("utf-8") for n in sections}
+    section_texts = {n: _read(n) for n in sections}
 
     def _text_block_count(xml: str) -> int:
         try:
@@ -1117,10 +1130,14 @@ def self_check(profile_dir: Path) -> None:
 
 def _read_hwpx_parts(path: Path) -> tuple[str, str]:
     try:
-        with zipfile.ZipFile(path) as zf:
-            return zf.read("Contents/header.xml").decode("utf-8"), zf.read("Contents/section0.xml").decode("utf-8")
+        with guard.open_zip(path) as zf:
+            budget = guard.Budget()
+            return (guard.read_entry(zf, "Contents/header.xml", budget).decode("utf-8"),
+                    guard.read_entry(zf, "Contents/section0.xml", budget).decode("utf-8"))
     except (OSError, zipfile.BadZipFile, KeyError) as exc:
         raise ProfileError(f"hwpx 를 읽을 수 없다: {path}: {exc}") from exc
+    except guard.UnsafeArchiveError as exc:
+        raise ProfileError(f"hwpx 를 안전하게 열 수 없다: {path}: {exc}") from exc
 
 
 def _diff_attrs(expected: dict, actual: dict) -> list[str]:

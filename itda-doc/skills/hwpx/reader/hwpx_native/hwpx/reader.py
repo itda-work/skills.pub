@@ -10,6 +10,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 from .. import document as docir
+from ..safe_archive import Budget, open_zip, read_entry
 
 
 _HEADING_STYLE_NAMES = {
@@ -87,25 +88,37 @@ class _ResolvedParagraphProps:
     space_after_mm: float = 0.0
 
 
+class HwpxFormatError(ValueError):
+    """구조가 깨진 HWPX — XML 이 형식에 맞지 않거나 본문 섹션이 없다. convert 가 손상 오류(code=corrupt)로 알린다(#29)."""
+
+
+def _parse_xml(zf: zipfile.ZipFile, name: str, budget: Budget) -> ET.Element:
+    try:
+        return ET.fromstring(read_entry(zf, name, budget))
+    except ET.ParseError as exc:
+        raise HwpxFormatError(f"hwpx: {name} 의 XML 이 깨졌습니다({exc})") from exc
+
+
 def read_hwpx_file(path: str | Path) -> docir.Document:
-    with zipfile.ZipFile(path) as zf:
-        return _parse_zip(zf)
+    # 풀기 전 선언값 검사 + 읽는 중 실제 바이트 예산(#27) — 상한 초과는 UnsafeArchiveError
+    with open_zip(path) as zf:
+        return _parse_zip(zf, Budget())
 
 
-def _parse_zip(zf: zipfile.ZipFile) -> docir.Document:
+def _parse_zip(zf: zipfile.ZipFile, budget: Budget) -> docir.Document:
     names = set(zf.namelist())
-    style_map, char_pr_map, para_properties_map = _parse_header(zf, names)
-    bin_index = _parse_bin_index(zf, names)
+    style_map, char_pr_map, para_properties_map = _parse_header(zf, names, budget)
+    bin_index = _parse_bin_index(zf, names, budget)
     section_files = sorted(
         (name for name in names if _is_section_file(name)),
         key=_section_index,
     )
     if not section_files:
-        raise ValueError("hwpx: no section files found in archive")
+        raise HwpxFormatError("hwpx: no section files found in archive")
 
     document = docir.Document()
     for index, name in enumerate(section_files):
-        root = ET.fromstring(zf.read(name))
+        root = _parse_xml(zf, name, budget)
         blocks = _section_to_blocks(
             root,
             style_map,
@@ -128,6 +141,7 @@ def _parse_zip(zf: zipfile.ZipFile) -> docir.Document:
 def _parse_header(
     zf: zipfile.ZipFile,
     names: set[str],
+    budget: Budget,
 ) -> tuple[dict[str, int], dict[str, _CharPr], dict[str, _ParaProperty]]:
     style_map: dict[str, int] = {}
     char_pr_map: dict[str, _CharPr] = {}
@@ -135,7 +149,7 @@ def _parse_header(
     if "Contents/header.xml" not in names:
         return style_map, char_pr_map, para_properties_map
 
-    root = ET.fromstring(zf.read("Contents/header.xml"))
+    root = _parse_xml(zf, "Contents/header.xml", budget)
     style_containers = _children(root, "styles")
     if not style_containers:
         style_containers = _children(root, "styleList")
@@ -171,11 +185,11 @@ def _parse_header(
     return style_map, char_pr_map, para_properties_map
 
 
-def _parse_bin_index(zf: zipfile.ZipFile, names: set[str]) -> dict[str, _BinItem]:
+def _parse_bin_index(zf: zipfile.ZipFile, names: set[str], budget: Budget) -> dict[str, _BinItem]:
     result: dict[str, _BinItem] = {}
     if "Contents/content.hpf" not in names:
         return result
-    root = ET.fromstring(zf.read("Contents/content.hpf"))
+    root = _parse_xml(zf, "Contents/content.hpf", budget)
     for item in root.iter():
         if _local_name(item.tag) != "item":
             continue
@@ -183,7 +197,7 @@ def _parse_bin_index(zf: zipfile.ZipFile, names: set[str]) -> dict[str, _BinItem
         if not href.startswith("BinData/"):
             continue
         item_id = item.attrib.get("id", "")
-        data = zf.read(href) if href in names else b""
+        data = read_entry(zf, href, budget) if href in names else b""
         result[item_id] = _BinItem(
             id=item_id,
             href=href,

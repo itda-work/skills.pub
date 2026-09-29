@@ -1,7 +1,7 @@
 # iCloud 앱 전용 비밀번호 — 발급 가이드
 
 - 공식 사이트: <https://account.apple.com> (Apple 계정 관리)
-- 발급 키: `ICLOUD_EMAIL` + `ICLOUD_APP_PASSWORD`
+- 발급하는 것: 메일·캘린더 연결용 앱 전용 비밀번호 — itda-hyve 설정 창의 "계정" 화면에 등록합니다
 - Last Verified: 2026-06-10 (email·calendar 운영 GUIDE에서 통합 — 실화면 재검증 시 갱신)
 
 ## 1. 가입 조건
@@ -17,26 +17,28 @@
 3. **앱 전용 비밀번호 생성** → 이름 입력(예: `itda-skills`) → 생성
 4. 화면에 표시된 16자리 비밀번호(`xxxx-xxxx-xxxx-xxxx`)를 **바로 복사** — 다시 볼 수 없습니다
 
-## 3. 키 ↔ 환경변수 매핑
+## 3. itda-hyve 에 등록하기
 
-| 항목 | 환경변수 |
-|---|---|
-| iCloud 이메일 주소 | `ICLOUD_EMAIL` |
-| 16자리 앱 전용 비밀번호 | `ICLOUD_APP_PASSWORD` |
+메일·캘린더 스킬은 계정을 PC 에 설치한 **itda-hyve** 앱에 등록해 두고 그 앱을 통해서만 씁니다.
+비밀번호는 itda-hyve 안에만 있고 Claude 에게 전달되지 않습니다. 설치는
+[itda-hyve 내려받기](https://github.com/itda-work/itda-hyve.pub/releases/latest)에서 합니다.
 
-```dotenv
-ICLOUD_EMAIL=you@icloud.com
-ICLOUD_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx
-```
+1. itda-hyve 설정 창의 **계정** 화면에서 계정을 추가합니다
+2. 제공자 **아이클라우드**를 고르고, iCloud 이메일 주소(`you@icloud.com`)와 16자리 앱 전용 비밀번호를 넣습니다 — 서버 주소는 자동으로 채워집니다
+3. **연결 테스트**를 눌러 메일(과 캘린더) 줄이 성공인지 확인한 뒤 **저장**합니다
+
+> 비밀번호를 Claude 대화창에 붙여 넣지 마세요. Claude 는 그 값을 쓰지 않습니다.
 
 ## 4. 한도·주의사항
 
 - 앞뒤 하이픈 포함/제외 모두 동작하지만, **발급 화면에 보인 그대로** 넣는 것을 권장합니다.
-- **하나의 앱 전용 비밀번호를 메일·캘린더가 공용**합니다 — itda-email용으로 발급했다면 calendar에서 재사용하면 됩니다(추가 발급 불필요).
-- 분실 시 같은 메뉴에서 기존 항목을 삭제하고 새로 생성하세요.
+- **하나의 앱 전용 비밀번호를 메일·캘린더가 공용**합니다 — itda-hyve 에 한 번 등록하면 메일과 캘린더가 같은 계정을 씁니다(추가 발급 불필요).
+- 분실 시 같은 메뉴에서 기존 항목을 삭제하고 새로 생성한 뒤, itda-hyve 계정 화면에서 교체하세요.
 - Apple 계정 비밀번호를 변경하면 기존 앱 전용 비밀번호가 모두 무효화됩니다 — 재발급이 필요합니다.
 
-## 5. 이 키를 쓰는 스킬
+## 5. 이 계정을 쓰는 스킬
 
 - `itda-work/email` — 아이클라우드 메일 읽기·발송
 - `itda-work/calendar` — 아이클라우드 캘린더 (CalDAV)
+- `itda-work/morning-brief` — 오늘 일정·미회신 메일 아침 브리핑
+- `itda-work/time-audit` — 캘린더 실적 기반 업무 시간 감사

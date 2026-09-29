@@ -13,11 +13,11 @@ allowed-tools: Read, Bash, Write, Glob, mcp__workspace__bash
 argument-hint: "[도메인/문서 프리셋 또는 스펙.json] [--rows N] [--xlsx-template 양식.xlsx] [--hwpx-template 양식.hwpx]"
 metadata:
   author: "Chinseok"
-  version: "0.1.1"
+  version: "0.1.3"
   category: "data-analysis"
   status: "experimental"
   created_at: "2026-09-05"
-  updated_at: "2026-09-06"
+  updated_at: "2026-09-28"
   tags: "synthetic-data, test-data, privacy, interview, preset, nursing-hospital, long-term-care, xlsx, hwpx, deterministic, korean"
 ---
 
@@ -100,7 +100,7 @@ python3 "$SKILL_DIR/scripts/synth.py" verify spec.json ./가상데이터/data.js
 |---|---|
 | `data.csv` · `data.json` | 가상 데이터 N건 (json 에는 스펙·seed 동봉 — 재현·재검증용) |
 | `<문서>.xlsx` | 양식을 줬으면 그 양식의 헤더 행 아래에 기입(다른 시트·제목·서식 보존, 헤더 아래에 이미 내용이 있으면 아래로 밀고 리포트에 적는다 — 수식 참조는 갱신되지 않으니 빈 양식 권장), 없으면 새 통합문서. 첫 시트 「안내」 에 한계 고지 |
-| `<문서>-001.hwpx …` | hwpx 양식(1건 1장)의 `(항목명)`·`{{항목명}}` placeholder 치환. `(한계고지)` 가 있으면 고지도 기입, 없으면 리포트 ⚠️ |
+| `<문서>-001.hwpx …` | hwpx 양식(1건 1장)의 `(항목명)`·`{{항목명}}` placeholder 치환. `(한계고지)` 가 있으면 고지도 기입, 없으면 리포트 ⚠️. 글자 서식이 갈린 곳에 걸쳐 치환 못 한 placeholder 도 리포트 ⚠️ |
 | `report.md` | 한계 고지 2종 + 규칙별 위반 건수(0 확인) + 자유텍스트 placeholder 잔여 |
 | `field-definitions.md` | 항목 정의표 — 항목별 개인정보 등급·재식별 준식별자 조합·근거 조문 (1교시 「판단 기준표」에 붙인다) |
 
@@ -145,6 +145,8 @@ python3 "$SKILL_DIR/scripts/synth.py" verify spec.json ./가상데이터/data.js
 
 - 항목별 분포만 닮고 항목 간 상관관계는 없다(예: 주진단과 재원일수 무관). 통계·경영 판단에 쓰지 않는다.
 - docx 양식 채우기는 이번 판에 없다(`format: docx` 는 스펙에서 허용되나 산출은 xlsx/csv 로 낸다).
+- hwpx 양식은 산출을 쓰기 전에 한 번 끝까지 풀어 본다 — ZIP 엔트리 500개·압축을 푼 크기 256MB 초과, 위조된 크기 정보, 경로 탐색 이름,
+  XML 의 DOCTYPE 이면 exit 2 로 멈추고 아무 산출도 만들지 않는다. 정상 양식이 크기로 걸리면 `ITDA_MAX_UNZIP_MB`·`ITDA_MAX_ZIP_ENTRIES` 로 올린다.
 - 프리셋의 개인정보 등급은 예측이다. 기관 내부 기준으로 `field-definitions.md` 를 고쳐 쓴다.
 
 ## 부록: Claude Code 확장 (선택)

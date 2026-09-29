@@ -11,11 +11,11 @@ allowed-tools: Read, Bash, Write, Glob, Grep, mcp__workspace__bash
 argument-hint: "[지역/테마] 또는 [동네 주제]"
 metadata:
   author: "Chinseok"
-  version: "0.1.4"
+  version: "0.1.5"
   category: "data-fetching"
   status: "experimental"
   created_at: "2026-06-01"
-  updated_at: "2026-09-27"
+  updated_at: "2026-09-28"
   tags: "restaurant, food-trend, hotplace, search-volume, surge, naver-datalab, searchad, eatery-trend"
 ---
 
@@ -107,7 +107,7 @@ Claude가 이 스킬을 실행할 때 반드시 따르는 행동 규칙입니다
 
 **권장 (비개발자 포함 모든 사용자) — 작업 폴더 `.env`에 키 등록:**
 
-작업 폴더(Cowork 연결 폴더 / Claude Code 프로젝트 루트) 루트에 `.env` 파일을 만들고 아래 다섯 줄을 넣어 두면 스킬이 자동으로 찾아 읽습니다. 파일명 별칭 `.env.txt`·`env.txt`·`환경변수.txt` 도 동일하게 탐색된다. `.env` 대신 셸 환경변수나 `~/.claude/settings.json` 의 `env` 로 설정해 두어도 로더가 자동으로 찾습니다.
+작업 폴더(Cowork 연결 폴더 / Claude Code 프로젝트 루트) 루트에 `.env` 파일을 만들고 아래 다섯 줄을 넣어 두면 스킬이 자동으로 찾아 읽습니다. 파일명 별칭 `.env.txt`·`환경변수.txt` 도 동일하게 탐색된다. `.env` 대신 셸 환경변수나 `~/.claude/settings.json` 의 `env` 로 설정해 두어도 로더가 자동으로 찾습니다.
 
 ```dotenv
 NAVER_CLIENT_ID=...
@@ -117,7 +117,7 @@ NAVER_SEARCHAD_SECRET_KEY=...
 NAVER_SEARCHAD_CUSTOMER_ID=...
 ```
 
-> **키 주입 (Claude 실행 규칙):** 자격증명 유무를 `ls`/`find` 등으로 **사전 점검하지 않는다** — 스크립트가 `.env`·`.env.txt`·`env.txt`·`환경변수.txt` 를 스스로 탐색하므로 **우선 실행**한다(셸 glob·검색 패턴은 별칭을 놓쳐 오탐한다: `.env*`→env.txt 누락, `*env*`→환경변수.txt 누락). 실행이 자격증명 누락으로 실패하면, 사용자 지침("Claude 지침"·`CLAUDE.md`)에 해당 변수가 선언돼 있는 경우 그 값을 환경변수로 전달해 재시도한다 — 예: `NAVER_CLIENT_ID=<...> ... python3 "$SKILL_DIR/scripts/main.py" ...`. 지침에도 없으면 해당 소스가 fail-loud로 사유를 표시한다. 수동 확인이 꼭 필요하면 파일명 4종(`.env`·`.env.txt`·`env.txt`·`환경변수.txt`)을 그대로 나열해 확인한다.
+> **키 주입 (Claude 실행 규칙):** 자격증명 유무를 `ls`/`find` 등으로 **사전 점검하지 않는다** — 스크립트가 `.env`·`.env.txt`·`환경변수.txt` 를 스스로 탐색하므로 **우선 실행**한다(셸 glob·검색 패턴은 별칭을 놓쳐 오탐한다: `.env*`·`*env*` 는 `환경변수.txt` 를, `*.env` 는 `.env.txt` 를 놓친다). 실행이 자격증명 누락으로 실패하면, 사용자 지침("Claude 지침"·`CLAUDE.md`)에 해당 변수가 선언돼 있는 경우 그 값을 환경변수로 전달해 재시도한다 — 예: `NAVER_CLIENT_ID=<...> ... python3 "$SKILL_DIR/scripts/main.py" ...`. 지침에도 없으면 해당 소스가 fail-loud로 사유를 표시한다. 수동 확인이 꼭 필요하면 파일명 3종(`.env`·`.env.txt`·`환경변수.txt`)을 그대로 나열해 확인한다.
 
 > **출처 표시 (Claude 실행 규칙):** 스크립트 stderr 에 `[자격증명] KEY ← 출처` 줄이 나오면, 그 내용을 사용자에게 짧게 알린다(예: "환경변수.txt 의 NAVER_CLIENT_ID 를 사용했습니다") — 사용자가 어느 설정파일이 쓰였는지 인지하게 하는 계약이다. 값은 어디에도 표시하지 않는다.
 

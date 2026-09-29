@@ -1,7 +1,7 @@
 {
   "name": "itda-travel",
   "description": "여행을 계획한다 — 고속열차 검색·예약(2026-09-01 SRT의 KTX 통합 반영), 항공권 최저가 비교, 숙소 요금 비교, 카카오맵 근처 장소, 여행지 유행 맛집 탐지.",
-  "version": "12.0.1",
+  "version": "13.0.0",
   "author": {
     "name": "스킬.잇다",
     "url": "https://github.com/itda-work"

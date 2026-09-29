@@ -11,12 +11,12 @@ allowed-tools: Read, Bash, Glob, Grep, mcp__workspace__bash
 argument-hint: "[xlsx 경로 또는 감사 요청]"
 metadata:
   author: "Chinseok"
-  version: "0.3.1"
+  version: "0.4.0"
   category: "data-tidy"
   status: "experimental"
   recommended: false
   created_at: "2026-07-07"
-  updated_at: "2026-09-27"
+  updated_at: "2026-09-28"
   tags: "xlsx, audit, formula, spreadsheet, openpyxl, qa, hardcode, incubating"
 ---
 
@@ -77,12 +77,23 @@ openpyxl은 수식을 **재계산하지 않는다**. `#REF!`·`#DIV/0!` 같은 *
 필요하면 `itda-data:xlsx-recalc` 로 재계산한 새 파일을 감사한다(LibreOffice 단독, 격리 프로필·timeout).
 수식 **문자열** 기반 검사(하드코드·off-by-one·순환참조·깨진 링크·복붙)는 이 한계와 무관하게 동작한다.
 
+## 입력 방어 (엑셀 파일)
+열기 전에 시트의 병합 목록을 먼저 읽는다(`scripts/xlsx_guard.py`, 원본 불변).
+- **거꾸로 적힌 병합**(`B1:A1`)은 openpyxl 이 파일 전체를 못 여는 원인이라 빼고 읽는다.
+- **거대한 병합**(병합 하나 1만 칸 초과, 시트 합계 20만 칸 초과)은 빼고 읽는다 — 열 전체 병합 하나로 수십 초·수백 MB 가 들었다.
+- **겹친 병합**·**병합에 가려진 값**(왼쪽 위가 아닌 칸의 값 — openpyxl 은 조용히 버린다)은 알린다.
+- 위 네 가지는 모두 category `입력` · Warning 발견으로 보고에 실린다. 조용히 넘기지 않는다.
+- 칸은 파일에 실제로 있는 것만 읽는다 — 먼 칸에 서식만 남은 시트(행 20만)도 즉시 끝난다.
+- date1904(맥 엑셀) 워크북의 날짜는 openpyxl 이 보정해 읽는다(테스트 고정).
+- 값이 꽉 찬 큰 시트는 여전히 무겁다: 10만 행×20열(200만 칸)에 약 14초·2.2GB(파일을 수식·값 두 번 연다).
+
 ## Prerequisites
 **파일 감사(크로스플랫폼)**: Python 3.10+ · openpyxl (`scripts/requirements.txt`).
 ```bash
 # Claude Code(플러그인 설치) = $CLAUDE_PLUGIN_ROOT / Cowork = 세션 마운트 탐색
 SKILL_DIR="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/skills/data-audit}"
-[ -n "$SKILL_DIR" ] || SKILL_DIR=$(find /sessions/*/mnt/.remote-plugins -type d -path '*/skills/data-audit' 2>/dev/null | head -1)
+# Cowork 는 플러그인 설치면 .remote-plugins, 단일 .skill 업로드면 .claude/skills 아래에 둔다
+[ -n "$SKILL_DIR" ] || SKILL_DIR=$(find /sessions/*/mnt/.remote-plugins /sessions/*/mnt/.claude/skills -type d -path '*/skills/data-audit' 2>/dev/null | head -1)
 # 둘 다 아니면(저장소 체크아웃 등) 이 SKILL.md 가 있는 디렉토리 절대경로를 그대로 사용
 ```
 ```powershell

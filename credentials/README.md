@@ -10,7 +10,10 @@
 | 층 | 위치 | 담는 내용 |
 |---|---|---|
 | 요약 | 각 스킬 `GUIDE.md` | 핵심 발급 단계 번호 목록(자족 가능 최소한) + ` ```dotenv ` 블록 + 키별 영향 |
-| 정본 | `skills/docs/credentials/<service>.md` | 가입 조건 · 상세 절차 · 키↔환경변수 매핑 · 한도/주의 · 사용 스킬 역링크 · Last Verified |
+| 정본 | `skills/docs/credentials/<service>.md` | 가입 조건 · 상세 절차 · 키↔환경변수 매핑(메일·캘린더 앱 비밀번호는 itda-hyve 등록 절차) · 한도/주의 · 사용 스킬 역링크 · Last Verified |
+
+메일·캘린더 계정(앱 비밀번호)은 환경변수·`.env` 가 아니라 itda-hyve 설정 창의 "계정" 화면에 등록한다 —
+그 정본의 §3 은 "키 ↔ 환경변수 매핑" 대신 "itda-hyve 에 등록하기" 다(itda-work/skills#23).
 
 스킬 전용 정보는 정본에 넣지 않는다 — 예: 공공데이터포털의 **데이터셋별 활용신청 링크**는
 스킬마다 다르므로 각 GUIDE 잔류(정본은 공통 가입·키 절차만).
@@ -22,8 +25,8 @@
 | 네이버 오픈API | [naver-openapi.md](naver-openapi.md) | `NAVER_CLIENT_ID` `NAVER_CLIENT_SECRET` | blog-seo · eatery-trend | 2026-06-10* |
 | 네이버 검색광고 API | [naver-searchad.md](naver-searchad.md) | `NAVER_SEARCHAD_ACCESS_KEY` `NAVER_SEARCHAD_SECRET_KEY` `NAVER_SEARCHAD_CUSTOMER_ID` | blog-seo · eatery-trend | 2026-06-10* |
 | 공공데이터포털 | [data-go-kr.md](data-go-kr.md) | `KO_DATA_API_KEY` | realestate · g2b · funding · realty-jeonse-gap · realty-supply · realty-deals · realty-price-stats · market-scan | 2026-06-10* |
-| 네이버 앱 비밀번호 | [naver-app-password.md](naver-app-password.md) | `NAVER_EMAIL` `NAVER_APP_PASSWORD` | email · calendar · work-plan | 2026-06-10* |
-| iCloud 앱 전용 비밀번호 | [icloud-app-password.md](icloud-app-password.md) | `ICLOUD_EMAIL` `ICLOUD_APP_PASSWORD` | email · calendar | 2026-06-10* |
+| 네이버 앱 비밀번호 | [naver-app-password.md](naver-app-password.md) | 환경변수 없음 — itda-hyve 계정 화면에 등록 | email · calendar · morning-brief · time-audit | 2026-06-10* |
+| iCloud 앱 전용 비밀번호 | [icloud-app-password.md](icloud-app-password.md) | 환경변수 없음 — itda-hyve 계정 화면에 등록 | email · calendar · morning-brief · time-audit | 2026-06-10* |
 | KOSIS 국가통계포털 | [kosis.md](kosis.md) | `KOSIS_API_KEY` | kosis · realty-supply · market-scan | 2026-06-10* |
 | 한국은행 ECOS | [ecos.md](ecos.md) | `ECOS_API_KEY` | ecos · market-scan | 2026-06-10* |
 | 금융감독원 DART | [dart.md](dart.md) | `DART_API_KEY` | dart · market-scan | 2026-06-10* |

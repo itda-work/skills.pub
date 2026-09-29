@@ -1,9 +1,11 @@
 """Markdown writer compatible with hyve's Go markdown writer."""
 from __future__ import annotations
 
+from html import escape as _html_escape
 from io import StringIO
 from pathlib import Path
 import posixpath
+import re
 
 from . import document as docir
 
@@ -142,7 +144,7 @@ class MarkdownWriter:
                 out.write("<tbody>\n")
             out.write("<tr>\n")
             for cell in row.cells:
-                txt = self._render_cell(cell.children).replace("\n", "<br>")
+                txt = self._render_cell_html(cell.children)
                 attrs = ""
                 if cell.col_span > 1:
                     attrs += f' colspan="{cell.col_span}"'
@@ -179,6 +181,40 @@ class MarkdownWriter:
                     parts.append(rendered)
         return "\n".join(parts)
 
+    def _render_cell_html(self, blocks: list[docir.Block]) -> str:
+        """HTML 표 셀 내용 (#3).
+
+        HTML 블록 안에서는 마크다운이 처리되지 않으므로 강조는 `<strong>`·`<em>` 로, 텍스트는
+        이스케이프해서 쓴다. 셀 안 중첩 표는 한 줄 HTML 로 그대로 넣는다 — 줄바꿈을 `<br>` 로
+        바꾸면 표 마크업이 글자처럼 보인다.
+        """
+        parts: list[str] = []
+        for block in blocks:
+            if isinstance(block, (docir.Paragraph, docir.Heading)):
+                rendered = render_inlines_html(block.children).strip()
+                rendered = _strip_br_edges(rendered)
+            elif isinstance(block, docir.Table):
+                rendered = self._table_html_inline(block)
+            else:
+                rendered = self._render_blocks([block], 1).strip().replace("\n", "<br>")
+            if rendered:
+                parts.append(rendered)
+        return "<br>".join(parts)
+
+    def _table_html_inline(self, table: docir.Table) -> str:
+        rows: list[str] = []
+        for row in table.rows:
+            cells: list[str] = []
+            for cell in row.cells:
+                attrs = ""
+                if cell.col_span > 1:
+                    attrs += f' colspan="{cell.col_span}"'
+                if cell.row_span > 1:
+                    attrs += f' rowspan="{cell.row_span}"'
+                cells.append(f"<td{attrs}>{self._render_cell_html(cell.children)}</td>")
+            rows.append("<tr>" + "".join(cells) + "</tr>")
+        return "<table>" + "".join(rows) + "</table>"
+
     def _render_blocks(self, blocks: list[docir.Block], depth: int) -> str:
         out = StringIO()
         for block in blocks:
@@ -195,20 +231,63 @@ def write_markdown(
 
 
 def render_inlines(inlines: list[docir.Inline]) -> str:
-    return "".join(render_inline(inline) for inline in inlines)
+    return "".join(render_inline(inline) for inline in _merge_adjacent_emphasis(inlines))
+
+
+_EMPHASIS_TYPES = (docir.Bold, docir.Italic, docir.Strikethrough)
+
+
+def _merge_adjacent_emphasis(inlines: list[docir.Inline]) -> list[docir.Inline]:
+    """글자모양 경계로 쪼개진 같은 강조를 하나로 잇는다 — `**무료****대여**` 잔재 방지(#3, #7).
+
+    밑줄은 마크다운·HTML 셀 어디서도 표시를 만들지 않으므로 먼저 포장을 푼다. 글자모양 순서상 밑줄이 가장
+    바깥이라(`Underline(Bold(Text))`) 풀지 않으면 `굵게 · 밑줄(굵게) · 굵게` 가 이어지지 못해 `**출****자**`,
+    `(****https://…` 가 남았다(#7). 빈 글자 조각(필드·하이퍼링크 컨트롤 자리)도 병합을 막으므로 건너뛴다.
+    이은 자식은 렌더 때 다시 이 함수를 거치므로 안쪽 강조까지 이어진다.
+    """
+    flat: list[docir.Inline] = []
+    for inline in inlines:
+        if isinstance(inline, docir.Underline):
+            flat.extend(inline.children)
+        elif isinstance(inline, docir.Text) and inline.value == "":
+            continue
+        else:
+            flat.append(inline)
+    merged: list[docir.Inline] = []
+    for inline in flat:
+        last = merged[-1] if merged else None
+        if last is not None and type(last) is type(inline) and isinstance(inline, _EMPHASIS_TYPES):
+            merged[-1] = type(inline)(children=[*last.children, *inline.children])
+        else:
+            merged.append(inline)
+    return merged
+
+
+_MD_EDGE_RE = re.compile(r"^(\s*)(.*?)(\s*)$", re.DOTALL)
+
+
+def _wrap_md(marker: str, inner: str) -> str:
+    """강조 표시 안쪽 끝에 공백·줄바꿈이 오면 마크다운이 강조로 읽지 않는다 — 태그 밖으로 뺀다.
+    내용이 비면 표시를 만들지 않는다(빈 `****` 잔재 방지, #3)."""
+    lead, body, trail = _MD_EDGE_RE.match(inner).groups()
+    if not body:
+        return lead + trail
+    return f"{lead}{marker}{body}{marker}{trail}"
 
 
 def render_inline(inline: docir.Inline) -> str:
     if isinstance(inline, docir.Text):
-        return inline.value
+        # 원문 별표(각주 `*`·가림 `****`)는 강조 구문과 섞이면 강조가 잘못 짝지어지거나 줄머리 `* ` 가 목록이 된다 —
+        # 글자로 남도록 이스케이프한다(#8). HTML 셀 경로(_render_inline_html)는 마크다운이 아니라 불필요.
+        return inline.value.replace("*", "\\*")
     if isinstance(inline, docir.Bold):
-        return "**" + render_inlines(inline.children) + "**"
+        return _wrap_md("**", render_inlines(inline.children))
     if isinstance(inline, docir.Italic):
-        return "*" + render_inlines(inline.children) + "*"
+        return _wrap_md("*", render_inlines(inline.children))
     if isinstance(inline, docir.Underline):
         return render_inlines(inline.children)
     if isinstance(inline, docir.Strikethrough):
-        return "~~" + render_inlines(inline.children) + "~~"
+        return _wrap_md("~~", render_inlines(inline.children))
     if isinstance(inline, docir.Link):
         return "[" + render_inlines(inline.children) + "](" + inline.url + ")"
     if isinstance(inline, docir.Code):
@@ -218,10 +297,56 @@ def render_inline(inline: docir.Inline) -> str:
     return ""
 
 
+def render_inlines_html(inlines: list[docir.Inline]) -> str:
+    html = "".join(_render_inline_html(inline) for inline in _merge_adjacent_emphasis(inlines))
+    # 글자모양 경계로 쪼개진 같은 강조를 잇는다: `<strong>무료</strong><strong>대여</strong>` → 하나
+    return _ADJACENT_TAG_RE.sub("", html)
+
+
+_ADJACENT_TAG_RE = re.compile(r"</(strong|em|del)><\1>")
+_EDGE_RE = re.compile(r"^((?:\s|<br>)*)(.*?)((?:\s|<br>)*)$", re.DOTALL)
+
+
+def _wrap_html(tag: str, inner: str) -> str:
+    """앞뒤 공백·줄바꿈은 태그 밖으로 뺀다. 내용이 비면 태그를 만들지 않는다(빈 `****` 잔재 방지)."""
+    lead, body, trail = _EDGE_RE.match(inner).groups()
+    if not body:
+        return lead + trail
+    return f"{lead}<{tag}>{body}</{tag}>{trail}"
+
+
+def _render_inline_html(inline: docir.Inline) -> str:
+    if isinstance(inline, docir.Text):
+        return _html_escape(inline.value, quote=False).replace("\r\n", "<br>").replace("\n", "<br>")
+    if isinstance(inline, docir.Bold):
+        return _wrap_html("strong", render_inlines_html(inline.children))
+    if isinstance(inline, docir.Italic):
+        return _wrap_html("em", render_inlines_html(inline.children))
+    if isinstance(inline, docir.Underline):
+        return render_inlines_html(inline.children)
+    if isinstance(inline, docir.Strikethrough):
+        return _wrap_html("del", render_inlines_html(inline.children))
+    if isinstance(inline, docir.Link):
+        return f'<a href="{_html_escape(inline.url)}">{render_inlines_html(inline.children)}</a>'
+    if isinstance(inline, docir.Code):
+        return "<code>" + _html_escape(inline.value, quote=False) + "</code>"
+    if isinstance(inline, docir.LineBreak):
+        return "<br>"
+    return ""
+
+
+def _strip_br_edges(value: str) -> str:
+    lead, body, trail = _EDGE_RE.match(value).groups()
+    return body
+
+
 def _table_needs_html(table: docir.Table) -> bool:
+    """병합 셀이나 셀 안 표가 있으면 HTML 표로 쓴다 — GFM 셀은 표를 담을 수 없다(#3)."""
     for row in table.rows:
         for cell in row.cells:
             if cell.col_span > 1 or cell.row_span > 1:
+                return True
+            if any(isinstance(child, docir.Table) for child in cell.children):
                 return True
     return False
 

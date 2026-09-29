@@ -4,9 +4,9 @@ description: >
   업무 문서의 영업기밀(거래처명·프로젝트코드·담당자·단가 등)을 외부 AI에 넣기 전 로컬에서
   결정론적으로 마스킹하고, AI 산출물의 토큰을 원값으로 되돌리는 왕복 게이트입니다.
   "이 견적서 마스킹해서 검토해줘", "거래처명 가리고 원가절감안 분석해줘",
-  "AI가 돌려준 검토서 원래 이름으로 복원해줘"처럼 말하면 됩니다.
-  사용자 용어집으로 무엇을 가릴지 통제하고, 잔존 0을 검증하며, 무엇을 치환했는지 감사 기록을 남깁니다.
-  [책임 경계] 본 스킬은 용어집 기반 영업기밀 마스킹·왕복 복원 전담 — itda-data:pii-redact 는 정형 PII 무상태 마스킹, itda-data:synthetic-data 는 실제 데이터 없이 같은 구조의 가상 데이터 생성.
+  "AI가 돌려준 검토서 원래 이름으로 복원해줘", "이 한글(hwpx) 파일 거래처명 가려서 줘"처럼 말하면 됩니다.
+  텍스트와 한글(HWPX)을 서식 그대로 가리고, 용어집으로 대상을 통제하며 잔존 0 검증과 감사 기록을 남깁니다.
+  [책임 경계] 본 스킬은 용어집 기반 영업기밀 마스킹·복원 전담 — itda-data:pii-redact 는 정형 PII 마스킹, itda-data:synthetic-data 는 가상 데이터 생성.
 license: MIT
 compatibility: "Python 3.10+"
 user-invocable: true
@@ -14,12 +14,12 @@ allowed-tools: Read, Bash, Write, Glob, mcp__workspace__bash
 argument-hint: "<마스킹할 문서 파일 경로> [--glossary <용어집.json>]"
 metadata:
   author: "Chinseok"
-  version: "0.2.1"
+  version: "0.3.3"
   category: "data-analysis"
   status: "experimental"
   created_at: "2026-07-16"
-  updated_at: "2026-09-05"
-  tags: "redaction, masking, roundtrip, glossary, trade-secret, deterministic, stdlib, korean, audit"
+  updated_at: "2026-09-28"
+  tags: "redaction, masking, roundtrip, glossary, trade-secret, deterministic, stdlib, korean, audit, hwpx"
 ---
 
 # biz-redact
@@ -44,7 +44,7 @@ metadata:
 
 ## [HARD] 철칙 (반드시 지킨다)
 
-1. **평문 기밀 파일 4종 — 원문·`glossary.json`·`map.json`·`restored.txt` — 을 에이전트가 Read 하지 않는다.** `mask`/`verify`/`restore`는 **Bash로 스크립트만 실행**한다. 에이전트가 읽어도 되는 **신뢰 산출물**은 `masked.txt`·`report.json`·`verify`/`restore` 리포트·`audit.jsonl` 넷뿐이다(전부 기밀값 미포함). 사용자가 원문을 대화에 붙여넣으려 하면 **파일 경로로 달라고 안내한다** — 붙여넣는 순간 이미 유출이며, 그 자기모순을 막는 것이 이 스킬의 존재 이유다. 복원 결과 확인도 `restore` 리포트(변형 0·복원 건수)로 하고, `restored.txt`는 사용자가 로컬에서 연다.
+1. **평문 기밀 파일 4종 — 원문·`glossary.json`·`map.json`·`restored.txt`(HWPX 는 `restored.hwpx`) — 을 에이전트가 Read 하지 않는다.** `mask`/`verify`/`restore`는 **Bash로 스크립트만 실행**한다. 에이전트가 읽어도 되는 **신뢰 산출물**은 `masked.txt`·`report.json`·`verify`/`restore` 리포트·`audit.jsonl` 넷뿐이다(전부 기밀값 미포함). 사용자가 원문을 대화에 붙여넣으려 하면 **파일 경로로 달라고 안내한다** — 붙여넣는 순간 이미 유출이며, 그 자기모순을 막는 것이 이 스킬의 존재 이유다. 복원 결과 확인도 `restore` 리포트(변형 0·복원 건수)로 하고, `restored.txt`는 사용자가 로컬에서 연다.
    > ⚠️ 이 경계는 **지시-강제(instruction-enforced)** 다 — 도구 권한으로 완전히 차단되지 않는다. `Read`는 신뢰 산출물(`masked.txt`·`report.json`) 열람에 필요해 허용되므로, 같은 `Read`로 원문·`map.json`을 여는 것을 기술적으로 막지는 못한다. 이 [HARD] 철칙을 지키는 것이 유일한 방어선이며, 지키지 않으면 경계가 무효가 된다. (스크립트가 만드는 `map.json`·`restored.txt`는 파일 권한도 `0600`으로 좁혀 타 사용자 열람을 막는다.)
 2. **`verify` 잔존 > 0 인 마스킹본은 AI 과제에 절대 쓰지 않는다.** 잔존이 발견되면 **중단하고 보고**한다(용어집 보강 안내). 잔존한 채로 AI에 넘기면 게이트가 무효다.
 3. **평문 기밀 4종과 `_workspace/` 산출물은 커밋하지 않는다.** 저장소 커밋 금지선이다(합성 `references/glossary-template.json`만 예외).
@@ -88,6 +88,12 @@ py -3 "$env:SKILL_DIR\scripts\biz_redact.py" mask <input.txt> --glossary <glossa
 #   --now: 타임스탬프 고정 주입(테스트 결정론용; 미지정 시 현재 시각)
 ```
 
+- **한글(HWPX) 입력** — 파일 내용으로 HWPX 를 알아보고(확장자 무관) `masked.hwpx`(서식·표·그림 그대로, 기밀 자리만 토큰)·
+  `masked.txt`(AI 에 넘길 본문 평문)·`map.json`·`report.json` 을 만든다. 글자모양이 달라 쪼개진 기밀("가나다"+"엘리베이터")도
+  문단 단위로 잡고, 문단을 넘어서는 잡지 않는다. **본문 밖**(미리보기 글자·메타데이터)도 같이 가리고 미리보기 그림은 흰 그림으로
+  바꾼다. 치환 뒤 **파일 안 모든 텍스트 엔트리**를 다시 훑어 잔존이 있으면 exit 1 로 아무것도 만들지 않는다(리포트
+  `container.residual_by_entry` 에 엔트리 이름·건수만). 문서 속 그림 수는 `container.images_unscanned` — **그림 속 글자는 가리지 못한다**고
+  사용자에게 말한다. `.hwp`(HWP 5 바이너리)는 받지 않는다 — 한글에서 HWPX 로 저장해 달라고 한다.
 - `mask`는 치환 직후 **자체 잔존 검증을 자동 실행**한다. 잔존 > 0이면 exit 1(알고리즘 자기모순 = 에러 표면화)이고, 신뢰 산출물은 디스크에 승격되지 않는다.
 - 에이전트는 stdout의 `report.json`(기밀값 미포함)을 읽어 `by_category`(카테고리별 건수)·`residual_count`·`result`를 사용자에게 해석해 전달한다. `masked.txt`·`map.json`은 **경로만** 안내한다.
 
@@ -173,7 +179,12 @@ python3 "$SKILL_DIR/scripts/biz_redact.py" restore <ai_output.txt> --map <map.js
 - **토큰 변형 시 안전 실패** — 한국어 카테고리 라벨을 토큰에 넣는 것은 확대 적용이라 LLM이 라벨을 번역·변형할 여지가 있다. 이 경우 복원은 조용히 틀리지 않고 **변형 감지로 exit 1(안전 실패)** 한다. 변형이 관찰되면 AI에게 토큰 보존을 다시 지시하거나 재실행한다.
 - **유니코드 정규화(NFC) — 안전 우선** — 입력 텍스트·표면형을 처리 전 **NFC로 정규화**한다. macOS 등에서 흔한 NFD(분해형) 한글 문서에서 등재 기밀이 매칭 실패로 조용히 안 가려지던(위음성) 것을 막기 위함이다(**기밀 마스킹 > 원문 바이트 보존**). 이 때문에 **바이트 수준 왕복 무손실(mask→restore가 원문과 byte-identical)은 NFC 문서에만 성립**한다 — 원문이 NFD였으면 복원본은 NFC라 원문 바이트와 다를 수 있다(NFC로는 동일). 원문이 NFD였던 경우 `mask`·`verify`·`restore` 리포트의 `normalized: true` 플래그로 그 사실을 정직하게 표기한다.
 - **겹치는 등재 표면형의 파편 잔존** — 등재 표면형끼리 겹칠 때(예: "거래처지원"과 "지원"이 둘 다 등재), 길이 내림차순 치환으로 긴 쪽이 먼저 토큰화되면 짧은 쪽의 일부가 잘려나가 **의미상 남은 파편이 완결 표면형이 아니라 잔존 스캔에 0으로 보일 수 있다**. 잔존 스캔은 "완결 표면형의 미치환"을 잡지, 부분문자열 파편까지 재조립하지 않는다. 겹치는 표면형은 용어집에서 서로 포함 관계가 되지 않게 정리하고, 필요하면 마스킹본을 육안 확인한다(상세는 `references/glossary-format.md`).
-- **텍스트 한정** — 이미지·스캔 속 기밀은 다루지 않는다.
+- **텍스트·HWPX 한정** — 이미지·스캔 속 기밀, HWPX 문서 속 그림의 글자는 다루지 않는다(그림 수만 리포트). `.hwp`·PDF·DOCX 는 받지 않는다.
+- **안전하지 않은 HWPX 는 받지 않는다** — ZIP 엔트리 500개·압축을 푼 크기 256MB 초과, 위조된 크기 정보, 경로 탐색 이름,
+  XML 의 DOCTYPE 이면 exit 2(무산출). DOCTYPE 은 정상 한글 문서에 없고, 엔티티(`&x;`)에 숨긴 기밀은 글자 매칭도 잔존 게이트도
+  못 보므로 통째로 거부한다. 정상 문서가 크기로 걸리면 `ITDA_MAX_UNZIP_MB`·`ITDA_MAX_ZIP_ENTRIES` 로 상한을 올린다.
+- **HWPX 복원은 글자 분포가 바뀐다** — 여러 run 에 걸친 기밀은 첫 run 에 토큰(복원 시 원값)이 들어가므로, 원래 기밀 안에서 글자모양이
+  달랐다면 복원본에서는 한 모양이 된다. 본문 글자열은 원문과 같다(테스트로 고정).
 
 ---
 

@@ -1,5 +1,44 @@
 # Changelog — itda-email
 
+## [0.38.0] — 2026-09-28 (#34)
+
+### Added
+
+- 보낸·임시·휴지통·스팸 메일함을 이름 대신 특수 용도(`"\\Sent"`·`"\\Drafts"`·`"\\Trash"`·`"\\Junk"`)로 지목하는 안내(itda-hyve 0.9.2).
+  "보낸메일함 보여줘" 에서 `imap_list_mailboxes` 한 번이 줄어든다. 옛 판(`invalid_input`·`not_found`)이면 이름 확인으로 돌아가고 업데이트를 안내한다.
+  최소 판은 0.9.0 그대로 — 이 기능 밖의 계약은 바뀌지 않았다.
+- `references/netbridge.md` 사본 동기화(읽기 도구 `save_as`·특수 용도 메일함 절).
+
+## [0.37.0] — 2026-09-28 (#20)
+
+### Removed
+
+- 남아 있던 옛 IMAP 직접 접속 읽기 스크립트 9개(`check_env`·`check_connection`·`read_email`·`list_folders`·`reply_context`·`email_providers`·`email_state`·`email_imap_utf7`·`diagnose_smtp`) — `.env`·환경변수의 계정 비밀번호로 메일 서버에 직접 붙던 경로다. 마지막 사용처였던 `inbox-triager` 에이전트를 itda-hyve 메일 읽기 도구로 옮겨 실행 경로가 0이 됐다. 이 스킬 폴더에 `scripts/` 가 없다.
+- 그 스크립트의 테스트 23개 파일(435건)·`imap_mock.py`·`fixtures/*.eml` 3개, email 안의 `env_loader` 사본 테스트(`test_env_loader.py` — 정본은 `shared/tests` 가 지킨다).
+- 삭제 전 참조 조사: https://github.com/itda-work/skills/issues/20#issuecomment-5863481713
+
+### Added
+
+- `tests/test_inbox_triager_agent.py` — `inbox-triager` 의 `tools` 가 itda-hyve 메일 읽기 도구 4개(Cowork·Claude Code 이름)+`ToolSearch` 와 정확히 같고(셸·파일 읽기·`smtp_send`·`imap_save_attachment` 없음), 본문이 옛 스크립트·`.env`·환경변수를 실행 경로로 지목하지 않으며, 이 스킬에 `scripts/` 가 없음을 고정한다.
+
+## [0.36.0] — 2026-09-28 (#19)
+
+### Removed
+
+- 옛 IMAP/SMTP 직접 접속 스크립트 17개 — 발송·초안·폴더 조작 계열(`send_email`·`send_outbox`·`send_draft`·`save_draft`·`read_draft`·`list_drafts`·`delete_draft`·`_draft_imap`·`email_compose`·`attachment_validator`·`flag_email`·`mark_spam`·`move_email`·`trash_email`·`manage_folder`·`_imap_common`)과 `thread_status`(morning-brief 0.3.0 이 itda-hyve 로 옮겨 사용처 없음). 이 스킬 본문은 itda-hyve 도구만 쓰고, 저장소 어디에서도 실행 경로가 아니었다. 관련 테스트 21개 파일 삭제, 섞인 4개 파일은 해당 케이스만 걷어냈다(738 → 435건).
+- 삭제 전 참조 조사: https://github.com/itda-work/skills/issues/19#issuecomment-5863283032
+
+### Kept
+
+- 읽기 경로 9개(`check_env`·`check_connection`·`read_email`·`list_folders`·`reply_context` + import 폐포 `email_providers`·`email_state`·`email_imap_utf7`, 그리고 `check_connection` 오류 안내가 가리키는 `diagnose_smtp`) — 플러그인 에이전트 `inbox-triager` 가 아직 이 스크립트를 실행한다. 에이전트를 itda-hyve 로 옮기면 함께 지운다(후속).
+
+## [0.35.2] — 2026-09-27 (#12)
+
+### Changed
+
+- 첨부 읽기 안내를 문서 스킬 계약과 맞췄다 — HWP·HWPX 는 `itda-doc:hwpx` 읽기 경로(병합·중첩 표·글상자 보존, 바이너리 `.hwp` 포함),
+  스캔 쪽이 있는 PDF 는 `itda-doc:pdf-context-refinery` 쪽별 판정. 그 스킬이 없거나 못 읽은 쪽이 있으면 요약에 그 사실을 적는다(읽은 척 금지).
+
 ## [0.35.1] — 2026-09-27
 
 ### Changed
