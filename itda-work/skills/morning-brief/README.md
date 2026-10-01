@@ -31,14 +31,14 @@
 | D7 | playwright 스크린샷으로 Verify | **정적 검증이 정본**, 시각 축은 `INCONCLUSIVE` | Cowork 에 playwright·chromium·`/opt/pw-browsers` 가 없다(Phase 0 실측 확정). 상류 Build 의 렌더 체크 절은 통째로 미채택 |
 | D8 | 팔레트 wash `#F9F9F7` / clay `#C6613F` | **스타일 4종의 색 토큰**(라이트·다크 한 벌씩, 인쇄는 늘 라이트) — 기본 타임라인은 청록 accent `#0F766E` | 0.10.0 까지는 먹·한지 톤(`#FBF8F1`·`#22201C`) + 단청 주홍 `#B3492D` 한 벌이었다. #42 에서 사용자가 고른 시안(C·A·B·E)의 색으로 바꾸고 다크 모드를 더했다(D18) |
 | D9 | "오늘 마감"·"사라진 겹침"·비주최자 prep·spare 검색 | 없음 | 소스가 없거나(마감·회차 간 상태) 앵커가 약하다. 지어내느니 뺀다 |
-| D10 | Sections 는 연결된 아무 도구나, **요청한 것만** | allowlist **2종**(날씨·환율), argv 확정. **날씨는 기본 적용**(`Sections: none` 으로 제외) | 교차 플러그인 자유 호출은 계약이 없다. 날씨는 아침에 가장 먼저 궁금한 것이라 매번 요청하게 두지 않는다(마스터 결정 2026-09-03 — v4 "Sections 없음=0" 반전). 시드·수집 실패 시엔 다른 데서 끌어오지 않고 경고만 남긴다. 날씨 위치는 itda-hyve `location`(batch 안), 예보는 weather-here 가 샌드박스에서 직접(실패 때만 `http_request` 한 번 — #40, 아래 Sections 판단) |
+| D10 | Sections 는 연결된 아무 도구나, **요청한 것만** | allowlist **2종**(날씨·환율), argv 확정. **날씨는 기본 적용**(`Sections: none` 으로 제외) | 교차 플러그인 자유 호출은 계약이 없다. 날씨는 아침에 가장 먼저 궁금한 것이라 매번 요청하게 두지 않는다(마스터 결정 2026-09-03 — v4 "Sections 없음=0" 반전). 시드·수집 실패 시엔 다른 데서 끌어오지 않고 경고만 남긴다. 날씨 위치는 itda-hyve `location`(batch 안), 예보는 batch 밖에서 weather-here `--weather-request` 인자로 `http_request` 한 번(#46 — 0.12.3 까지는 샌드박스 직접, 실패 때만 `http_request`) |
 | D11 | 인용 축자 요구가 문서 규율 | `verify.py` 가 앵커 1:1 + 인용 **바이트 대조**로 집행 | "축자로 쓰라"는 지킬 수 없다 — 지켰는지 재는 것이 답이다 |
 | D12 | 예약 작업을 스킬이 만든다 | **템플릿 제공까지** | 예약 자동 생성은 이 판의 범위 밖. 무인 판별 신호가 없어 프롬프트 명시가 유일 |
 | D13 | RTL 지원 | 없음 | 한국어 전용 |
 | D14 | 페이지 하단에 아무것도 두지 않는다(footer 금지) | 접이식 **「출처」 절** — 수집 요약(역할·프로바이더·계정 주소)·원본 목록·항목↔원본 링크·미표시 후보 표기 | 상류는 브리핑의 여백을 지키려 footer 를 금지하지만, 우리 데이터는 **연결된 커넥터가 아니라 사용자 개인 계정**에서 온다 — 무엇을 어느 계정에서 읽었고 무엇을 안 보여줬는지 말할 수 있어야 신뢰가 선다. 기본 닫힘이라 여백은 지켜지고, 공유 시엔 `--no-sources` 로 뺀다. candidates.json 만으로 코드가 만들어 LLM 무접촉 |
 | D15 | 소스가 없으면 커넥터 제안 카드 | **샘플 모드** — 명시 요청(`샘플 브리핑`)에만 지어낸 시나리오로 같은 페이지를 그리고, 최상단 상시 띠·출처 계정란 「샘플 · 에이전트 생성 시나리오」·앵커 `provider:"sample"` 로 샘플임을 못 지우게 박는다 | 상류는 미연결 역할에 연결 제안 카드를 띄우지만 우리에겐 제안할 커넥터가 없다(D4). 그래도 "이 스킬이 뭘 주는지" 는 보여줄 수 있어야 도입 판단이 선다 — 카드 대신 **완성된 형식 한 장**으로 답한다. 계정 부재 시 자동 대체는 금지(no-silent-fallback): 계정 0 페이지는 안내 한 줄만 두고, 전환은 사용자의 명시 요청으로만 |
 | D16 | 하루의 모양(지형 한 획 + 세 마디)과 두 목록(「지금 당신이 필요한 일」·「정리된 일」)을 LLM 이 고르고 쓴다 | **오늘 일정 전체 → 일정별 관련 메일 → 일정과 무관한 미회신(제목·보낸 사람·요약)** 세 목록을 **코드가** 고르고 그린다. LLM 은 셋째 목록의 요약 문장만. 내일 일정·prep·취소 목록·재회신 목록·관련 사람 정보 없음 | 사용자 피드백(2026-09-28, itda-work/skills#38) — "하루를 세 마디로" 는 러프했고 원하는 것은 일정과 그 일정에 걸린 메일을 한눈에 보는 것이었다. 고르기를 코드로 옮기자 목록↔버킷 대조(구 ② 버킷 축)·acts 개수 축이 필요 없어졌다. 관련 사람 정보는 사용자 결정으로 넣지 않는다 |
-| D17 | (상류 해당 없음 — 수집 방식) | **batch 한 번**: `accounts_list`·`location`·`calendar_events`/`imap_search` INBOX(`include_snippet: 300`)/`imap_search` `\Sent` 를 `account: "*"`(파일 이름 `{n}`)로 한 계획 파일에. **`location` 은 정밀(OS) 그대로 같은 batch** — `ip_only`·따로 부르기 둘 다 택하지 않았다. 예보는 batch 밖(weather-here 직접) | batch 는 가장 느린 호출을 기다린다. `location` 의 긴 대기(권한 창 25초 + 위치 8초)는 **위치 권한을 아직 정하지 않았을 때만**, itda-hyve 프로세스당 한 번 생긴다(`location/os_darwin.go` 판독 — 두 번째부터는 창 없이 바로 IP). 권한이 정해진 뒤에는 10분 안의 OS 위치면 즉시, 아니면 8초 상한, 결과는 10분 캐시 — 메일 수집(첫 로그인 최대 6.5초, itda-hyve#21 실측)과 겹친다. **따로 부르면** 매일 바퀴 하나가 늘어 모델 대기(0.6.0 실측 72초·33초)가 돌아오고, **`ip_only` 로 바꾸면** 매일 시·도부터 틀릴 수 있다(#37 — 대전 KT 회선이 성남). 첫 회차 30초 남짓은 사용자가 권한 창에 답하는 시간이기도 하다. 예보는 좌표가 `location` 결과에 달려 한 batch 에 못 넣는다 — weather-here 의 기본(샌드박스 직접, 2026-09-28 Cowork 실측 성공)으로 받고 막히면 `http_request` 한 번. 본문은 snippet(200·500자 시간이 같아 300자)으로 쓰고 snippet 이 없는 메일만 예외 바퀴의 `imap_fetch` |
+| D17 | (상류 해당 없음 — 수집 방식) | **batch 한 번**: `accounts_list`·`location`·`calendar_events`/`imap_search` INBOX(`include_snippet: 300`)/`imap_search` `\Sent` 를 `account: "*"`(파일 이름 `{n}`)로 한 계획 파일에. **`location` 은 정밀(OS) 그대로 같은 batch** — `ip_only`·따로 부르기 둘 다 택하지 않았다. 예보·환율은 batch 밖(형제 스킬이 낸 `call` 로 `http_request` 한 번씩) | batch 는 가장 느린 호출을 기다린다. `location` 의 긴 대기(권한 창 25초 + 위치 8초)는 **위치 권한을 아직 정하지 않았을 때만**, itda-hyve 프로세스당 한 번 생긴다(`location/os_darwin.go` 판독 — 두 번째부터는 창 없이 바로 IP). 권한이 정해진 뒤에는 10분 안의 OS 위치면 즉시, 아니면 8초 상한, 결과는 10분 캐시 — 메일 수집(첫 로그인 최대 6.5초, itda-hyve#21 실측)과 겹친다. **따로 부르면** 매일 바퀴 하나가 늘어 모델 대기(0.6.0 실측 72초·33초)가 돌아오고, **`ip_only` 로 바꾸면** 매일 시·도부터 틀릴 수 있다(#37 — 대전 KT 회선이 성남). 첫 회차 30초 남짓은 사용자가 권한 창에 답하는 시간이기도 하다. 예보는 좌표가 `location` 결과에 달려 한 batch 에 못 넣는다 — weather-here 가 낸 호출 인자로 `http_request` 한 번(#46 — 스크립트가 네트워크를 열지 않는다). 본문은 snippet(200·500자 시간이 같아 300자)으로 쓰고 snippet 이 없는 메일만 예외 바퀴의 `imap_fetch` |
 | D18 | 한 모양(두 밴드·640px 한 단) | **보고서 스타일 4종**(`render.py --style`): `timeline`(기본 — 세로 시간축, 길이 비례 블록, 1시간 이상 빈 시간, 관련 메일은 일정 옆) · `memo`(결재 메모) · `desk`(지표 띠·표) · `print`(A4 두 단). ② 일정별 관련 메일은 따로 절이 아니라 **그 일정 곁**에 붙는다. 시안 D(카드형)는 넣지 않았다 | 사용자 결정(2026-09-29, itda-work/skills#42) — 시안 5종 중 C 를 기본, A·B·E 를 옵션으로. 모양은 사용자 발화에서 **후보를 읽기 전에** 고른다. 네 스타일은 같은 조각 함수(일정 제목·관련 메일 목록·미회신 항목·대량 발송·출처)를 다른 자리에 놓을 뿐이라 `data-mb-*` 표지와 내용이 같고, verify 는 스타일과 무관하게 같은 검사를 한다(`style-declared` 만 추가). 웹 폰트는 여전히 싣지 않는다(D6) |
 
 ## 상류 반증 대조
@@ -99,6 +99,7 @@
   - 예보는 batch 밖으로 — 좌표 의존이라 한 batch 에 넣을 수 없다. #38 에서 "샌드박스 네트워크에 기대지 않는다" 로 둘째 바퀴에 넣었던 것을 뒤집는다.
     근거는 weather-here 의 2026-09-28 Cowork 실측(Open-Meteo 응답)과 실패 시 `http_request` 한 번의 대체 경로다. `shared/netbridge.md` 의 "샌드박스는 무인증 API 도
     막힌다" 서술과 어긋나므로 **Cowork 재실측 항목**이다 — 막히면 매 회차 도구 호출이 하나 느는 것이지 날씨가 틀리는 것은 아니다.
+    (0.12.4 에서 다시 뒤집었다 — weather-here 0.15.0 이 직접 호출을 지워 예보는 늘 `http_request` 한 번이다, itda-work/skills#46.)
   - 요약 재료를 1000자 본문에서 300자 snippet 으로 줄였다(itda-hyve 실측: 200·500자 시간이 같다 — 비용은 통당 왕복). snippet 이 없는 메일만 예외 `imap_fetch`.
     `snippet_truncated` 는 흔하다(google 50/50) — 그것으로 본문을 받으면 예외가 기본이 된다. 후보에 `body_partial` 로 남기고 모델은 앞부분으로 알 수 있는 것만 쓴다.
   - `{n}` 은 `accounts_list` 순번(건너뛴 계정도 번호를 차지)이라 `accounts.json` 순번과 같다 — 파일 이름 계약(`inbox-<n>.json`)을 바꾸지 않았고,
@@ -228,12 +229,13 @@ itda-work/itda-hyve#17). 계정별 호출은 `account: "*"` + `save_as`·`id` �
 |---|---|---|
 | `accounts.json` | `accounts_list` | `accounts[].name`·`email`·`calendar.supported` |
 | `location.json` | `location`(날씨 절이 있고 `--weather-place` 가 없을 때) | `source`·`lat`·`lon`(0.05° 격자) — 판정은 weather-here `--geo-input` |
-| `weather-forecast.json` | (예외) 샌드박스에서 Open-Meteo 가 실패했을 때만 모델이 `http_request` 한 번(weather-here `--weather-request` 인자) | weather-here `--weather-input` |
+| `weather-here/openmeteo-<위도>_<경도>-<시각>.json` | 모델이 `http_request` 한 번(weather-here `--weather-request` 가 낸 `call` 그대로 — 이름도 그것이 정한다) | weather-here `--weather-input` |
+| `exrate/daily-USD-<시작>-<오늘>-<받은 시각>.xml` | 모델이 `http_request` 한 번(exchange-rate `plan --date today` 가 낸 `call` 그대로) | exchange-rate `show --input` |
 | `calendar-<n>.json` | `calendar_events` 오늘 00:00 ~ 내일 00:00(+09:00), `expand: true`, `limit: 1000` | `events[]`(`uid`·`calendar`·`summary`·`start`·`end`·`all_day`·`status`·`location`·`rrule`·`recurrence_id`·`has_attendees`·`organizer{email}`·`attendees[{email}]`·`attendees_truncated`)·`errors[]`·`truncated` |
 | `inbox-<n>.json` | `imap_search` INBOX, `since` = 오늘 −2일, `limit: 200`, `include_snippet: 300` | `messages[]`(`uid`·`date`·`from`·`to`·`subject`·`message_id`·`in_reply_to`·`bulk`·`bulk_reason`·`snippet`·`snippet_truncated`)·`total_matched` |
 | `sent-<n>.json` | `imap_search` `mailbox: "\Sent"`, `since` = 오늘 −30일, `limit: 200` | 같음 + `special_use` |
 | `bodies-<n>.json` | (예외) `imap_fetch` INBOX `uids`(③ 목록 중 snippet 이 없는 메일만, 계정당 한 호출), `max_body_chars: 1000` | `messages[].uid`·`text`, `errors[]` — 있으면 snippet 보다 먼저 |
-| `section-날씨.txt`·`section-환율.txt` | 형제 스킬 `weather-here`(`--geo-input location.json`, 실패 때 `--weather-input weather-forecast.json` 또는 지역명)·`exchange-rate` 출력 | 평문 |
+| `section-날씨.txt`·`section-환율.txt` | 형제 스킬 `weather-here`(`--geo-input location.json` 또는 지역명 + `--weather-input <예보 파일>`)·`exchange-rate`(`show --date today --input <환율 파일>`) 출력 | 평문 |
 
 도구 실패는 같은 이름에 `{"error": {"code","message"}}`(batch `results[].error` 를 모델이 쓴다). 파일이 아예 없으면 `input_missing`.
 `--input` 은 폴더 대신 `{"<파일 이름>": <내용>}` 묶음 JSON 한 개도 받는다.
@@ -263,12 +265,11 @@ itda-work/itda-hyve#17). 계정별 호출은 `account: "*"` + `save_as`·`id` �
 
 | 절 | 외부 API | 키 | 판단 |
 |---|---|---|---|
-| 날씨 | Open-Meteo Forecast(`api.open-meteo.com`) + itda-hyve `location` | 없음 | 위치는 batch 안의 `location`(OS 위치 → IP 합의, #37 — IP 한 곳은 대전 KT 회선을 성남으로 잡았다). 예보는 **weather-here 가 샌드박스에서 직접**(#40 — 좌표가 location 결과에 달려 batch 한 번에 못 넣는다. #38 의 "둘째 바퀴 `http_request`" 는 바퀴를 하나 더 만들었다), 실패하면 `http_request` 한 번. 지역명을 말한 경우도 같은 순서 |
-| 환율 | 서울외국환중개 매매기준율(`www.smbs.biz`) | 없음 | 현행 유지 |
+| 날씨 | Open-Meteo Forecast(`api.open-meteo.com`) + itda-hyve `location` | 없음 | 위치는 batch 안의 `location`(OS 위치 → IP 합의, #37 — IP 한 곳은 대전 KT 회선을 성남으로 잡았다). 예보는 batch 밖에서 **weather-here 호출 인자로 `http_request` 한 번**(#46 — 스크립트 직접 호출을 지웠다. #40 의 "샌드박스 직접" 은 Cowork 클라우드 VM 에서 간헐적으로 막힌다). 지역명을 말한 경우도 같은 순서 |
+| 환율 | 서울외국환중개 매매기준율(`www.smbs.biz`) | 없음 | exchange-rate `plan --date today` 호출 인자로 `http_request` 한 번(#46 — exchange-rate 0.11.0 이 직접 호출을 지웠다) |
 
-#18 의 기준("키가 필요하면 itda-hyve 경로로, 아니면 현행 유지")대로 둘 다 현행을 유지했다. 달라진 것은
-**누가 부르는가**다 — `gather.py` 가 subprocess 로 부르던 것을, LLM 이 형제 스킬 스크립트로 받아
-`section-*.txt` 로 남긴다(`gather.py` 는 스크립트를 실행하지 않는다). ⚠️ `shared/netbridge.md` 는
-"Cowork 샌드박스는 인증이 필요 없는 API 도 막힌다" 고 적고 있고 capability map §3.6·§3.8 은 PyPI·npm
-도달을 기록한다 — 샌드박스에서 이 두 호스트가 닿는지는 **Cowork 실측 항목**이다. 막히면 그 절은
-`section_missing` 경고로 빠지고(지어내지 않는다), 그때 itda-hyve `http_request` 경로를 검토한다.
+#18 의 기준("키가 필요하면 itda-hyve 경로로, 아니면 현행 유지")은 #45·#46 으로 바뀌었다 — **키가 없어도 네트워크는 itda-hyve 하나**
+(규칙 `cowork-network-via-hyve` — Cowork 클라우드 VM 에서 HTTP 가 간헐적으로 막힌다). 두 절 모두 형제 스킬이 호출 인자(`call`)를 내고,
+LLM 이 그것을 그대로 `http_request` 로 보내고, 형제 스킬이 저장 파일을 판독해 `section-*.txt` 로 남긴다(`gather.py` 는 스크립트를
+실행하지 않는다). 둘 다 요청에 User-Agent 를 싣지 않으므로 기본 UA 가 범용인 itda-hyve 0.10.4 이상이 요구 판이다(`HYVE_MIN_VERSION`).
+실패하면 그 절은 `section_missing` 경고로 빠진다(지어내지 않는다).

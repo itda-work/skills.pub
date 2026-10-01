@@ -1,197 +1,271 @@
-"""나라장터 공공데이터개방표준서비스 API 클라이언트.
+"""나라장터 공공데이터개방표준서비스 — 호출 계획과 응답 파서 (파일 입력 전용).
 
-공공데이터포털(https://www.data.go.kr) G2B 입찰공고 조회 API 래퍼.
+네트워크는 itda-hyve 의 ``http_request`` 가 한다(itda-work/skills#45). 이 모듈은
+  1. 기간을 1개월 창으로 나눈 **호출 계획**(``http_request`` 인자 그대로)을 만들고
+  2. 그렇게 저장한 **응답 JSON 파일을 읽어** 오류 판정·창별 전량 대조·중복 제거만 한다.
+직접 API 를 부르지 않고, 키 값을 보지 않는다(``{{secret:KO_DATA_API_KEY}}`` 자리표시자만 싣는다).
+
+응답 형태 (2026-09-30 itda-hyve 실측):
+    성공      {"response": {"header": {"resultCode": "00"}, "body": {"items": [...], "totalCount": N, "pageNo": 1, "numOfRows": 999}}}
+    API 오류  {"nkoneps.com.response.ResponseError": {"header": {"resultCode": "07", "resultMsg": "입력범위값 초과 에러"}}}
+    게이트웨이 {"OpenAPI_ServiceResponse": {"cmmMsgHeader": {"errMsg": "SERVICE_KEY_IS_NULL", "returnReasonCode": "20", …}}}  (HTTP 401)
 """
 from __future__ import annotations
 
+import calendar
 import json
-import urllib.error
-import urllib.parse
-import urllib.request
-from datetime import datetime, timedelta
+import math
+import re
+from datetime import date, datetime
+from pathlib import Path
+from typing import Any
 
-# API 엔드포인트
-_API_ENDPOINT = (
+from hyve_input import HyveHTTPError, HyveInputError, read_input
+
+API_URL = (
     "https://apis.data.go.kr/1230000/ao/PubDataOpnStdService"
     "/getDataSetOpnStdBidPblancInfo"
 )
+SECRET = "{{secret:KO_DATA_API_KEY}}"
 
-# 요청 타임아웃(초)
-_REQUEST_TIMEOUT = 15
+# 한 쪽의 행 수(API 상한 999). 호출 수를 줄이려 가장 큰 값을 쓴다.
+PAGE_SIZE = 999
+# 창마다 받을 쪽 상한. 999 × 20 ≈ 2만 건. 넘으면 truncated 로 표시한다(호출 예산).
+MAX_PAGES = 20
+# itda-hyve batch 한 번에 넣을 수 있는 호출 수. 넘으면 하나도 실행하지 않는다(netbridge §batch).
+BATCH_LIMIT = 40
+# 단건 호출 제한 시간. Cowork 호출 하나 60초 상한보다 짧아야 한다(netbridge — 브리지가 먼저 끊으면
+# itda-hyve 는 계속 돌아 나중에 파일을 쓰고, 재시도가 "같은 이름" 으로 거부된다).
+CALL_TIMEOUT = 50
+
+# 저장 이름 규칙 — 창(시작·끝)과 쪽을 이름에 싣는다. collect 가 이 이름으로 창을 가른다.
+_NAME_RE = re.compile(r"bids-(\d{8})-(\d{8})-p(\d+)\.json$")
+
+# data.go.kr 게이트웨이 returnReasonCode
+_GATEWAY_HINTS = {
+    "20": "서비스 접근 거부 — 활용신청 승인 전이거나(승인 뒤 동기화 5~30분) 키가 채워지지 않았다",
+    "22": "일일 트래픽 초과 — 내일 다시 받는다",
+    "30": "등록되지 않은 서비스키 — itda-hyve GUI 시크릿 탭에 **Decoding 키**로 다시 등록",
+    "31": "서비스키 기간 만료 — 공공데이터포털에서 연장",
+}
+# 서비스 resultCode
+_RESULT_HINTS = {
+    "07": "입력범위값 초과 — 기간이 1개월을 넘거나 numOfRows 가 999 를 넘는다(plan 의 창을 그대로 쓴다)",
+    "08": "필수 요청 파라미터 누락 — plan 이 준 params 를 그대로 보냈는지 확인",
+}
 
 
 class G2BAPIError(Exception):
-    """나라장터 API 호출 중 발생하는 오류."""
+    """저장된 응답이 성공 응답이 아니다 (본문의 오류 코드)."""
+
+    def __init__(self, message: str, error_code: str | None = None):
+        super().__init__(message)
+        self.error_code = error_code
 
 
-def format_date(date_str: str) -> str:
-    """YYYY-MM-DD 형식 날짜를 YYYYMMDD로 변환.
+class InputFileError(Exception):
+    """입력 파일을 가공할 수 없다 — 없음·이름 규칙 위반·절단·HTTP 오류·itda-hyve 실패.
 
-    API에 전달하기 전 날짜 형식을 변환. begin_dt에는 0000, end_dt에는 2359를
-    호출자가 직접 붙여서 사용.
-
-    Args:
-        date_str: YYYY-MM-DD 형식의 날짜 문자열.
-
-    Returns:
-        YYYYMMDD 형식의 날짜 문자열.
-
-    Raises:
-        ValueError: 날짜 형식이 올바르지 않거나 존재하지 않는 날짜인 경우.
+    ``kind`` 는 출력 JSON 의 ``error`` 값이다(``input``·``truncated``·``http``·``hyve``).
     """
+
+    def __init__(self, message: str, kind: str = "input"):
+        super().__init__(message)
+        self.kind = kind
+
+
+class IncompleteError(Exception):
+    """창마다 받은 행이 totalCount 에 모자라다. ``next_calls`` 에 더 받을 호출이 담긴다.
+
+    ``windows`` 는 창별 ``need_pages``(전량에 필요한 쪽)·``will_truncate``(상한을 넘어 잘릴 창)를 싣는다 —
+    더 받기 **전에** 잘림을 알리기 위해서다.
+    """
+
+    def __init__(self, message: str, next_calls: list[dict[str, Any]],
+                 windows: list[dict[str, Any]] | None = None):
+        super().__init__(message)
+        self.next_calls = next_calls
+        self.windows = windows or []
+
+    @property
+    def will_truncate(self) -> bool:
+        return any(w.get("will_truncate") for w in self.windows)
+
+
+# --- 날짜·창 ---
+
+def parse_date(date_str: str) -> date:
+    """YYYY-MM-DD 를 date 로. 형식이 틀리면 ValueError."""
     try:
-        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        return datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError as exc:
         raise ValueError(
             f"날짜 형식이 올바르지 않습니다: '{date_str}'. YYYY-MM-DD 형식으로 입력하세요."
         ) from exc
-    return dt.strftime("%Y%m%d")
 
 
-def validate_date_range(begin_dt: str, end_dt: str) -> None:
-    """날짜 범위가 1개월을 초과하지 않는지 검증.
+def split_windows(from_date: str, to_date: str) -> list[tuple[date, date]]:
+    """기간을 달력 달 단위 창으로 나눈다(API 는 한 요청에 1개월 이내만 받는다).
 
-    Args:
-        begin_dt: 시작일 (YYYYMMDD 형식).
-        end_dt: 종료일 (YYYYMMDD 형식).
-
-    Raises:
-        G2BAPIError: 날짜 범위가 1개월을 초과하는 경우.
+    예: 2026-08-20 ~ 2026-10-05 → (08-20~08-31), (09-01~09-30), (10-01~10-05)
     """
-    begin = datetime.strptime(begin_dt, "%Y%m%d")
-    end = datetime.strptime(end_dt, "%Y%m%d")
-
-    # 1개월 이내 여부 확인 (31일 기준으로 판단)
-    delta = end - begin
-    if delta.days > 31:
-        raise G2BAPIError(
-            f"날짜 범위가 1개월을 초과합니다 ({delta.days}일). "
-            "최대 1개월 이내로 지정하세요."
-        )
-
-
-def build_url(api_key: str, params: dict) -> str:
-    """API 요청 URL을 구성.
-
-    serviceKey는 별도로 인코딩하여 이중 인코딩을 방지.
-    다른 파라미터는 urllib.parse.urlencode로 인코딩.
-
-    Args:
-        api_key: 공공데이터포털 serviceKey (URL 디코딩 상태).
-        params: serviceKey를 제외한 나머지 파라미터 딕셔너리.
-
-    Returns:
-        완성된 API 요청 URL 문자열.
-    """
-    # serviceKey는 별도로 인코딩 (safe='' 으로 모든 특수문자 인코딩)
-    encoded_key = urllib.parse.quote(api_key, safe="")
-
-    # 나머지 파라미터 인코딩
-    other_params = urllib.parse.urlencode(params)
-
-    if other_params:
-        return f"{_API_ENDPOINT}?serviceKey={encoded_key}&{other_params}"
-    return f"{_API_ENDPOINT}?serviceKey={encoded_key}"
+    begin, end = parse_date(from_date), parse_date(to_date)
+    if begin > end:
+        raise ValueError(f"시작일({from_date})이 종료일({to_date})보다 늦습니다.")
+    windows = []
+    cur = begin
+    while cur <= end:
+        last = date(cur.year, cur.month, calendar.monthrange(cur.year, cur.month)[1])
+        stop = min(last, end)
+        windows.append((cur, stop))
+        cur = date.fromordinal(stop.toordinal() + 1)
+    return windows
 
 
-# @MX:ANCHOR: [AUTO] G2B 입찰공고 조회의 핵심 API 호출 함수.
-# @MX:REASON: fan_in >= 3 (collect_g2b 및 향후 확장); API 계약의 진입점.
-def search_bids(
-    api_key: str,
-    begin_dt: str,
-    end_dt: str,
-    page: int = 1,
-    rows: int = 10,
-) -> dict:
-    """나라장터 입찰공고를 조회.
+def save_name(w_from: str, w_to: str, page: int) -> str:
+    """저장 이름: ``g2b/bids-<시작 YYYYMMDD>-<끝 YYYYMMDD>-p<쪽>.json``."""
+    return f"g2b/bids-{w_from}-{w_to}-p{page}.json"
 
-    Args:
-        api_key: 공공데이터포털 serviceKey.
-        begin_dt: 조회 시작일 (YYYY-MM-DD 형식).
-        end_dt: 조회 종료일 (YYYY-MM-DD 형식).
-        page: 페이지 번호 (기본값 1).
-        rows: 페이지당 결과 수 (기본값 10).
 
-    Returns:
-        다음 키를 포함하는 딕셔너리:
-        - items: 입찰공고 목록
-        - totalCount: 전체 결과 수
-        - pageNo: 현재 페이지 번호
-        - numOfRows: 페이지당 결과 수
-
-    Raises:
-        G2BAPIError: 날짜 범위 초과, 네트워크 오류, API 오류, JSON 파싱 실패 등.
-        ValueError: 날짜 형식이 올바르지 않은 경우.
-    """
-    # rows 상한 적용 (API가 1000 이상이면 기본값 10으로 리셋)
-    rows = max(1, min(999, rows))
-
-    # 날짜 형식 변환 (YYYY-MM-DD → YYYYMMDD)
-    begin_yyyymmdd = format_date(begin_dt)
-    end_yyyymmdd = format_date(end_dt)
-
-    # 날짜 범위 검증 (1개월 이내)
-    validate_date_range(begin_yyyymmdd, end_yyyymmdd)
-
-    # API 파라미터 구성 (시간 붙이기: begin=0000, end=2359)
-    params = {
-        "type": "json",
-        "pageNo": str(page),
-        "numOfRows": str(rows),
-        "bidNtceBgnDt": begin_yyyymmdd + "0000",
-        "bidNtceEndDt": end_yyyymmdd + "2359",
+def build_call(w_from: str, w_to: str, page: int, rows: int = PAGE_SIZE) -> dict[str, Any]:
+    """한 쪽을 받는 호출 — batch ``calls`` 한 칸 형태. 단독 호출은 ``args`` 만 쓴다."""
+    return {
+        "id": f"{w_from}-{w_to}-p{page}",
+        "tool": "http_request",
+        "args": {
+            "url": API_URL,
+            "params": {
+                "serviceKey": SECRET,
+                "type": "json",
+                "pageNo": str(page),
+                "numOfRows": str(rows),
+                "bidNtceBgnDt": f"{w_from}0000",
+                "bidNtceEndDt": f"{w_to}2359",
+            },
+            "timeout_sec": CALL_TIMEOUT,
+            "save_as": save_name(w_from, w_to, page),
+        },
     }
 
-    url = build_url(api_key, params)
 
-    try:
-        with urllib.request.urlopen(url, timeout=_REQUEST_TIMEOUT) as resp:
-            raw = resp.read()
-    except urllib.error.URLError as exc:
-        raise G2BAPIError(f"네트워크 오류: {exc}") from exc
+def plan(from_date: str, to_date: str, rows: int = PAGE_SIZE) -> dict[str, Any]:
+    """창마다 1쪽을 받는 호출 계획. 2쪽 이후는 collect 가 totalCount 를 보고 ``next_calls`` 로 알려 준다."""
+    rows = max(1, min(PAGE_SIZE, rows))
+    windows = split_windows(from_date, to_date)
+    out_windows = []
+    calls = []
+    for b, e in windows:
+        wf, wt = b.strftime("%Y%m%d"), e.strftime("%Y%m%d")
+        out_windows.append({"from": b.isoformat(), "to": e.isoformat()})
+        calls.append(build_call(wf, wt, 1, rows))
+    return {"status": "ok", "from": from_date, "to": to_date, "rows": rows,
+            "windows": out_windows, "calls": calls}
 
+
+# --- 응답 파일 ---
+
+def _read_body(path: Path) -> bytes:
+    """입력 파일에서 응답 본문을 꺼낸다 — hyve 층 판독은 공용 ``hyve_input`` 이 한다.
+
+    세 형태(본문 그대로·``http_request`` 응답 JSON 전체·실패 자리 ``{"error": …}``)를 받는다. HTTP 오류면
+    본문의 게이트웨이·서비스 오류 코드를 먼저 본다(그쪽이 더 구체적이다). 나머지는 :class:`InputFileError`.
+    """
     try:
-        data = json.loads(raw)
+        return read_input(path).data
+    except HyveHTTPError as exc:
+        _raise_api_error(exc.body, path)
+        raise InputFileError(str(exc), kind=exc.kind) from exc
+    except HyveInputError as exc:
+        raise InputFileError(str(exc), kind=exc.kind) from exc
+
+
+def _raise_api_error(body: bytes, path: Path) -> None:
+    """본문이 게이트웨이·서비스 오류 형태면 G2BAPIError 를 올린다. 아니면 조용히 돌아온다."""
+    try:
+        data = json.loads(body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        text = body.decode("utf-8", "replace")
+        m = re.search(r"<returnReasonCode>\s*(\d+)\s*</returnReasonCode>", text)
+        if m:
+            code = m.group(1)
+            auth = re.search(r"<returnAuthMsg>(.*?)</returnAuthMsg>", text, re.S)
+            raise G2BAPIError(
+                f"공공데이터포털 게이트웨이 거부 (returnReasonCode={code}, "
+                f"{(auth.group(1).strip() if auth else '')}): {_GATEWAY_HINTS.get(code, '')} ({path.name})",
+                error_code=f"gateway-{code}",
+            )
+        return
+    if not isinstance(data, dict):
+        return
+    gw = data.get("OpenAPI_ServiceResponse")
+    if isinstance(gw, dict):
+        hdr = gw.get("cmmMsgHeader") or {}
+        code = str(hdr.get("returnReasonCode", ""))
+        raise G2BAPIError(
+            f"공공데이터포털 게이트웨이 거부 (returnReasonCode={code}, {hdr.get('errMsg', '')}, "
+            f"{hdr.get('returnAuthMsg', '')}): {_GATEWAY_HINTS.get(code, '')} ({path.name})",
+            error_code=f"gateway-{code}",
+        )
+    for key, val in data.items():
+        if key.endswith("ResponseError") and isinstance(val, dict):
+            hdr = val.get("header") or {}
+            code = str(hdr.get("resultCode", ""))
+            raise G2BAPIError(
+                f"API 오류 (resultCode={code}, {hdr.get('resultMsg', '')}): "
+                f"{_RESULT_HINTS.get(code, '요청 파라미터를 확인')} ({path.name})",
+                error_code=code,
+            )
+
+
+def parse_page(path: str | Path) -> dict[str, Any]:
+    """저장된 응답 파일 한 쪽을 읽는다.
+
+    Returns:
+        ``{"items": [...], "total_count": N, "page": n, "rows": r}``
+    Raises:
+        InputFileError, G2BAPIError
+    """
+    p = Path(path).expanduser()
+    body = _read_body(p)
+    _raise_api_error(body, p)
+    try:
+        data = json.loads(body)
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-        raise G2BAPIError(f"JSON 파싱 실패: {exc}") from exc
-
-    # 응답 구조 검증
+        raise InputFileError(
+            f"JSON 이 아닙니다 — 본문이 잘렸거나 HTTP 오류 페이지일 수 있다({p.name}): {exc}"
+        ) from exc
     try:
         header = data["response"]["header"]
-        body = data["response"]["body"]
+        body_obj = data["response"]["body"]
     except (KeyError, TypeError) as exc:
-        raise G2BAPIError(f"예상치 못한 응답 구조: {exc}") from exc
+        raise InputFileError(f"입찰공고 응답 형태가 아닙니다({p.name}): {exc}") from exc
 
-    result_code = header.get("resultCode", "")
-    if result_code != "00":
-        result_msg = header.get("resultMsg", "")
+    code = str(header.get("resultCode", ""))
+    if code != "00":
         raise G2BAPIError(
-            f"API 오류 (resultCode={result_code}): {result_msg}"
+            f"API 오류 (resultCode={code}, {header.get('resultMsg', '')}): "
+            f"{_RESULT_HINTS.get(code, '요청 파라미터를 확인')} ({p.name})",
+            error_code=code,
         )
 
-    items = body.get("items") or []
+    items = body_obj.get("items") or []
+    if isinstance(items, dict):  # 공공데이터포털 일부 서비스의 {"item": [...]} 형태 대비
+        items = items.get("item") or []
+        items = [items] if isinstance(items, dict) else items
     return {
         "items": items,
-        "totalCount": body.get("totalCount", 0),
-        "pageNo": body.get("pageNo", page),
-        "numOfRows": body.get("numOfRows", rows),
+        "total_count": int(body_obj.get("totalCount") or 0),
+        "page": int(body_obj.get("pageNo") or 1),
+        "rows": int(body_obj.get("numOfRows") or PAGE_SIZE),
     }
-
-
-# 페이지네이션 기본값
-# 1페이지당 최대 행 수(API 상한 999). 페이지 호출 횟수를 줄이기 위해 큰 값을 쓴다.
-_PAGE_SIZE = 999
-# 무한루프/과도호출 방지 상한. 999 * 20 = 최대 약 2만 건까지 순회.
-_MAX_PAGES = 20
 
 
 def _item_key(item: dict) -> tuple:
     """페이지 경계 중복 제거용 안정 키.
 
-    같은 데이터셋에서 한 입찰공고(bidNtceNo)가 차수(bidNtceOrd)별로 여러 행을
-    가질 수 있고, 페이지 간 중복이 관측된다. (공고번호, 차수, 참조공고번호,
-    참조차수) 조합으로 행을 식별한다. 식별 필드가 모두 비면 항목 전체를
-    정렬된 튜플로 폴백한다.
+    한 입찰공고(bidNtceNo)가 차수(bidNtceOrd)별로 여러 행을 가질 수 있고, 페이지 간 중복이
+    관측된 적이 있다. (공고번호, 차수, 참조공고번호, 참조차수)로 행을 식별한다. 식별 필드가
+    모두 비면 항목 전체를 정렬된 튜플로 쓴다.
     """
     parts = (
         str(item.get("bidNtceNo", "")),
@@ -204,109 +278,132 @@ def _item_key(item: dict) -> tuple:
     return tuple(sorted((str(k), str(v)) for k, v in item.items()))
 
 
-# @MX:ANCHOR: [AUTO] 거짓 0건 방지 — 날짜범위 전 페이지 순회 수집.
-# @MX:REASON: 키워드 검색이 첫 페이지 밖 공고를 놓치는 silent under-collect 결함 수정 진입점.
-def collect_all_bids(
-    api_key: str,
-    begin_dt: str,
-    end_dt: str,
-    page_size: int | None = None,
-    max_pages: int | None = None,
-) -> dict:
-    """날짜 범위 내 입찰공고를 모든 페이지에 걸쳐 누적 수집.
+def _name_of(path: str) -> tuple[str, str, int]:
+    """저장 이름에서 (창 시작, 창 끝, 쪽)을 읽는다."""
+    m = _NAME_RE.search(Path(path).name)
+    if not m:
+        raise InputFileError(
+            f"파일 이름이 규칙(bids-<시작 YYYYMMDD>-<끝 YYYYMMDD>-p<쪽>.json)과 다릅니다: {Path(path).name} "
+            "— plan 이 준 save_as 를 그대로 쓰세요"
+        )
+    return m.group(1), m.group(2), int(m.group(3))
 
-    totalCount를 읽어 필요한 페이지를 순회하며 항목을 누적한다.
-    페이지 경계에서 발생하는 중복(같은 bidNtceNo/bidNtceOrd 재출현)은
-    안정 키로 제거한다. max_pages 상한에 도달하면 미조회분이 남아도
-    중단하고 truncated=True로 표시한다.
 
-    클라이언트 측 키워드 필터링은 호출자가 누적된 items에 대해 수행한다.
-    이렇게 해야 키워드가 첫 페이지 밖(예: 11번째, 500번째)에 있어도
-    수집되어 거짓 0건(false 0)을 방지한다.
+def collect(paths: list[str], max_pages: int = MAX_PAGES, single_page: bool = False) -> dict[str, Any]:
+    """저장된 쪽 파일들을 창별로 묶어 전량 대조하고 중복을 없앤다.
 
-    Args:
-        api_key: 공공데이터포털 serviceKey.
-        begin_dt: 조회 시작일 (YYYY-MM-DD 형식).
-        end_dt: 조회 종료일 (YYYY-MM-DD 형식).
-        page_size: 페이지당 결과 수 (기본 999, 호출 횟수 최소화).
-        max_pages: 순회 상한 페이지 수 (기본 20, 무한루프/과호출 방지).
+    창마다 필요한 쪽 = ceil(totalCount / numOfRows). ``max_pages`` 안에서 빠진 쪽이 있으면
+    그 쪽을 받는 호출을 ``next_calls`` 에 담아 :class:`IncompleteError` 를 올린다.
+    필요한 쪽이 ``max_pages`` 를 넘으면 상한까지만 요구하고 ``truncated`` 로 표시한다 — 첫 incomplete 에서
+    이미 창별 ``need_pages``·``will_truncate`` 로 알린다(다 받은 뒤에야 알면 사용자가 모르고 승인한다).
+    ``single_page`` 면 대조하지 않는다(한 쪽만 훑어보기).
+
+    분모는 창 안 쪽들의 totalCount **최댓값**이다. 이 API 는 받는 사이에도 공고가 늘고 줄어(실측: 하루 약
+    1,900건이 계속 올라온다) 쪽마다 값이 다를 수 있으므로 오류가 아니라 경고로 둔다. 최댓값을 쓰는 이유 —
+    쪽 사이에 **삭제**가 있으면 뒤쪽이 앞으로 밀려 1건을 건너뛴다(T1=5·T2=4). 최솟값이면 필요한 쪽이 줄어
+    그 1건이 빠진 채 완료로 판정되고, 최댓값이면 한 쪽을 더 요구하거나 "다시 받으라" 로 실패한다.
 
     Returns:
-        다음 키를 포함하는 딕셔너리:
-        - items: 중복 제거된 누적 입찰공고 목록.
-        - totalCount: API가 보고한 필터 전 전체 결과 수.
-        - pages_fetched: 실제 호출한 페이지 수.
-        - truncated: max_pages 상한 때문에 미조회분이 남았으면 True.
-        - scanned_count: 누적·중복제거 후 실제 스캔한 항목 수.
-
-    Raises:
-        G2BAPIError: 날짜 범위 초과, 네트워크 오류, API 오류 등.
-        ValueError: 날짜 형식이 올바르지 않은 경우.
+        ``{"items", "total_count", "scanned_count", "truncated", "windows", "sources", "warnings", "page"}``
     """
-    # 모듈 기본값을 호출 시점에 해석(테스트에서 _PAGE_SIZE 패치 가능).
-    if page_size is None:
-        page_size = _PAGE_SIZE
-    if max_pages is None:
-        max_pages = _MAX_PAGES
-    page_size = max(1, min(999, page_size))
     max_pages = max(1, max_pages)
+    windows: dict[tuple[str, str], list[tuple[str, dict[str, Any]]]] = {}
+    sources = []
+    for p in paths:
+        parsed = parse_page(p)
+        if single_page:
+            key = ("", "")
+        else:
+            wf, wt, name_page = _name_of(p)
+            key = (wf, wt)
+            if name_page != parsed["page"]:
+                raise InputFileError(
+                    f"파일 이름의 쪽(p{name_page})과 본문 pageNo({parsed['page']})가 다릅니다: {Path(p).name} "
+                    "— 다른 호출의 응답을 이 이름으로 저장했다. plan·next_calls 의 save_as 를 그대로 쓰세요"
+                )
+        windows.setdefault(key, []).append((p, parsed))
+        sources.append({"path": str(Path(p).expanduser()), "page": parsed["page"],
+                        "total_count": parsed["total_count"], "item_count": len(parsed["items"])})
 
-    accumulated: list[dict] = []
-    seen: set[tuple] = set()
-    total_count = 0
-    pages_fetched = 0
+    warnings: list[str] = []
+    next_calls: list[dict[str, Any]] = []
+    short: list[str] = []
     truncated = False
+    total_count = 0
+    raw_items: list[dict] = []
+    window_rows = []
 
-    page = 1
-    while page <= max_pages:
-        result = search_bids(
-            api_key=api_key,
-            begin_dt=begin_dt,
-            end_dt=end_dt,
-            page=page,
-            rows=page_size,
-        )
-        pages_fetched += 1
+    for (wf, wt), pages in sorted(windows.items()):
+        totals = {pp["total_count"] for _, pp in pages}
+        total = max(totals)
+        total_count += total
+        for _, pp in pages:
+            raw_items.extend(pp["items"])
+        collected = sum(len(pp["items"]) for _, pp in pages)
+        window = {"from": wf, "to": wt, "total_count": total,
+                  "pages": sorted(pp["page"] for _, pp in pages), "collected": collected}
+        window_rows.append(window)
+        if single_page:
+            continue
 
-        # totalCount는 첫 페이지(실제로는 모든 페이지) 응답에서 동일하게 보고됨.
-        try:
-            total_count = int(result.get("totalCount", 0) or 0)
-        except (TypeError, ValueError):
-            total_count = 0
+        label = f"{wf}~{wt}"
+        if len(totals) > 1:
+            warnings.append(f"{label}: 쪽마다 totalCount 가 다릅니다({sorted(totals)}) — 받는 사이 공고가 바뀌었습니다")
+        sizes = {pp["rows"] for _, pp in pages}
+        if len(sizes) > 1:
+            raise InputFileError(f"{label}: 쪽마다 numOfRows 가 다릅니다({sorted(sizes)}) — 한 창은 같은 numOfRows 로 받으세요")
+        rows = sizes.pop()
+        got = [pp["page"] for _, pp in pages]
+        dup = sorted({g for g in got if got.count(g) > 1})
+        if dup:
+            raise InputFileError(f"{label}: 같은 쪽이 두 번 들어왔습니다({dup})")
 
-        page_items = result.get("items") or []
-        new_in_page = 0
-        for item in page_items:
-            key = _item_key(item)
-            if key in seen:
-                continue
-            seen.add(key)
-            accumulated.append(item)
-            new_in_page += 1
-
-        # 종료 조건:
-        # 1) 이번 페이지가 비었으면(더 이상 데이터 없음) 중단.
-        if not page_items:
-            break
-        # 2) totalCount를 모두 소진했으면 중단.
-        #    (중복 때문에 누적 < totalCount 일 수 있으므로 page*page_size 기준으로 판단)
-        if total_count and page * page_size >= total_count:
-            break
-        # 3) 페이지가 page_size 미만이면 마지막 페이지로 간주.
-        if len(page_items) < page_size:
-            break
-
-        page += 1
-    else:
-        # while 루프가 break 없이 max_pages를 소진한 경우(else 절).
-        # 아직 미조회분이 남았는지 확인.
-        if total_count and pages_fetched * page_size < total_count:
+        need = math.ceil(total / rows) if total else 1
+        upto = min(need, max_pages)
+        window["need_pages"] = need
+        window["will_truncate"] = need > max_pages
+        missing = [n for n in range(1, upto + 1) if n not in got]
+        if missing:
+            cut = (f" — 전량은 {need}쪽이라 상한 {max_pages}쪽에서 잘린다(will_truncate)"
+                   if need > max_pages else "")
+            short.append(f"{label} totalCount={total}, 받은 쪽 {sorted(got)} → 더 받을 쪽 {missing}{cut}")
+            next_calls += [build_call(wf, wt, n, rows) for n in missing]
+            continue
+        if need > max_pages:
             truncated = True
+            warnings.append(
+                f"{label}: 전체 {total}건 중 {collected}건만 받았습니다(상한 {max_pages}쪽). 미조회분에 있는 "
+                "공고는 결과에 없습니다 — 기간을 좁히거나 --max-pages 를 늘려 쪽을 더 받으세요"
+            )
+        elif collected < total:
+            short.append(f"{label} totalCount={total} 인데 {collected}건 — 받는 사이 공고가 밀렸습니다, 이 창을 1쪽부터 다시 받으세요")
 
+    if short:
+        raise IncompleteError("창마다 전량을 받지 못했습니다: " + " / ".join(short), next_calls,
+                              windows=window_rows)
+
+    accumulated = []
+    seen: set[tuple] = set()
+    for item in raw_items:
+        k = _item_key(item)
+        if k in seen:
+            continue
+        seen.add(k)
+        accumulated.append(item)
+    dups = len(raw_items) - len(accumulated)
+    if dups:
+        warnings.append(f"쪽 경계에서 겹친 공고 {dups}건을 하나로 합쳤습니다")
+
+    page_label: int | str = "all"
+    if single_page:
+        page_label = sources[0]["page"] if len(sources) == 1 else "partial"
     return {
         "items": accumulated,
-        "totalCount": total_count,
-        "pages_fetched": pages_fetched,
-        "truncated": truncated,
+        "total_count": total_count,
         "scanned_count": len(accumulated),
+        "truncated": truncated,
+        "windows": window_rows,
+        "sources": sources,
+        "warnings": warnings,
+        "page": page_label,
     }

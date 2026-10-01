@@ -63,18 +63,30 @@ meeting-reliability 스킬의 `scripts/`(`meeting_adapter.py`·`selfcheck.py`·`
 찾는다. 세 스크립트는 서로를 평면 모듈명으로 import 하므로, **절대경로로 실행**하면 파이썬이
 스크립트 디렉토리를 sys.path 에 넣어 정상 해소된다(cwd 무관).
 
-- 힌트 경로가 있으면 그 `scripts/` 를 쓴다.
-- Claude Code(플러그인 설치): `$CLAUDE_PLUGIN_ROOT` 가 설정돼 있으면
-  `"$CLAUDE_PLUGIN_ROOT/skills/meeting-reliability/scripts"` 를 1순위로 쓴다(#1279 SKILL_DIR 규약).
-- Claude Code(저장소 체크아웃): 스킬 상대경로(`itda-research/skills/meeting-reliability/scripts`).
-- Cowork(플러그인 파일이 Glob 밖): 셸로 마운트 경로를 탐색한다. 파일명 단독이 아니라
-  **스킬 경로 조건을 포함**해 다른 플러그인의 동명 `selfcheck.py` 오매치를 배제한다.
-  ```bash
-  find /sessions/*/mnt/.remote-plugins -path '*meeting-reliability/scripts/selfcheck.py' 2>/dev/null
-  ```
-- **디렉토리 3종 동거 검증** — 매치를 채택하기 전, 그 `scripts/` 디렉토리에
+스킬 디렉토리는 규칙 `skill-dir-resolution` 정본 블록으로 정한다. 힌트 경로(스킬 디렉토리)가 있거나 `Skill` 로 로드해
+base directory 를 받았으면 **먼저** `SKILL_DIR="그 경로"` 로 넣는다 — 블록이 그 값을 검증하고, 없을 때만 설치 위치
+(Code 캐시·동기화본·Cowork 배치)를 찾는다. 후보가 없거나 여럿이면 블록이 멈춘다 — 그때는 아래 에러 핸들링으로 중단한다.
+저장소 체크아웃에서는 `SKILL_DIR=itda-research/skills/meeting-reliability` 를 먼저 넣으면 된다(블록이 절대경로로 바꾼다).
+
+```bash
+# SKILL_DIR 확정(skill-dir-resolution) — 스킬을 불러올 때 받은 base directory 를 먼저 SKILL_DIR="그 경로" 로 넣는다(항상)
+# 블록은 그 값을 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾는다 — SKILL.md 가 있는 후보가 하나일 때만 받고 아니면 멈춘다
+SKILL_DIR=$(sh -c '
+S=$1 P=$2 H=${5:-$HOME/.claude}
+ok() { d=${1%/}; [ "${d##*/}" = "$S" ] && [ -f "$d/SKILL.md" ] && (cd "$d" && pwd -P); }
+[ -n "$3" ] && { ok "$3" && exit; d=${3%/}; [ "${d##*/}" = "$S" ] && echo "SKILL_DIR 무시: $3 에 SKILL.md 가 없다" >&2; }
+[ -n "$4" ] && { ok "$4/skills/$S" && exit; echo "CLAUDE_PLUGIN_ROOT 무시: $4/skills/$S 에 SKILL.md 가 없다" >&2; }
+c=$(for d in "$H"/plugins/synced/*/"$P"/skills/"$S" "$H"/plugins/synced/*/"$P"~*/skills/"$S" "$H"/plugins/cache/*/"$P"/*/skills/"$S" \
+    /root/.claude/plugins/synced/*/"$P"/skills/"$S" /root/.claude/plugins/synced/*/"$P"~*/skills/"$S" \
+    /sessions/*/mnt/.remote-plugins/*/skills/"$S" /sessions/*/mnt/.claude/skills/"$S"; do ok "$d"; done | sort -u)
+[ "$(printf "%s\n" "$c" | grep -c .)" -gt 1 ] && { printf "SKILL_DIR 후보가 여럿이다 — 어느 설치본이 쓰이는지 모른다:\n%s\n" "$c" >&2; exit 1; }
+printf "%s\n" "$c"' _ meeting-reliability itda-research "${SKILL_DIR:-}" "${CLAUDE_PLUGIN_ROOT:-}" "${CLAUDE_CONFIG_DIR:-}")
+: "${SKILL_DIR:?정하지 못했다 — 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 SKILL_DIR 에 넣고 이 블록을 다시 실행하라}"
+```
+
+- **디렉토리 3종 동거 검증** — 실행 전, `"$SKILL_DIR/scripts"` 에
   `meeting_adapter.py`·`selfcheck.py`·`render_html.py` 3종이 **모두** 있는지 확인한다.
-  하나라도 없으면 잘못된 매치로 보고 다음 후보를 검사한다. 조건을 만족하는 첫 디렉토리를 쓴다.
+  하나라도 없으면 잘못된 디렉토리로 보고 쓰지 않는다.
 - 세 스크립트를 모두 갖춘 디렉토리를 못 찾으면 추측으로 진행하지 말고 **에러로 중단**(아래 에러 핸들링).
 
 셸은 환경에 있는 쪽을 쓴다: `Bash`(Claude Code) 또는 `mcp__workspace__bash`(Cowork).

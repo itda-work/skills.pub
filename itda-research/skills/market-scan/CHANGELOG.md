@@ -2,6 +2,39 @@
 
 본 스킬의 변경 이력. [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/) 형식을 따른다.
 
+## [0.4.0] — 2026-09-30 (itda-work/skills#45·#46)
+
+> ⚠️ **배포 차단** — itda-hyve 0.10.4(itda-work/itda-hyve#31 — `final_url`·저장 경로에 키가 평문으로 남던 결함 수정) 공개 **뒤에**,
+> `itda-web:web-search` 0.3.0 과 함께 배포한다. 이 경계는 도구 목록으로 가를 수 없어 스킬이 판별하지 못한다.
+
+### Changed (2026-10-01 추가)
+
+- 위임 표의 `itda-web:blog-reader` 지목을 지웠다 — 그 스킬이 제거됐다(사용자 결정, itda-work/skills#46 W14 — 네이버 블로그 robots 가 목록·댓글·전체
+  검색을 막는다). 단일 URL 본문 폴백은 `itda-web:web-reader` 하나다.
+
+### Changed
+
+- 상권·로컬 라우팅에서 `itda-travel:place-finder` 를 지웠다 — 그 스킬이 공개 팩에서 빠졌다(카카오맵 검색 경로가 robots·요청 프로파일 규칙에 걸림, itda-work/skills#46). 상권 조사는 웹 검색으로 한다.
+- GUIDE 의 공공데이터포털 키 줄에서 `funding` 을 뺐다 — funding 3.0.0 은 키가 필요 없다(itda-hyve 로 공개 페이지를 받는다). "funding 은 아직 itda-hyve 로 옮기지 않았다" 예외 문구를 지웠다.
+- **BREAKING — Q4 데이터 소스 가용성 점검을 itda-hyve 모델로** (itda-work/skills#45, W3 리뷰 M4). 키는 itda-hyve 시크릿 탭에만 있고 목록을 조회할 방법이 없어, 옛 점검(web-search `--check-env`·환경변수에 키가 있는지)은 늘 "없음" 이 되어 소스를 모두 뺐다. 이제 ① 스킬 설치 + 도구 목록에 itda-hyve `http_request` 가 있으면 **후보**로 올리고("(키는 첫 호출에서 확인)" 표기) ② 첫 호출이 `secret_missing` 이면 그 소스를 빼고 등록할 시크릿 이름을 알린다. 다중엔진 웹 검색과 공공데이터 API(dart·ecos·kosis·g2b·실거래) 모두 같다. "거짓 메뉴 금지" 는 확인 전 "키 있음" 이라 적지 않는 것으로 지킨다 — 문장도 "실제로 쓸 수 있는 소스만" 에서 "설치·연결이 확인된 소스만" 으로 맞췄다(W5 리뷰 m10). 한 번 `secret_missing` 으로 빠진 소스는 그 대화의 다음 조사 보기에 다시 올리지 않는다.
+- **키 없는 소스를 빼고 계속하는 것은 우회가 아니다** — netbridge·itda-hyve 의 "`secret_missing` 이면 멈춘다" 는 그 소스 하나에 대한 것이라는 한 줄을 2단계 머리에 넣었다(W5 리뷰 M3 — 재리뷰 n6 에서 web-search 선택 시 절 밖으로 옮겨, web-search 를 고르지 않은 공공데이터 조사에서도 읽히게 했다. 공식 사이트 폴백은 API 가 아니라 공개 페이지라 키 우회가 아니라는 것도 적었다). 정본 `shared/netbridge.md` 에도 "여러 소스를 묶는 스킬은 그 소스만 빼고 계속할 수 있다(스킬이 정한다)" 를 더했다.
+- **BREAKING — web-search 시크릿 이름** — `NAVER_SEARCH_CLIENT_ID`·`NAVER_SEARCH_CLIENT_SECRET` 대신 `NAVER_CLIENT_ID`·`NAVER_CLIENT_SECRET`(web-search 0.3.0 과 같은 이름). 유료 엔진은 Exa 하나다 — web-search 0.3.0 이 Perplexity 를 뺐다(Sonar Chat Completions 지원 종료 2026-09-27).
+- 비용 가드 — web-search `auto` 가 무료 엔진(tavily·naver·serper)만 고르게 된 것을 반영했다. 기본은 `--engines tavily,naver`, Exa 는 Claude 가 제안하는 경우라 과금을 알리고 동의를 받은 뒤 지목한다. 첫 검색이 전부 `secret_missing` 이면 web-search 를 빼고 내장 WebSearch 로 계속하며, 빠진 소스를 보고서 출처 절에 적는다. 첫 검색에서 빠진 엔진은 다음 질의부터 뺀다. 한 조사의 다중엔진 질의는 10개 이내, 넘으면 호출 수를 먼저 알린다(W5 리뷰 m8).
+- `allowed-tools` 에 `mcp__remote-devices__itda-hyve__http_request` 를 더했고 `compatibility` 에 itda-hyve 0.10.4 이상을 적었다. GUIDE.md 의 키 등록을 itda-hyve 시크릿 탭으로 바꾸고(settings.json `env` 블록 제거 — funding 만 예외로 그 스킬 가이드를 따른다), 다중엔진 웹 검색 소스 줄을 더했다.
+- 계약 테스트 `itda-web/skills/web-search/tests/test_handoff_market_scan.py` 를 새 모델로 다시 썼다 — 이 문서의 시크릿 이름 ⊇ web-search 가 쓰는 이름, 옛 경로(`--check-env`·환경변수 감지·옛 네이버 이름·Perplexity) 부재, `secret_missing` 확정 문구, "기본은 무료 엔진(`--engines …`)" 문장에 유료 엔진 없음, 유료가 든 `--engines` 예시는 같은 줄에 과금·동의 문구(옛 단언은 항진이었다 — W5 리뷰 M4 #7).
+
+## [0.3.0] — 2026-09-30 (itda-work/skills#45)
+
+### Changed
+
+- **BREAKING — env 파일을 더 읽지 않는다** (itda-work/skills#45, 사용자 결정 2026-09-30). 호출하는 형제 스킬들이 `.env`·`.env.txt` 를 포함해 어떤 env 파일도 읽지 않으므로, 관문의 공공데이터 키 "감지" 는 환경변수만 본다(`.env` 파일을 열어 보지 않는다). GUIDE.md 의 키 등록 안내를 Claude Code 설정 `env`·셸 환경변수 기준으로 고치고, Cowork 에서 넣는 방법은 스킬마다 다르다고 적었다. 이 스킬 자체는 키를 읽지 않는다.
+
+## [0.2.5] — 2026-09-30 (itda-work/skills#45)
+
+### Changed
+
+- **자격증명 파일 별칭에서 `환경변수.txt` 제거** (itda-work/skills#45, BREAKING) — 읽는 파일명은 `.env`·`.env.txt` 두 가지다. `환경변수.txt` 로 키를 두었다면 파일 이름을 `.env.txt`(또는 `.env`)로 바꾼다. GUIDE.md 의 키 등록 안내를 `.env.txt` 기준으로 고쳤다.
+
 ## [0.2.4] — 2026-09-27
 
 ### Changed

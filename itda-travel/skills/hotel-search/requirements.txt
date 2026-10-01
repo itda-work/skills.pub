@@ -1,3 +1,3 @@
 # hotel-search — 표준 라이브러리만 사용(별도 패키지 불필요).
-# 요금·달력은 Xotelo API(data.xotelo.com), 환율은 open.er-api.com 을 urllib 로 직접 호출한다.
-# (브라우저·hyve·API 키 불필요. #1013)
+# 요금·달력(data.xotelo.com)과 환율(open.er-api.com) 요청은 스크립트가 아니라 itda-hyve(로컬 MCP 서버)가 보내고,
+# 스크립트는 저장된 응답만 읽는다. (브라우저·API 키 불필요. #1013 · itda-work/skills#45)

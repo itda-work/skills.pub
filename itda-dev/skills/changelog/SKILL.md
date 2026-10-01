@@ -15,10 +15,10 @@ argument-hint: "[orca|claude|codex|herdr] [--since 3d|2w|<태그>] [--new] [--al
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
-  version: "1.1.0"
+  version: "1.1.1"
   status: "experimental"
   created_at: "2026-08-09"
-  updated_at: "2026-09-01"
+  updated_at: "2026-09-30"
   tags: "changelog, release, release-notes, update, summary, orca, claude-code, codex, herdr, github, gh, ide, devtools, terminal, multiplexer"
 ---
 
@@ -44,11 +44,22 @@ metadata:
 - Orca 앱이 실행 중이어야 탭이 열린다. `orca` CLI 가 없는 환경이면 열기 단계는 명시
   에러로 끝난다 — 그 경우 렌더된 HTML 경로를 보고하는 데서 멈춘다(조용한 대체 열기 금지).
 
+**먼저** 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 `SKILL_DIR` 에 넣고 아래 블록을 실행한다 — 블록은 그 값을 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾는다(후보가 여럿이면 멈춘다).
+
 ```bash
-# Claude Code(플러그인 설치) = $CLAUDE_PLUGIN_ROOT / Cowork = 세션 마운트 탐색
-SKILL_DIR="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/skills/changelog}"
-[ -n "$SKILL_DIR" ] || SKILL_DIR=$(find /sessions/*/mnt/.remote-plugins -type d -path '*/skills/changelog' 2>/dev/null | head -1)
-# 둘 다 아니면(심링크·저장소 체크아웃 등) 이 SKILL.md 가 있는 디렉토리 절대경로를 그대로 사용
+# SKILL_DIR 확정(skill-dir-resolution) — 스킬을 불러올 때 받은 base directory 를 먼저 SKILL_DIR="그 경로" 로 넣는다(항상)
+# 블록은 그 값을 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾는다 — SKILL.md 가 있는 후보가 하나일 때만 받고 아니면 멈춘다
+SKILL_DIR=$(sh -c '
+S=$1 P=$2 H=${5:-$HOME/.claude}
+ok() { d=${1%/}; [ "${d##*/}" = "$S" ] && [ -f "$d/SKILL.md" ] && (cd "$d" && pwd -P); }
+[ -n "$3" ] && { ok "$3" && exit; d=${3%/}; [ "${d##*/}" = "$S" ] && echo "SKILL_DIR 무시: $3 에 SKILL.md 가 없다" >&2; }
+[ -n "$4" ] && { ok "$4/skills/$S" && exit; echo "CLAUDE_PLUGIN_ROOT 무시: $4/skills/$S 에 SKILL.md 가 없다" >&2; }
+c=$(for d in "$H"/plugins/synced/*/"$P"/skills/"$S" "$H"/plugins/synced/*/"$P"~*/skills/"$S" "$H"/plugins/cache/*/"$P"/*/skills/"$S" \
+    /root/.claude/plugins/synced/*/"$P"/skills/"$S" /root/.claude/plugins/synced/*/"$P"~*/skills/"$S" \
+    /sessions/*/mnt/.remote-plugins/*/skills/"$S" /sessions/*/mnt/.claude/skills/"$S"; do ok "$d"; done | sort -u)
+[ "$(printf "%s\n" "$c" | grep -c .)" -gt 1 ] && { printf "SKILL_DIR 후보가 여럿이다 — 어느 설치본이 쓰이는지 모른다:\n%s\n" "$c" >&2; exit 1; }
+printf "%s\n" "$c"' _ changelog itda-dev "${SKILL_DIR:-}" "${CLAUDE_PLUGIN_ROOT:-}" "${CLAUDE_CONFIG_DIR:-}")
+: "${SKILL_DIR:?정하지 못했다 — 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 SKILL_DIR 에 넣고 이 블록을 다시 실행하라}"
 WORK="${TMPDIR:-/tmp}/changelog"
 mkdir -p "$WORK"
 P=orca   # 또는 claude | codex | herdr

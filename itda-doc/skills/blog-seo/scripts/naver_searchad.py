@@ -110,7 +110,7 @@ class NaverSearchAdClient:
 
     @classmethod
     def from_env(cls) -> "NaverSearchAdClient":
-        """환경변수로 클라이언트 생성 (CLI > environ > .env, SPEC-ENV-ERROR-001)."""
+        """환경변수로 클라이언트 생성 (CLI > environ, SPEC-ENV-ERROR-001 · env 파일 미사용 #45)."""
         from _env_setup import (
             get_searchad_access_key,
             get_searchad_customer_id,

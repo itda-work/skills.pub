@@ -23,8 +23,10 @@
 |---|---|
 | 일반 인증키 (**Decoding**) | `KO_DATA_API_KEY` |
 
-```dotenv
-KO_DATA_API_KEY=발급받은_Decoding_키
+키는 Claude Code 설정 파일(`~/.claude/settings.json`)의 `env` 에 넣습니다(설정을 바꾼 뒤 Claude Code 를 다시 시작). 스킬이 itda-hyve 경로를 지원하면 itda-hyve 앱의 **시크릿** 탭에 같은 이름으로 등록해도 됩니다 — 어느 경로가 되는지는 각 스킬 GUIDE 에 적혀 있습니다. `.env` 같은 파일은 스킬이 읽지 않습니다(itda-work/skills#45).
+
+```json
+{ "env": { "KO_DATA_API_KEY": "발급받은_Decoding_키" } }
 ```
 
 ## 4. 한도·주의사항
@@ -35,11 +37,11 @@ KO_DATA_API_KEY=발급받은_Decoding_키
 - 일일 트래픽 한도(데이터셋별 보통 1,000~10,000회)가 있으니 동일 조건 반복 조회는 피하세요.
 - 운영계정 전환 전 개발계정 한도로도 개인 사용에는 충분합니다.
 
-## 5. 이 키를 쓰는 스킬 (8개)
+## 5. 이 키를 쓰는 스킬 (7개)
 
 | 플러그인 | 스킬 |
 |---|---|
-| itda-gov | g2b · funding · realty-deals · realty-jeonse-gap · realty-meta · realty-price-stats · realty-supply |
+| itda-gov | g2b · realty-deals · realty-jeonse-gap · realty-meta · realty-price-stats · realty-supply |
 | itda-research | market-scan (위 itda-gov 스킬을 거쳐 씀) |
 
 > 데이터셋별 활용신청 링크는 각 스킬 GUIDE의 "사전 준비" 절을 따르세요 — 같은 키 하나로 동작하지만 신청은 데이터셋 단위입니다.

@@ -61,14 +61,15 @@
       "name_ko": "중국 위안",
       "name_en": "Chinese Yuan",
       "unit": 1,
-      "aliases_ko": ["위안", "인민폐"]
+      "aliases_ko": [],
+      "note": "2016-01-01부터 고시 중단(사이트 공지). 위안은 CNH"
     },
     {
       "code": "CNH",
-      "name_ko": "위안 (역외)",
+      "name_ko": "위안 (CNH)",
       "name_en": "Chinese Yuan (Offshore)",
       "unit": 1,
-      "aliases_ko": ["역외위안"]
+      "aliases_ko": ["위안", "위안화", "인민폐", "역외위안"]
     },
     {
       "code": "HKD",
@@ -377,6 +378,34 @@
       "name_en": "Egyptian Pound",
       "unit": 1,
       "aliases_ko": ["이집트파운드"]
+    },
+    {
+      "code": "KES",
+      "name_ko": "케냐 실링",
+      "name_en": "Kenyan Shilling",
+      "unit": 1,
+      "aliases_ko": []
+    },
+    {
+      "code": "LYD",
+      "name_ko": "리비아 디나르",
+      "name_en": "Libyan Dinar",
+      "unit": 1,
+      "aliases_ko": []
+    },
+    {
+      "code": "ETB",
+      "name_ko": "에티오피아 비르",
+      "name_en": "Ethiopian Birr",
+      "unit": 1,
+      "aliases_ko": []
+    },
+    {
+      "code": "FJD",
+      "name_ko": "피지 달러",
+      "name_en": "Fiji Dollar",
+      "unit": 1,
+      "aliases_ko": []
     }
   ]
 }

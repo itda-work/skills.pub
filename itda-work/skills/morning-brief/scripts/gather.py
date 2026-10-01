@@ -131,7 +131,10 @@ SNIPPET_CHARS = 300         # 요약 한두 문장에 충분하고, 200·500자 
 SNIPPET_FOR = "non_bulk"
 # 0.9.5 이하는 모르는 인자를 호출 단위 invalid_input 으로 거부한다(batchtool.Adapt 의 DisallowUnknownFields) — 받은편지함만
 # 실패하고 일정·보낸편지함은 받힌다. 그 실패를 「계정 확인 실패」 로 뭉뚱그리지 않고 업데이트 안내로 바꾼다(아래 HYVE_OUTDATED).
-HYVE_MIN_VERSION = "0.9.6"
+# 공개판 기준 — 0.9.0 다음 공개판이 0.10.1 이다(0.9.1~0.10.0 은 공개되지 않은 개발판, itda-work/skills#46).
+# 요구 판은 0.10.4 — 0.12.4 부터 날씨(Open-Meteo)·환율(서울외국환중개)을 늘 itda-hyve http_request 로 받는데, 0.10.4 전 판은
+# 기본 User-Agent 에 제품명을 싣는다(outbound-identity-leak). 도구 목록으로는 못 가르지만 server_version 으로 가른다(W9 리뷰 M1).
+HYVE_MIN_VERSION = "0.10.4"
 HYVE_OUTDATED = "hyve_outdated"
 
 # 판정 자체를 못 했다는 코드. 역할은 ready 지만 목록이 비거나 모자라므로 빈 상태로
@@ -732,7 +735,7 @@ def detect_hyve_outdated(inp: Inputs) -> dict | None:
     ① 1차: `accounts_list` 최상위 `server_version` 이 `HYVE_MIN_VERSION` 보다 낮다(0.9.5 도 이 필드를 준다).
     ② 2차: 받은편지함 호출이 `snippet_for` 거부(`hyve_outdated`)로 끝났다 — 판 필드가 없거나 형식을 못 읽을 때의 근거.
     판 형식을 못 읽으면 ① 은 판정하지 않는다(모르는 것을 옛 판으로 단정하지 않는다) — ② 는 그대로 본다.
-    ① 이 0.9.6 이상이라고 해도 ② 가 있으면 멈춘다(받은 메일이 비는 것은 같다)."""
+    ① 이 `HYVE_MIN_VERSION` 이상이라고 해도 ② 가 있으면 멈춘다(받은 메일이 비는 것은 같다)."""
     evidence: list[str] = []
     found = server_version(inp)
     need = _version_tuple(HYVE_MIN_VERSION)
@@ -1115,7 +1118,7 @@ def collect_calendar(inp: Inputs, accounts: list[dict], tz: ZoneInfo,
         if any(isinstance(ev, dict) and ev.get("has_attendees") and "attendees" not in ev
                for ev in rows):
             _warn(warnings, "calendar", "degraded", "attendees_missing", acc,
-                  "calendar_events 응답에 attendees 가 없다(itda-hyve 0.9.3 미만)")
+                  "calendar_events 응답에 attendees 가 없다(itda-hyve 0.10.4 미만)")
         events.extend(expand_events(rows, tz, win["day0"], win["day1"], acc,
                                     warnings))
     # 전 계정이 실패하면 그 역할은 ready 가 아니다 — 빈 이벤트를 "조용한 하루" 로
@@ -1199,6 +1202,19 @@ def _read_bodies(inp: Inputs, acc: dict) -> tuple[dict[int, str], dict | None]:
     return out, None
 
 
+def _sibling_error(text: str) -> str | None:
+    """절 텍스트가 형제 스킬의 오류 JSON(`{"status": "error", "error": <종류>, …}`)이면 그 종류, 아니면 None."""
+    if not text.startswith("{"):
+        return None
+    try:
+        obj = json.loads(text)
+    except ValueError:
+        return None
+    if isinstance(obj, dict) and obj.get("status") == "error":
+        return str(obj.get("error") or "error")
+    return None
+
+
 def collect_sections(inp: Inputs, names: list[str],
                      warnings: list[dict]) -> dict:
     """Sections 는 LLM 이 형제 스킬(weather-here·exchange-rate)로 받아 둔 평문."""
@@ -1209,6 +1225,14 @@ def collect_sections(inp: Inputs, names: list[str],
             warnings.append({"role": "sections", "severity": "warning",
                              "code": "section_missing", "section": name,
                              "detail": f"{_f_section(name)} 가 없거나 비었다"})
+            continue
+        kind = _sibling_error(text)
+        if kind is not None:
+            # 형제 스킬의 실패 출력(exchange-rate 는 실패를 stdout JSON 으로 낸다)이 파일에 실렸다 — 절이 아니라 결손이다.
+            # 페이지에 그 JSON 을 싣지 않는다(W9 재확인 M1).
+            warnings.append({"role": "sections", "severity": "warning",
+                             "code": "section_missing", "section": name,
+                             "detail": f"{_f_section(name)} 가 형제 스킬의 오류 출력이다({kind})"})
             continue
         out[name] = {"kind": "text", "text": text}
     return out
@@ -1554,8 +1578,8 @@ def build_plan(inp: Inputs, now: datetime, tz: ZoneInfo, *, save_dir: str,
     아직 정하지 않았을 때만, itda-hyve 프로세스당 한 번 생긴다. 권한이 정해진 뒤에는 최근 위치(10분)면 바로, 아니면 8초 안에
     끝나 메일 수집(첫 로그인 최대 6.5초 실측)과 겹친다. 따로 부르면 매일 바퀴 하나(모델 대기 33~72초 실측)가 늘고, `ip_only` 로
     바꾸면 매일 위치가 시·도부터 틀릴 수 있다(#37 — 대전 KT 회선이 성남). 날씨 예보는 batch 에 넣지 않는다 — 좌표가 location
-    결과에 달려 있어 한 바퀴에 못 넣는다. 스크립트(weather-here)가 샌드박스에서 Open-Meteo 를 직접 부르고, 실패할 때만
-    `http_request` 한 번(SKILL 1-4).
+    결과에 달려 있어 한 바퀴에 못 넣는다. weather-here 가 낸 호출 인자로 모델이 `http_request` 한 번(SKILL 1-4 —
+    weather-here 0.15.0 부터 스크립트 직접 호출 없음, itda-work/skills#46).
     """
     win = _windows(now)
     calls: list[dict] = []

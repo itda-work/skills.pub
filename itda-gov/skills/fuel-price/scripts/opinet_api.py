@@ -1,4 +1,7 @@
-"""오피넷 Open API (선택 경로 — `OPINET_API_KEY` 가 있을 때만).
+"""오피넷 Open API (선택 경로 — itda-hyve 시크릿 `OPINET_API_KEY`). 네트워크 없음.
+
+요청은 itda-hyve ``http_request`` 가 보낸다. 키는 ``params`` 의 ``{{secret:OPINET_API_KEY}}`` 자리표시자로만
+가리킨다 — 스크립트는 키를 보지 않는다(itda-work/skills#45). 이 모듈은 호출 인자를 만들고 저장된 응답을 판독한다.
 
 무료 일반 API: 오피넷 회원가입 → 유가정보 API → 키 즉시 자동 발급, 300회/일.
 문서: https://www.opinet.co.kr/user/custapi/custApiInfo.do
@@ -7,80 +10,110 @@
 돌아온다 — 에러가 아니라 조용히 빈다. 그래서 빈 배열은 "데이터 없음"이 아니라 **키 오류 신호**로
 표면화한다(no-silent-fallback).
 
-지원: 전국 현재가(avgAllPrice) · 시도별 현재가(avgSidoPrice) · 최근 7일 전국 일별(avgRecentPrice).
+지원: 최근 7일 전국 일별(avgRecentPrice) · 최근 7일 시도 일별(areaAvgRecentPrice).
 월간 평균은 API 에 없다 — 웹 통계 경로(opinet_web) 가 정본.
 """
 from __future__ import annotations
 
+import datetime as _dt
 import json
-import os
-import urllib.parse
-import urllib.request
+import re
 
-from opinet_web import PRODUCTS, SIDO_BY_CODE, USER_AGENT, OpinetWebError
+from hyve_input import snippet
+from opinet_web import PRODUCTS, SIDO_BY_CODE, OpinetWebError
 
 API_BASE = "https://www.opinet.co.kr/api"
 KEY_VAR = "OPINET_API_KEY"
-TIMEOUT_SEC = 30
+KEY_PLACEHOLDER = "{{secret:" + KEY_VAR + "}}"
 
-SETUP_GUIDE = (
-    "OPINET_API_KEY 가 설정되지 않았습니다.\n\n"
-    "오피넷 무료 API 키 발급 (즉시 자동 승인):\n"
-    "  1. https://www.opinet.co.kr/user/custapi/custApiInfo.do 접속\n"
-    "  2. 페이지 아래 「일반 API 이용 신청」 (회원가입 필요 · 일반 API 300회/일)\n\n"
-    "설정: 작업 폴더 루트 .env 에 한 줄 —  OPINET_API_KEY=발급받은_키\n"
-    "키가 없어도 기본 경로(웹 통계, --source web)는 그대로 동작합니다."
+KEY_GUIDE = (
+    "오피넷 API 키는 itda-hyve GUI 시크릿 탭에 OPINET_API_KEY 로 등록한다 "
+    "(발급: https://www.opinet.co.kr/user/custapi/custApiInfo.do 하단 「일반 API 이용 신청」, 무료·즉시). "
+    "키 없이 쓰려면 기본 웹 경로(--source web)."
 )
 
 
 class OpinetApiError(OpinetWebError):
-    """Open API 경로 실패."""
+    """Open API 응답 판정 실패."""
 
 
-def resolve_key(cli_arg: str | None = None) -> str:
-    """CLI 인자 > 환경변수 > (가능하면) 공용 env_loader 순으로 키를 찾는다."""
-    if cli_arg:
-        return cli_arg
-    try:  # publish 시 shared/ 에서 주입되는 공용 로더 (.env·settings.json 탐색)
-        import env_loader  # type: ignore
-
-        return env_loader.resolve_api_key(KEY_VAR, None, SETUP_GUIDE)
-    except ImportError:
-        val = os.environ.get(KEY_VAR)
-        if val:
-            return val
-        raise OpinetApiError(SETUP_GUIDE) from None
-    except Exception as e:  # env_loader.MissingAPIKeyError 등
-        raise OpinetApiError(str(e)) from e
+def endpoint_for(region_code: str | None) -> str:
+    return "avgRecentPrice" if region_code is None else "areaAvgRecentPrice"
 
 
-def _call(endpoint: str, key: str, **params: str) -> list[dict]:
-    q = {"out": "json", "code": key, **params}
-    url = f"{API_BASE}/{endpoint}.do?{urllib.parse.urlencode(q)}"
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT_SEC) as resp:
-            raw = resp.read().decode("utf-8", "replace")
-    except Exception as e:  # noqa: BLE001
-        raise OpinetApiError(f"오피넷 API 접속 실패 ({endpoint}): {e}") from e
-    return parse_oil_array(raw, endpoint)
+def call_params(region_code: str | None, prodcd: str) -> dict[str, str]:
+    """``http_request`` 의 ``params`` — 키는 자리표시자로만(URL 쿼리 문자열에 쓰지 않는다)."""
+    params = {"out": "json", "code": KEY_PLACEHOLDER}
+    if region_code is not None:
+        params["area"] = region_code
+    params["prodcd"] = prodcd
+    return params
+
+
+_CODE_IN_TEXT = re.compile(r"(?<![A-Za-z0-9_])(code=)[^&\s\"'<>]*", re.IGNORECASE)
+
+
+def _excerpt(raw: str) -> str:
+    """오류 메시지용 본문 발췌 — 공용 가림(키 이름들)에 더해 오피넷 키 파라미터 ``code=`` 도 가린다."""
+    return snippet(_CODE_IN_TEXT.sub(lambda m: m.group(1) + "••••", raw).encode("utf-8"), 120)
 
 
 def parse_oil_array(raw: str, endpoint: str = "") -> list[dict]:
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as e:
-        raise OpinetApiError(f"오피넷 API 응답이 JSON 이 아닙니다 ({endpoint}): {raw[:120]!r}") from e
+        raise OpinetApiError(f"오피넷 API 응답이 JSON 이 아닙니다 ({endpoint}): {_excerpt(raw)}") from e
+    if not isinstance(data, dict):
+        raise OpinetApiError(f"오피넷 API 응답 구조가 예상과 다릅니다 ({endpoint}): {_excerpt(raw)}")
     oil = (data.get("RESULT") or {}).get("OIL")
-    if oil is None:
-        raise OpinetApiError(f"오피넷 API 응답 구조가 예상과 다릅니다 ({endpoint}): {raw[:120]!r}")
+    if not isinstance(oil, list):
+        raise OpinetApiError(f"오피넷 API 응답 구조가 예상과 다릅니다 ({endpoint}): {_excerpt(raw)}")
     if not oil:
         raise OpinetApiError(
             f"오피넷 API 가 빈 결과를 돌려줬습니다 ({endpoint}). "
-            "키가 없거나 잘못됐을 때 오피넷은 에러 대신 빈 배열을 반환합니다 — "
-            "OPINET_API_KEY 를 확인하세요. 키 없이 쓰려면 --source web (기본값)."
+            "키가 없거나 잘못됐을 때 오피넷은 에러 대신 빈 배열을 반환합니다 — " + KEY_GUIDE
         )
+    if not all(isinstance(r, dict) for r in oil):
+        raise OpinetApiError(f"오피넷 API 응답 행이 객체가 아닙니다 ({endpoint})")
     return oil
+
+
+def _row_date(r: dict) -> _dt.date:
+    d = str(r.get("DATE") or "")
+    try:
+        if len(d) != 8 or not d.isdigit():
+            raise ValueError
+        return _dt.date(int(d[:4]), int(d[4:6]), int(d[6:8]))
+    except ValueError:
+        raise OpinetApiError(f"응답 행의 DATE 가 YYYYMMDD 가 아닙니다: {d!r}") from None
+
+
+def check_rows(rows: list[dict], *, region_code: str | None, prodcd: str) -> None:
+    """행의 제품·지역·날짜가 요청과 명세에 맞는지 — 다른 질의의 응답·빠진 필드·빈 날짜를 막는다.
+
+    명세(Opinet_API_Free.pdf): 전국 ④ ``{DATE, PRODCD, PRICE}`` · 시도 ⑥ ``{DATE, AREA_CD, AREA_NM, PRODCD, PRICE}``.
+    필드가 없으면 요청값으로 채워 보지 않는다(없는 것을 맞다고 하지 않는다).
+    """
+    for r in rows:
+        if "PRODCD" not in r:
+            raise OpinetApiError("응답 행에 PRODCD 가 없습니다 — 명세와 다른 응답입니다")
+        if str(r["PRODCD"]) != prodcd:
+            raise OpinetApiError(f"응답 제품코드({r['PRODCD']})가 요청({prodcd})과 다릅니다")
+        if region_code is not None:
+            if "AREA_CD" not in r:
+                raise OpinetApiError("응답 행에 AREA_CD 가 없습니다 — 명세와 다른 응답입니다")
+            if str(r["AREA_CD"]) != region_code:
+                raise OpinetApiError(f"응답 지역코드({r['AREA_CD']})가 요청({region_code})과 다릅니다")
+    dates = sorted(_row_date(r) for r in rows)
+    if len(set(dates)) != len(dates):
+        raise OpinetApiError("응답에 같은 날짜 행이 두 번 있습니다 — 다른 질의의 응답이 섞였습니다")
+    gaps = [f"{a:%Y-%m-%d}→{b:%Y-%m-%d}" for a, b in zip(dates, dates[1:]) if (b - a).days != 1]
+    if gaps:
+        raise OpinetApiError("응답 날짜가 하루씩 이어지지 않습니다: " + ", ".join(gaps))
+
+
+def latest_date(rows: list[dict]) -> _dt.date:
+    return max(_row_date(r) for r in rows)
 
 
 def _num(v) -> float | None:
@@ -88,30 +121,6 @@ def _num(v) -> float | None:
         return float(str(v).replace(",", ""))
     except (TypeError, ValueError):
         return None
-
-
-def current_national(key: str) -> list[dict]:
-    """전국 현재 평균가 — [{TRADE_DT, PRODCD, PRODNM, PRICE, DIFF}]."""
-    return _call("avgAllPrice", key)
-
-
-def current_sido(key: str, sido: str | None = None, prodcd: str | None = None) -> list[dict]:
-    params: dict[str, str] = {}
-    if sido:
-        params["sido"] = sido
-    if prodcd:
-        params["prodcd"] = prodcd
-    return _call("avgSidoPrice", key, **params)
-
-
-def recent_7days_national(key: str, prodcd: str) -> list[dict]:
-    """④ 최근 7일간 전국 일일 평균가격 — [{DATE, PRODCD, PRICE}] (가이드 p.7)."""
-    return _call("avgRecentPrice", key, prodcd=prodcd)
-
-
-def recent_7days_area(key: str, area: str, prodcd: str) -> list[dict]:
-    """⑥ 최근 7일간 일일 지역별 평균가격 — [{DATE, AREA_CD, AREA_NM, PRODCD, PRICE}] (가이드 p.9)."""
-    return _call("areaAvgRecentPrice", key, area=area, prodcd=prodcd)
 
 
 def _date_label(d: str) -> str:
@@ -125,17 +134,13 @@ def rows_to_series(rows: list[dict]) -> list[tuple[str, float | None]]:
     return [(_date_label(r.get("DATE", "")), _num(r.get("PRICE"))) for r in rows]
 
 
-def series_from_api(key: str, *, region_code: str | None, prodcd: str) -> tuple[str, list[tuple[str, float | None]]]:
-    """(지역명, 최근 7일 시계열). 전국=avgRecentPrice, 시도=areaAvgRecentPrice."""
+def region_name(region_code: str | None, rows: list[dict]) -> str:
     if region_code is None:
-        return "전국", rows_to_series(recent_7days_national(key, prodcd))
-    rows = recent_7days_area(key, region_code, prodcd)
-    name = SIDO_BY_CODE.get(region_code) or str(rows[0].get("AREA_NM", region_code))
-    return name, rows_to_series(rows)
+        return "전국"
+    return SIDO_BY_CODE.get(region_code) or str(rows[0].get("AREA_NM", region_code))
 
 
 __all__ = [
-    "KEY_VAR", "OpinetApiError", "PRODUCTS", "resolve_key", "parse_oil_array",
-    "current_national", "current_sido", "recent_7days_national", "recent_7days_area",
-    "rows_to_series", "series_from_api",
+    "API_BASE", "KEY_VAR", "KEY_PLACEHOLDER", "OpinetApiError", "PRODUCTS", "endpoint_for", "call_params",
+    "parse_oil_array", "check_rows", "latest_date", "rows_to_series", "region_name",
 ]

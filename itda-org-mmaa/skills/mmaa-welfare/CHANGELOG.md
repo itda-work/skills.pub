@@ -1,5 +1,52 @@
 # Changelog — mmaa-welfare
 
+## [0.4.0] — 2026-10-01 (itda-work/skills#46)
+
+> ⚠️ **배포 차단** — itda-hyve 0.10.4 공개 **뒤에** 배포한다. 0.10.4 는 기본 User-Agent 를 범용 `Mozilla/5.0` 으로 바꾼다 —
+> 재수집 호출은 UA 헤더를 싣지 않으므로, 그 전 판에서는 군인공제회 서버 로그에 제품명이 남는다.
+> 이 경계는 도구 목록으로 가를 수 없어 스킬이 판별하지 못한다. `compatibility` 는 itda-hyve 0.10.4 이상 하나다.
+> 검색·답변(동봉 스냅샷)은 네트워크를 쓰지 않아 이 경계와 무관하다.
+
+### Changed
+
+- **BREAKING — 재수집은 itda-hyve, `collect.py` 는 판독만** (itda-work/skills#45, 규칙 `cowork-network-via-hyve`). `requests` 직접 호출과
+  0.7초 순차 대기(`--delay`)를 지웠다.
+  - 옛판: `collect.py [--output-dir D] [--delay S] [--limit N]` 한 번(스크립트가 요청).
+  - 새판: `collect.py plan --run-dir R --save-dir S [--limit N]` → itda-hyve `batch`(`plan_file`) → `collect.py collect --run-dir R [--output-dir D]`
+    를 `status: "ok"` 가 될 때까지 되풀이한다(진입 → 메뉴·목록 → 상세, 계획 파일 하나에 8개 — batch 동시 실행 한 번, 저속 수집).
+    회차 상태는 `R/mmaa-state.json`. `--save-dir` 는 같은 폴더의 호스트 절대 경로(`/…`·`C:\…`·`C:/…`·UNC).
+  - 기본 출력이 스킬 `data/` 에서 **회차 폴더의 `snapshot/`** 으로 바뀌었다(배포본 `data/` 는 읽기 전용). 스킬 `data/` 갱신은 `--output-dir` 로.
+- **BREAKING — 전량 대조** — 옛판은 받지 못한 페이지를 로그만 찍고 건너뛴 채 스냅샷을 썼다. 이제 계획한 페이지가 **전부** 와야 저장한다.
+  실패 자리·누리집 페이지가 아닌 본문(WAF 차단 "Page Not Found (wf)" — GNB `dep1a`·`</html>` 부재로 판정, 잘린 본문)은 다시
+  계획하고, 한 페이지가 세 번 나쁘게 오면 `partial`(exit 2)로 끝내며 스냅샷을 쓰지 않는다. 바퀴 상한 30 — 앞 계획이 전부
+  판정된(안 온 파일 0) `collect` 만 센다(상태 `cycles`; 계획 파일 이름의 `round` 는 판정마다 오른다 — W13 재확인 b3).
+  아직 안 온 파일은 실패로 세지 않는다 — batch 가 끝나기 전에 `collect` 를 불러도 같은 계획을 다시 낼 뿐이고(`waiting`, 바퀴 그대로),
+  새 파일 없이 5번 연달아 부르면 상태를 그대로 둔 채 `not_fetched`(exit 1)로 멈춘다(W13 리뷰 m2 — 세 번 헛부르면 되살릴 수 없는 `partial` 이었다).
+  스냅샷 직전에 받은 파일이 사라졌으면 traceback 대신 그 페이지만 다시 계획한다(`lost`, W13 리뷰 m3).
+  목록이 로그인 셸이 아닌데 1쪽에서 상세 id 를 하나도 못 읽으면 `warnings` 에 싣는다(W13 리뷰 m1 — 조용한 `ok` 였다).
+- **BREAKING — 출력** — stdout JSON(`status`: `planned`·`incomplete`·`ok`·`smoke`·`partial`·`error`, 계획이면 `plan_files`·`batch_args`,
+  끝나면 `meta`·`warnings`). 진행 로그는 stderr 그대로. `--limit` 스모크 결과는 `status: "smoke"` 로 전량(`ok`)과 구분한다.
+- `meta.json` 에 `menu_count`(GNB 에서 발견한 복지포털 메뉴 수)·`listing_auth_count`(로그인 셸이었던 목록 수)·`listing_ids`(목록에서 읽은 상세 수)·`limited` 추가.
+- 요청 허용 범위를 코드로 고정: `https://www.mmaa.or.kr/web/contents/` 아래만 계획한다(밖이면 받지 않고 `warnings`).
+- 저장 이름 `mmaa/<p|l|v>-<경로 이름>-<URL 해시>.html` — 대소문자만 다른 경로(`WF-…`·`Wf-…`)도 대소문자 무시 파일 시스템에서 겹치지 않는다.
+- `requests` 의존성 제거(`requirements.txt`·`deps.json` — beautifulsoup4 만).
+
+### Added
+
+- 로그인 영역 확인(2026-10-01 itda-hyve 실측): 메뉴 39개 발견, 콘도 예약 등 로그인 셸은 `auth_required`·본문 비움 그대로, **제휴복지 카테고리 8개와
+  특별할인소식 목록 1쪽도 전부 로그인 셸**이다(목록을 따라가도 상세가 나오지 않는다). 동봉 스냅샷(2026-09-04)은 로그인 영역 25쪽이 이미 본문 없이
+  들어 있어 다시 만들지 않았다. robots.txt 는 없다(WAF 의 "Page Not Found (wf)" HTML 을 200 으로 준다 — 규칙 없음).
+- hyve 층 판독은 공용 `shared/hyve_input.py`. `references/netbridge.md` 동봉. Windows 콘솔(cp949) UTF-8 재설정(테스트로 고정).
+- 실측 픽스처 5종(`tests/trim_fixture.py` 로 GNB 복지포털 블록·본문 컨테이너·로그인 스크립트만 남김)과 흐름 테스트 `tests/test_collect_flow.py`.
+## [0.3.3] — 2026-09-30 (itda-work/skills#47)
+
+### Fixed
+
+- **SKILL_DIR 확정 블록이 새 Cowork 배치에서 빈 값을 내던 것** — Cowork 가 플러그인을 `/root/.claude/plugins/synced/` 에 두고
+  `CLAUDE_PLUGIN_ROOT` 를 주지 않자 옛 블록의 1·2순위가 둘 다 비었다. 새 블록(규칙 `skill-dir-resolution` 정본)은 스킬을 불러올 때 받은
+  base directory 를 먼저 넣게 하고 그 값을 검증해 쓴다. 넣지 못했을 때만 설정 홈(`CLAUDE_CONFIG_DIR`)의 동기화본·Code 캐시와
+  Cowork 배치를 찾으며, 후보마다 `SKILL.md` 를 확인하고 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다. PowerShell 블록도 같은 계약으로 바꿨다.
+
 ## [0.3.2] — 2026-09-27
 
 ### Changed

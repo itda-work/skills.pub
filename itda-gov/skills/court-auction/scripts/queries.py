@@ -1,29 +1,30 @@
-"""법원경매 고수준 워크플로우 — 입력 검증·body 빌드·정규화 조합.
+"""법원경매 요청 빌더 — 입력 검증과 요청 본문(JSON) 만들기. 네트워크 없음.
 
-``CourtAuctionClient``(transport)를 인자로 받아 5개 워크플로우 함수를 제공한다.
-모두 ``(ok, result, reason)`` 계약을 따른다 — 입력 검증 실패와 사이트 차단/오류를
-한국어 reason으로 fail-loud한다.
+요청은 itda-hyve ``http_request`` 가 보낸다(규칙 ``cowork-network-via-hyve``). 이 모듈은 사이트
+화면이 보내는 것과 **같은 본문**을 만든다 — 키 집합·순서·값은 2026-10-01 aside 로 뜬 요청
+프로파일(XHR ``send`` 본문) 그대로다(``request-profile-first``). 입력이 틀리면 ``ValueError``.
 """
 
 from __future__ import annotations
 
 import re
+from datetime import date as _date, datetime, timedelta, timezone
 
 from codetables import (
-    describe_bid_type_code,
+    REGION_USAGE_LARGE,
     resolve_bid_type_code,
     resolve_region_codes,
-    resolve_usage_code,
-)
-from normalize import (
-    normalize_case_detail_response,
-    normalize_court_codes_response,
-    normalize_notice_detail_response,
-    normalize_notice_list_response,
-    normalize_property_search_response,
+    resolve_usage,
 )
 
 PAGE_SIZE_VALUES = [10, 20, 50, 100]
+KST = timezone(timedelta(hours=9))
+# 물건상세검색 화면의 기간 기본값은 오늘 ~ 14일 뒤다(2026-10-01 aside — 20261001~20261015). 기간을 비우면 화면이
+# "기간을 올바르게 입력해주세요." 로 거부해 요청이 나가지 않는다 — 빈 기간은 화면이 보내는 값이 아니다.
+SEARCH_WINDOW_DAYS = 14
+# 소재지 분기에서도 숨은 법원 셀렉트의 값이 실린다 — 화면 기본값은 서울중앙지방법원이다(서버는 cortStDvs "2" 에서
+# 이 값을 쓰지 않는다: 2026-10-01 부산 조회 결과 3행 전부 B000412).
+REGION_BRANCH_HIDDEN_COURT = "B000210"
 
 
 # --- 입력 검증 (ValueError를 던지면 호출 함수가 reason으로 변환) ---
@@ -108,130 +109,98 @@ def _range_value(rng, key, *, integer_only=False, label=""):
     return text
 
 
-# --- Workflow A: 매각공고 목록 ---
+# --- 매각공고 목록 (PGJ143M01 "검색") ---
 
 
-def search_sale_notices(client, *, date, court_code=None, bid_type=None, include_raw=True):
-    try:
-        search_date = _to_notice_search_date(date)
-        court = _ensure_court_code(court_code) if court_code else ""
-    except ValueError as exc:
-        return False, None, str(exc)
-    bid_code = resolve_bid_type_code(bid_type)
-
+def build_notices_body(*, date, court_code=None, bid_type=None):
+    """``(body, search_date)`` — 사이트는 월(YYYYMM)만 보낸다. 일자는 받은 뒤 로컬로 거른다."""
+    search_date = _to_notice_search_date(date)
+    court = _ensure_court_code(court_code) if court_code else ""
     body = {
         "dma_srchDspslPbanc": {
-            # PGJ143M01 "검색" 버튼은 월(YYYYMM) 키를 POST한다. 일자는 아래에서 로컬 필터.
             "srchYmd": search_date["query_ymd"],
             "cortOfcCd": court,
-            "bidDvsCd": bid_code,
+            "bidDvsCd": resolve_bid_type_code(bid_type),
             "srchBtnYn": "Y",
         }
     }
-    ok, payload, reason = client.post_json("notices", body)
-    if not ok:
-        return False, None, reason
-
-    month = f"{search_date['query_ymd'][:4]}-{search_date['query_ymd'][4:6]}"
-    requested_bid = {"code": bid_code, "name": describe_bid_type_code(bid_code)} if bid_code else None
-    result = normalize_notice_list_response(
-        payload,
-        requested_date=(
-            f"{search_date['exact_ymd'][:4]}-{search_date['exact_ymd'][4:6]}-{search_date['exact_ymd'][6:8]}"
-            if search_date["exact_ymd"]
-            else month
-        ),
-        requested_month=month,
-        requested_court_code=court or None,
-        requested_bid_type=requested_bid,
-        include_raw=True,
-    )
-
-    if search_date["exact_ymd"]:
-        result["items"] = [
-            item
-            for item in result["items"]
-            if (item.get("raw") or {}).get("dspslDxdyYmd") == search_date["exact_ymd"]
-        ]
-        result["count"] = len(result["items"])
-
-    if not include_raw:
-        for item in result["items"]:
-            item.pop("raw", None)
-    return True, result, ""
+    return body, search_date
 
 
-# --- Workflow A: 공고 펼치기 ---
+# --- 공고 펼치기 (PGJ143M02/M03 — 목록 행을 그대로 넘긴다) ---
 
 
-def _build_notice_detail_body(notice):
-    if not isinstance(notice, dict):
-        raise ValueError("공고 펼치기에는 공고 객체(또는 raw)가 필요합니다.")
-    raw = notice.get("raw") if isinstance(notice.get("raw"), dict) else notice
+def _blank(value):
+    return "" if value is None else str(value)
 
-    cort = raw.get("cortOfcCd") or notice.get("courtCode") or ""
-    if not cort:
-        raise ValueError("공고 펼치기에는 법원사무소코드(cortOfcCd)가 필요합니다.")
 
-    sale_ymd = raw.get("dspslDxdyYmd") or notice.get("saleDate") or ""
-    if not sale_ymd:
-        raise ValueError("공고 펼치기에는 매각기일(dspslDxdyYmd)이 필요합니다.")
+def build_notice_detail_body(row):
+    """목록(``dlt_rletDspslPbancLst``) 한 행으로 상세 본문을 만든다.
 
-    jdbn = raw.get("jdbnCd") or notice.get("judgeDeptCode") or ""
+    화면(``scwin.sch_calendar_onclick``)은 행의 값을 그대로 옮기고 ``cortAuctnJdbnNm`` 은 비워 보낸다
+    (2026-10-01 aside 실측 — 목록 행에 담당계 이름이 있어도 빈 문자열). ``null`` 은 빈 문자열이 된다.
+    """
+    if not isinstance(row, dict):
+        raise ValueError("공고 펼치기에는 목록(notices) 행이 필요합니다.")
+    cort = _ensure_court_code(row.get("cortOfcCd"))
+    sale_ymd = _to_ymd(row.get("dspslDxdyYmd"), "dspslDxdyYmd")
+    jdbn = _blank(row.get("jdbnCd")).strip()
     if not jdbn:
-        raise ValueError(
-            "공고 펼치기에는 jdbnCd(재판부 토큰)가 필요합니다 — 목록(notices) 응답의 raw를 그대로 넘겨주세요."
-        )
-
-    bid_dvs = raw.get("bidDvsCd") or raw.get("intgCd") or resolve_bid_type_code(notice.get("bidType")) or ""
-
+        raise ValueError("목록 행에 담당계 코드(jdbnCd)가 없습니다.")
     return {
         "dma_srchGnrlPbanc": {
-            "cortOfcCd": _ensure_court_code(cort),
-            "dspslDxdyYmd": _to_ymd(sale_ymd, "dspslDxdyYmd"),
-            "bidBgngYmd": _optional_ymd(raw.get("bidBgngYmd"), "bidBgngYmd"),
-            "bidEndYmd": _optional_ymd(raw.get("bidEndYmd"), "bidEndYmd"),
+            "cortOfcCd": cort,
+            "dspslDxdyYmd": sale_ymd,
+            "bidBgngYmd": _optional_ymd(row.get("bidBgngYmd"), "bidBgngYmd"),
+            "bidEndYmd": _optional_ymd(row.get("bidEndYmd"), "bidEndYmd"),
             "jdbnCd": jdbn,
-            "cortAuctnJdbnNm": raw.get("cortAuctnJdbnNm") or notice.get("judgeDeptName") or "",
-            "jdbnTelno": raw.get("jdbnTelno") or notice.get("judgeDeptPhone") or "",
-            "dspslPlcNm": raw.get("dspslPlcNm") or notice.get("salePlace") or "",
-            "fstDspslHm": raw.get("fstDspslHm") or "",
-            "scndDspslHm": raw.get("scndDspslHm") or "",
-            "thrdDspslHm": raw.get("thrdDspslHm") or "",
-            "fothDspslHm": raw.get("fothDspslHm") or "",
-            "bidDvsCd": bid_dvs,
+            "cortAuctnJdbnNm": "",
+            "jdbnTelno": _blank(row.get("jdbnTelno")),
+            "dspslPlcNm": _blank(row.get("dspslPlcNm")),
+            "fstDspslHm": _blank(row.get("fstDspslHm")),
+            "scndDspslHm": _blank(row.get("scndDspslHm")),
+            "thrdDspslHm": _blank(row.get("thrdDspslHm")),
+            "fothDspslHm": _blank(row.get("fothDspslHm")),
+            "bidDvsCd": _blank(row.get("bidDvsCd")),
         }
     }
 
 
-def get_sale_notice_detail(client, notice, *, include_raw=True):
-    try:
-        body = _build_notice_detail_body(notice)
-    except ValueError as exc:
-        return False, None, str(exc)
-    ok, payload, reason = client.post_json("noticeDetail", body)
-    if not ok:
-        return False, None, reason
-    return True, normalize_notice_detail_response(payload, include_raw=include_raw), ""
+# --- 사건 단건 (PGJ15AF01) ---
 
 
-# --- Workflow B: 사건 단건 ---
+def build_case_body(*, court_code, case_number):
+    """``(body, 사건번호)`` — 화면은 ``{연도}타경{번호}`` 로 보낸다."""
+    court = _ensure_court_code(court_code)
+    case = _normalize_case_number(case_number)
+    if not re.fullmatch(r"\d{4}타경\d+", case):
+        raise ValueError(f"사건번호는 '2024타경100001' 형식이어야 합니다: '{case_number}'")
+    return {"dma_srchCsDtlInf": {"cortOfcCd": court, "csNo": case}}, case
 
 
-def get_case(client, *, court_code, case_number, include_raw=True):
-    try:
-        court = _ensure_court_code(court_code)
-        case = _normalize_case_number(case_number)
-    except ValueError as exc:
-        return False, None, str(exc)
-    body = {"dma_srchCsDtlInf": {"cortOfcCd": court, "csNo": case}}
-    ok, payload, reason = client.post_json("caseDetail", body)
-    if not ok:
-        return False, None, reason
-    return True, normalize_case_detail_response(payload, include_raw=include_raw), ""
+# --- 법원사무소 목록 (물건상세검색 화면이 부른다) ---
 
 
-# --- Workflow C: 물건 자유검색 ---
+def build_courts_body():
+    return {"cortExecrOfcDvsCd": "00079B"}
+
+
+# --- 물건상세검색 (PGJ151F00 "검색") ---
+
+
+def _search_window(sale, today):
+    base = today or datetime.now(KST).date()
+    frm = _optional_ymd(sale.get("from"), "saleDate.from") or base.strftime("%Y%m%d")
+    to = _optional_ymd(sale.get("to"), "saleDate.to") or (base + timedelta(days=SEARCH_WINDOW_DAYS)).strftime("%Y%m%d")
+    if frm > to:
+        if not _optional_ymd(sale.get("to"), "saleDate.to"):
+            # 사용자는 끝을 준 적이 없다 — 무엇을 썼는지와 고칠 인자를 말한다(W12 재확인 n1).
+            raise ValueError(
+                f"매각기일 시작({frm})이 끝({to})보다 늦다 — 끝을 주지 않아 화면 기본값(오늘+{SEARCH_WINDOW_DAYS}일 = {to})을 썼다. "
+                "--sale-to 도 준다."
+            )
+        raise ValueError(f"매각기일 시작({frm})이 끝({to})보다 늦다.")
+    return frm, to
 
 
 def build_property_search_body(
@@ -250,15 +219,33 @@ def build_property_search_body(
     flbd_count=None,
     total_yn="Y",
     order_by="",
-    notify_location=False,
+    today: _date | None = None,
 ):
+    """화면이 보내는 본문. 두 분기가 있다(2026-10-01 aside 로 둘 다 떴다 — ``request-profile.json``).
+
+    - 법원 분기(``cortStDvs`` "1"): 법원·담당계로 고른다. ``notifyLoc`` "off".
+    - 소재지 분기(``cortStDvs`` "2"): 시도·시군구·읍면동으로 고른다. 공고중소재지 체크(기본)가 ``notifyLoc`` "on",
+      숨은 법원 셀렉트의 기본값이 ``cortOfcCd`` 에 실린다. 화면은 두 분기를 라디오로 가르므로 법원과 지역을 함께 받지 않는다.
+
+    기간(``bidBgngYmd``·``bidEndYmd``)은 화면에서 비울 수 없다 — 주지 않으면 화면 기본값(오늘 ~ 14일 뒤, KST).
+    입찰구분을 주지 않으면 화면의 "전체"(빈 문자열).
+    """
     page_no = _to_positive_int(page, 1, "page")
     size = _to_positive_int(page_size, 10, "pageSize", allowed=PAGE_SIZE_VALUES)
-    court = _ensure_court_code(court_code) if court_code else ""
     reg = resolve_region_codes(region or {})
     usage = usage if isinstance(usage, dict) else {}
+    use = resolve_usage(usage.get("large"), usage.get("medium"), usage.get("small"))
     sale = sale_date if isinstance(sale_date, dict) else {}
-    has_region = bool(reg["sido"] or reg["sigungu"] or reg["dong"])
+    has_region = bool(reg["sido"])
+    if has_region and (court_code or judge_dept_code):
+        raise ValueError("화면은 법원/담당계와 소재지 중 하나로 고른다 — 법원코드와 지역을 함께 줄 수 없다.")
+    if has_region and use["large"] and use["large"] not in REGION_USAGE_LARGE:
+        raise ValueError("차량및운송장비·기타 용도는 법원으로만 검색할 수 있다(사이트 안내) — 지역 대신 법원코드를 준다.")
+    if has_region:
+        court = REGION_BRANCH_HIDDEN_COURT
+    else:
+        court = _ensure_court_code(court_code) if court_code else ""
+    bgng, end = _search_window(sale, today)
 
     return {
         "dma_pageInfo": {
@@ -290,9 +277,9 @@ def build_property_search_body(
             "cortOfcCd": court,
             "jdbnCd": str(judge_dept_code).strip() if judge_dept_code else "",
             "execrOfcDvsCd": "",
-            "lclDspslGdsLstUsgCd": resolve_usage_code(usage.get("large"), "large"),
-            "mclDspslGdsLstUsgCd": resolve_usage_code(usage.get("medium"), "medium"),
-            "sclDspslGdsLstUsgCd": resolve_usage_code(usage.get("small"), "small"),
+            "lclDspslGdsLstUsgCd": use["large"],
+            "mclDspslGdsLstUsgCd": use["medium"],
+            "sclDspslGdsLstUsgCd": use["small"],
             "cortAuctnMbrsId": "",
             "aeeEvlAmtMin": _range_value(appraised_price_range, "min", label="appraisedPriceRange.min"),
             "aeeEvlAmtMax": _range_value(appraised_price_range, "max", label="appraisedPriceRange.max"),
@@ -305,14 +292,14 @@ def build_property_search_body(
             "mvprpArtclKndCd": "",
             "mvprpArtclNm": "",
             "mvprpAtchmPlcTypCd": "",
-            "notifyLoc": "Y" if notify_location else "off",
+            "notifyLoc": "on" if has_region else "off",
             "lafjOrderBy": str(order_by) if order_by else "",
             "pgmId": "PGJ151F01",
             "csNo": "",
             "cortStDvs": "2" if has_region else "1",
             "statNum": 1,
-            "bidBgngYmd": _optional_ymd(sale.get("from"), "saleDate.from"),
-            "bidEndYmd": _optional_ymd(sale.get("to"), "saleDate.to"),
+            "bidBgngYmd": bgng,
+            "bidEndYmd": end,
             "dspslDxdyYmd": "",
             "fstDspslHm": "",
             "scndDspslHm": "",
@@ -330,26 +317,3 @@ def build_property_search_body(
             "sideDvsCd": "",
         },
     }
-
-
-def search_properties(client, *, include_raw=True, **filters):
-    try:
-        body = build_property_search_body(**filters)
-    except ValueError as exc:
-        return False, None, str(exc)
-    ok, payload, reason = client.post_json("propertySearch", body)
-    if not ok:
-        return False, None, reason
-    return True, normalize_property_search_response(
-        payload, requested_filters=body["dma_srchGdsDtlSrchInfo"], include_raw=include_raw
-    ), ""
-
-
-# --- 법원사무소코드 ---
-
-
-def get_court_codes(client):
-    ok, payload, reason = client.post_json("courts", {})
-    if not ok:
-        return False, None, reason
-    return True, normalize_court_codes_response(payload), ""

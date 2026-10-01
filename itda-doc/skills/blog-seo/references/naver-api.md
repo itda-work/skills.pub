@@ -12,7 +12,7 @@
 
 > **⚠️ 이관 고지**: 오픈 API(검색·데이터랩)는 NCP **NAVER API HUB**로 이관 중 — 2026-07-30 이후 개발자센터 신규 신청 불가, 기존 키는 2027-06-30까지 유효. 상세는 `docs/credentials/naver-openapi.md`.
 
-키 설정 위치: 작업 폴더 루트 `.env`(모든 환경 자동 탐색, Cowork 포함), 또는 셸 환경변수.
+키 설정 위치: 환경변수(셸 환경변수 또는 `claude config set env.<KEY>`). env 파일은 읽지 않는다(itda-work/skills#45).
 
 ---
 

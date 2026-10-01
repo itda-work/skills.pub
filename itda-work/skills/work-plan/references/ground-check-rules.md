@@ -43,7 +43,7 @@ DP-3 원칙: 검증 실패 시 abort(중단)가 아닌 downgrade(경고 표시)�
 | NAVER_SEARCHAD_ACCESS_KEY | blog-seo, eatery-trend | 네이버 검색광고 API 콘솔 → 액세스 키 |
 | NAVER_SEARCHAD_SECRET_KEY | blog-seo, eatery-trend | 네이버 검색광고 API 콘솔 → 시크릿 키 |
 | RONE_API_KEY | realty-price-stats | 한국부동산원 R-ONE 가입 후 발급 |
-| KO_DATA_API_KEY | g2b, funding, realty-* | 공공데이터포털(data.go.kr) → 회원가입 → 해당 데이터셋 활용신청 |
+| KO_DATA_API_KEY | g2b, realty-* | 공공데이터포털(data.go.kr) → 회원가입 → 해당 데이터셋 활용신청 |
 | KOSIS_API_KEY | kosis, realty-supply | KOSIS 통계청(kosis.kr) → 개발자 센터 → API 키 발급 |
 | DART_API_KEY | dart, market-scan | DART 공시(dart.fss.or.kr) → 오픈 API → 인증키 신청 |
 | ECOS_API_KEY | ecos, market-scan | 한국은행 경제통계(ecos.bok.or.kr) → 개발자 센터 → API 키 |

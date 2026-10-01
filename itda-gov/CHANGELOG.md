@@ -1,5 +1,25 @@
 # Changelog — itda-gov
 
+## [9.0.0] - 2026-10-01
+
+> 요구: **itda-hyve 0.10.4 이상**(옮긴 스킬 전부). itda-hyve 0.10.4 를 먼저 설치·업데이트한 뒤 이 판을 설치한다 — 0.10.3 이하는 응답 `final_url` 등에 시크릿이 되비치고 기본 User-Agent 에 제품명이 실린다.
+
+### BREAKING
+
+- **요청은 itda-hyve, 스크립트는 계획·가공만** (itda-work/skills#45·#46, 규칙 `cowork-network-via-hyve`). 스크립트가 외부 사이트·API 를 직접 부르지 않는다. 스크립트가 낸 호출을 itda-hyve(`http_request`·`batch`)가 받아 저장하고, 스크립트는 그 파일을 `--input` 으로 읽어 판정·전량 대조·가공만 한다. Claude Code 와 Cowork 가 같은 경로다. 옮긴 스킬: `dart` 0.21.1 · `ecos` 0.12.1 · `g2b` 0.12.1 · `kosis` 0.14.1 · `realty-deals` 0.13.1 · `realty-jeonse-gap` 0.11.1 · `realty-price-stats` 0.12.1 · `realty-supply` 0.11.1 · `fuel-price` 0.5.0 · `funding` 3.0.0 · `customs-notice` 0.2.0 · `fss-docs` 0.2.0 · `taxlaw` 0.2.0 · `court-auction` 0.2.0(키 안내 `realty-meta` 0.11.0). 하위 명령·출력 필드·저장 이름이 바뀌었다 — 스킬별 CHANGELOG 를 본다.
+- **API 키는 itda-hyve 시크릿 탭에만 둔다** — `DART_API_KEY` · `ECOS_API_KEY` · `KOSIS_API_KEY` · `KO_DATA_API_KEY` · `RONE_API_KEY` · `OPINET_API_KEY`(선택). 요청에는 `{{secret:이름}}` 자리표시만 실리고 스크립트·Claude 는 값을 보지 않는다. 환경변수·`--api-key`·`claude config set env.*` 경로와 키 주입 규칙을 지웠고, `.env`·`.env.txt` 같은 env 파일도 읽지 않는다(#45).
+- **`funding` 은 키 없는 공개 페이지 수집 전용** — K-Startup 공공데이터 API 경로를 지웠고(`KO_DATA_API_KEY` 를 쓰지 않는다), KOCCA 목록 수집은 robots 불허라 멈췄다.
+
+### Removed
+
+- `bai-notice` — 감사원 목록 데이터가 robots `User-agent: *` 불허 경로(`/api/`)로만 나오고 RSS·오픈 API 대안이 없다(사용자 결정 2026-10-01). 감사원 누리집 통합공지(https://www.bai.go.kr/bai/notice/notification/tab01)를 직접 확인한다.
+- `airport-airline-stats` — 인천공항 항공사별 통계 화면이 robots `User-agent: *` 불허 경로로만 나온다(사용자 결정 2026-10-01). 공공데이터포털 인천국제공항공사 API(15095072·15160910) 또는 공사 누리집 통계 화면을 직접 확인한다.
+
+### Fixed
+
+- **SKILL_DIR 확정 블록**(itda-work/skills#47) — 새 Cowork 배치(`/root/.claude/plugins/synced/…`, `CLAUDE_PLUGIN_ROOT` 없음)에서 빈 값을 내던 옛 블록을 바꿨다. 스킬을 불러올 때 받은 base directory 를 먼저 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾으며, 후보가 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다(PowerShell 블록도 같은 계약). 스크립트를 실행하는 스킬 전부.
+- 옮기며 드러난 수집 결함 — 전량 대조·응답 되비침 대조를 넣으며 고쳤다. 예: `dart` 연도 없는 조회가 7~12월에 실패, `realty-supply` KOSIS URL 오타·없는 표 ID·폐기된 청약 엔드포인트, `realty-price-stats` R-ONE 주간 시점, `fss-docs` 첨부가 늘 0건, `court-auction` 용도 코드표가 사이트와 다름. 상세는 스킬별 CHANGELOG.
+
 ## [8.0.1] - 2026-09-29
 
 ### Changed

@@ -19,7 +19,7 @@
 
 ## 사전 준비
 
-스킬별 API 키·환경변수·계정 설정·Python 패키지는 각 스킬의 `SKILL.md` Prerequisites 절과 `GUIDE.md` 에 있습니다. 여러 스킬이 같은 키를 쓰면 작업 폴더 `.env` 한 곳에 두면 됩니다.
+스킬별 API 키·환경변수·계정 설정·Python 패키지는 각 스킬의 `SKILL.md` Prerequisites 절과 `GUIDE.md` 에 있습니다. 여러 스킬이 같은 키를 쓰면 환경변수 하나로 함께 쓰입니다 — 스킬은 `.env` 같은 파일을 읽지 않습니다(itda-work/skills#45).
 
 ## 개발
 

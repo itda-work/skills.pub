@@ -2,6 +2,22 @@
 
 이 플러그인의 주요 변경 사항을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/), 버전은 [SemVer](https://semver.org/)를 따릅니다.
 
+## [2.1.0] - 2026-10-01
+
+### Added
+
+- **`windows-remote-lab` 0.2.0 되살림** — 2026-09-25 저장소 이관 때 "hyve 앱 MCP 없이 쓸 수 없다"고 보고 뺀 실기 SSH 랩을 되살렸다. 본문(SSH 접속·파일 push/pull·헤드리스 Office COM·좀비 가드)은 hyve 앱과 무관했고, 앱 전용이던 부록(hyve.exe 기동·MCP 프리셋 터널)은 앱 이름 없는 자리표시(`<app>`·`<PORT>`) 절차로 바꾸고 그때 실측값은 기록으로 남겼다. 보관된 `itda-skills/hyve` 판(교훈 반영본)을 옮기며 2026-10-01 실측(로컬 네트워크의 다른 Windows 10 실기, Boot Camp·amd64) 교훈을 함께 실었다: 함정 ⑦ 보강(GUI 바이너리 stdout 은 바이너리마다 다르다 — Wails 앱은 SSH 에서 정상 출력) · ⑰ SSH 기본 셸이 pwsh 7 일 수 있다(`DefaultShell` — 5.1 명시 + stdin 전달) · ⑱ 절전 노트북은 사용자 세션의 `SetThreadExecutionState` 로 실측 동안만 붙잡는다(전원 설정 불변) · 부록 ⓒ 사용자 세션 GUI 자동화(Win10 껍데기 UI 는 MSAA 로 열거, P/Invoke `$null`→`""` 함정은 `[NullString]::Value`, "뉴스 및 관심사" 위젯 덮임, BitBlt 캡처, 강제 종료 시 트레이 아이콘 잔존으로 `NIM_DELETE` 대조). 없는 저장소 규칙 경로 참조는 보관 저장소 기록으로 바꿨다. GUIDE 「안 될 때」 2행·사용자 화면 자동화 예시.
+
+### Changed
+
+- `windows-parallels-lab` 0.2.0 — 같은 회차 실측 교훈 6건: BOM 없이 dot-source 된 `.ps1` 의 한글 UIA 이름 비교 무음 실패 · 넘침 단추 좌표 고정 금지(UIA 로 찾기) · `shutdown /l` 은 로그오프 취소 경로를 재현 못 함 · `LogPixels` 로그인 뒤 192 복귀(원인 미확인) · Store 판 Claude Desktop 은 `/F /T` 로 끝냄 · 자동 로그인 꺼진 VM 의 로그오프 실측은 마지막에. 상세 `references/pitfalls.md` §2026-10-01. `[책임 경계]`·GUIDE 가 되살린 `windows-remote-lab` 을 다시 가리킨다.
+- 팩 description 에 "실기 SSH" 를 되돌렸다(plugin.json·marketplace).
+- `cloudflare-tunnel` 0.2.0 — `CLOUDFLARE_API_TOKEN` 보관 안내에서 `.env` 폴백을 뺐다(itda-work/skills#45, 사용자 결정 2026-09-30 — 스킬은 어떤 env 파일도 읽지 않는다). OS 보안 저장소를 권장하고, 폴백은 셸 환경변수(Claude Code 는 settings.json `env`)다. 이 토큰은 스크립트가 아니라 Claude·`cloudflared` 가 쓰며, itda-hyve 경로는 해당 없다.
+
+### Fixed
+
+- **SKILL_DIR 확정 블록**(itda-work/skills#47) — 새 Cowork 배치(`/root/.claude/plugins/synced/…`, `CLAUDE_PLUGIN_ROOT` 없음)에서 빈 값을 내던 옛 블록을 바꿨다. 스킬을 불러올 때 받은 base directory 를 먼저 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾으며, 후보가 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다(PowerShell 블록도 같은 계약). `changelog` 1.1.1 · `claude-usage` 0.2.1 · `codex-usage` 0.2.1.
+
 ## [2.0.2] - 2026-09-27
 
 ### Changed

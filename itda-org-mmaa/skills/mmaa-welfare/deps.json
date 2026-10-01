@@ -8,19 +8,6 @@
  "pep723": null,
  "rows": [
   {
-   "dist": "requests",
-   "specifier": ">=2.31",
-   "marker": "",
-   "necessity": "startup_required",
-   "scope": "runtime",
-   "provisioning": "direct",
-   "owner": "self",
-   "import_names": [
-    "requests"
-   ],
-   "feature": "--refresh 재수집"
-  },
-  {
    "dist": "beautifulsoup4",
    "specifier": ">=4.12",
    "marker": "",

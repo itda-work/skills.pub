@@ -102,7 +102,7 @@ def _accounts(inp: Inputs, only: list[str]) -> tuple[str, list[dict], dict | Non
     if rows and not any(isinstance(r, dict) and "calendar" in r for r in rows):
         # 캘린더 도구는 itda-hyve 0.9.0 에 들어왔고 그때부터 계정마다 calendar 필드가 있다.
         return "error", [], {"code": "itda_hyve_outdated",
-                             "message": "accounts_list 에 calendar 필드가 없다 — itda-hyve 0.9.2 이상 필요"}
+                             "message": "accounts_list 에 calendar 필드가 없다 — itda-hyve 0.10.1 이상 필요"}
     out: list[dict] = []
     names = set()
     for i, row in enumerate(rows, start=1):

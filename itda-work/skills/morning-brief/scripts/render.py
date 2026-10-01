@@ -790,12 +790,12 @@ DEGRADED_LINE = {
     "sent_read_failed": "보낸편지함을 읽지 못해 메일 회신 여부를 가리지 못했어요.",
     "inbox_truncated": "받은편지함 메일이 많아 최근 것만 봤어요 — 메일 항목이 빠져 있을 수 있어요.",
     "thread_headers_missing": "itda-hyve 가 옛 판이라 메일 회신 여부를 가리지 못했어요 — "
-                              "0.9.3 이상으로 업데이트해 주세요.",
+                              "0.10.4 이상으로 업데이트해 주세요.",
     "calendar_partial": "캘린더 일부를 읽지 못해 일정이 빠져 있을 수 있어요.",
     "calendar_truncated": "일정이 많아 일부만 가져왔어요 — 일정이 빠져 있을 수 있어요.",
     "recurrence_unsupported": "반복 일정 일부의 회차를 계산하지 못해 일정이 빠져 있을 수 있어요.",
     "attendees_missing": "itda-hyve 가 옛 판이라 일정 참석자를 몰라 관련 메일을 제목으로만 이었어요 — "
-                         "0.9.3 이상으로 업데이트해 주세요.",
+                         "0.10.4 이상으로 업데이트해 주세요.",
 }
 # 오류(error) 중 사용자가 할 일이 정해진 것 — 「계정 확인 실패」 한 줄로 뭉뚱그리지 않는다.
 # 옛 itda-hyve(hyve_outdated)는 여기 없다 — 페이지에 한 줄로 말하는 대신 그리지 않는다(아래 HYVE_OUTDATED, #43).

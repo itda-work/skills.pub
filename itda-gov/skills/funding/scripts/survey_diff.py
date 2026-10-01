@@ -38,7 +38,7 @@ wrapper 형식 jsonl 로 쓴다 — references/diff_record_schema.json 계약:
 
 GONE 은 검토 대상이 아니라 기회 소멸 알림 재료이므로 gone_<out> 에 분리한다.
 
-content_hash 비교: detail --merge-into 로 상세가 병합된 레코드는 해시로
+content_hash 비교: collect detail 로 상세가 병합된 레코드는 해시로
 비교한다. hash_version 불일치(v2↔v3 산식 전환)는 1회 CHANGED 로 흡수하고,
 해시가 사라지면 NEEDS_REHASH 가 된다 — classify() 참고.
 
@@ -49,6 +49,7 @@ Exit code: 0 성공(변경이 없어도 0), 1 잘못된 입력(현재 회차 레
 import argparse
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -121,7 +122,7 @@ def load_dir(d: Path):
                 rec.setdefault("apply_start", rec.get("start", ""))
                 rec.setdefault("apply_end", rec.get("deadline", ""))
             elif "source" in rec and "id" in rec:
-                key = (rec["source"], str(rec["id"]))
+                key = (rec["source"], _smtech_id(rec))
             else:
                 continue  # 알 수 없는 레코드 형태
             # 공통 diff 레코드 스키마(references/diff_record_schema.json)가
@@ -134,6 +135,20 @@ def load_dir(d: Path):
                 )
             records[key] = rec
     return records
+
+
+def _smtech_id(rec):
+    """SMTECH 식별자 이행 — 3.0.0 전 회차는 ``ancmId`` 만 썼다(세부 공고가 겹쳐 버려졌다).
+    옛 레코드는 url 의 ``ancmId``·``dtlAncmSn`` 으로 새 식별자(``S02879-1``)를 만들어 비교한다."""
+    rid = str(rec["id"])
+    if rec.get("source") != "smtech" or "-" in rid:
+        return rid
+    url = str(rec.get("url") or "")
+    anc = re.search(r"ancmId=([A-Za-z0-9]+)", url)
+    dtl = re.search(r"dtlAncmSn=(\d+)", url)
+    if anc and anc.group(1) == rid:
+        return f"{rid}-{dtl.group(1) if dtl else '0'}"
+    return rid
 
 
 def parse_profile_bullets(path):
@@ -168,7 +183,7 @@ def gone_eligible_from_manifest(curr_dir):
     (eligible, note) 를 반환한다:
 
       - eligible: status=="ok" 이고 exit_code==0 인 소스 이름 집합.
-        partial(api-window/page-cap/manual/inactive) 이거나 manifest 에 없는
+        partial(page-cap/manual/inactive)·coverage=window(closed-streak) 이거나 manifest 에 없는
         소스는 제외 — 그 레코드는 GONE 으로 보고하지 않는다.
       - manifest 가 없거나 읽을 수 없으면 None — 호출자는 --assume-complete
         가 없는 한 모든 GONE 을 억제한다(fail-closed).
@@ -190,7 +205,9 @@ def gone_eligible_from_manifest(curr_dir):
     for r in runs:
         if not isinstance(r, dict):
             continue
-        if r.get("status") == "ok" and r.get("exit_code") == 0:
+        # coverage=window(SMTECH 모집중 끊김 멈춤·쪽 상한)는 최근 구간이라 부재를 마감으로 단정하지 않는다.
+        if (r.get("status") == "ok" and r.get("exit_code") == 0
+                and r.get("coverage", "exhaustive") == "exhaustive"):
             s = r.get("source")
             if s:
                 eligible.add(s)
@@ -247,7 +264,14 @@ def fmt(rec):
             f"\n    {rec.get('url', '')}")
 
 
-def main():
+def main(argv=None):
+    # Windows 콘솔(cp949)은 '—'·한국어 print 에서 UnicodeEncodeError 로 죽는다(m4) — 첫 줄에서 UTF-8 로.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8")
+            except (OSError, ValueError):
+                pass
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("old_dir", type=Path, help="이전 회차 폴더")
     ap.add_argument("new_dir", type=Path, help="이번 회차 폴더")
@@ -261,7 +285,7 @@ def main():
                          "크롤로 간주한다(수기·레거시 폴더용). 이 옵션도 없고 "
                          "증명된 manifest 도 없으면 GONE 은 억제된다 — 부분 "
                          "크롤이 '전부 마감'으로 읽히면 안 된다.")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     for d in (args.old_dir, args.new_dir):
         if not d.is_dir():
@@ -305,7 +329,7 @@ def main():
     common = prev_sources & curr_sources
 
     # 커버리지 가드(fail-closed): 이번 회차가 전수 수집을 증명한 소스에서만
-    # GONE 을 선언한다. 부분 크롤(api-window/page-cap)이나 증명 없는 소스는
+    # GONE 을 선언한다. 부분 크롤(page-cap)·최근 구간(closed-streak)이나 증명 없는 소스는
     # "마감"과 "수집 범위 밖"을 구분할 수 없으므로 삭제를 억제한다.
     eligible, manifest_note = gone_eligible_from_manifest(args.new_dir)
     if eligible is None:  # manifest 없음/불량 → 아무것도 증명되지 않음
@@ -363,7 +387,7 @@ def main():
     if suppressed_closed:
         srcs = ", ".join(sorted({r.get('source') for r in suppressed_closed}))
         print(f"\n## GONE SUPPRESSED ({len(suppressed_closed)}) — 이번 회차의 "
-              f"[{srcs}] 수집이 부분(api-window/page-cap/manual)이라 부재를 "
+              f"[{srcs}] 수집이 부분(page-cap/manual) 또는 최근 구간(closed-streak)이라 부재를 "
               "'마감'으로 단정하지 않는다. 전수 재크롤로 확인하라.")
         for r in suppressed_closed:
             print(f"  · [{r.get('source')}] {r.get('title', '(제목 없음)')}")

@@ -1,5 +1,18 @@
 # Changelog — itda-audit
 
+## [1.1.0] - 2026-10-01
+
+> `market-scan` 의 다중 엔진 수집(`itda-web:web-search` 선택 시)은 **itda-hyve 0.10.4 이상**이 필요하다. 내장 WebSearch 만 쓰는 흐름은 그대로다.
+
+### Changed
+
+- `market-scan` 0.4.0 (itda-work/skills#45·#46) — Q4 데이터 소스 가용성 점검을 itda-hyve 모델로 바꿨다: 키는 itda-hyve 시크릿 탭에만 있어 목록을 볼 수 없으므로, 그 소스의 첫 호출이 `secret_missing` 이면 그 소스만 빼고 계속한다. web-search 시크릿 이름은 `NAVER_CLIENT_ID`·`NAVER_CLIENT_SECRET`(web-search 0.3.0 과 같다). env 파일·환경변수 키 감지를 지웠다.
+- `ground-check`·`market-scan` 의 WebFetch 폴백 대상 `itda-web:web-reader` 는 skills v14.0.0 배포본에 없다(배포 보류, v14.1 에 다시). 그동안은 두 스킬의 "web-reader 가 없으면 폴백 없이 실패로 기록" 규칙대로 동작한다.
+
+### Fixed
+
+- **SKILL_DIR 확정 블록**(itda-work/skills#47) — 새 Cowork 배치(`/root/.claude/plugins/synced/…`, `CLAUDE_PLUGIN_ROOT` 없음)에서 빈 값을 내던 옛 블록을 바꿨다. 스킬을 불러올 때 받은 base directory 를 먼저 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾으며, 후보가 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다(PowerShell 블록도 같은 계약). `brain-audit` 0.3.5 · `brain-build` 0.4.1 · `brain-fixture` 0.4.1 · `brain-ingest` 0.2.6 · `meeting-reliability` 0.1.5 · `market-scan`, 에이전트 `meeting-reliability-worker`.
+
 ## [1.0.3] - 2026-09-28
 
 ### Changed

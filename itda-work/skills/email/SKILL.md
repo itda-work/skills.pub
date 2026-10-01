@@ -12,9 +12,9 @@ metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
   recommended: true
-  version: "0.38.1"
+  version: "0.38.3"
   created_at: "2026-03-18"
-  updated_at: "2026-09-29"
+  updated_at: "2026-10-01"
   tags: "email, smtp, imap, naver, gmail, google, daum, kakao, icloud, multi-account, itda-hyve, mailbox, search, unread, flagged, attachments, save-attachment, attachment-summary, html, reply, in-reply-to, phishing, send-confirmation"
 ---
 
@@ -63,7 +63,7 @@ Claude Desktop 연결을 안내하고 멈춘다(다른 서버의 도구·내장 
 | 인자 | 타입 | 뜻 |
 |---|---|---|
 | `account` | string, 필수 | `accounts_list` 의 name |
-| `mailbox` | string | 메일함 이름. 기본 `INBOX`. 한글 이름 그대로(예: `"보낸메일함"`). 보낸·임시·휴지통·스팸 메일함은 이름 대신 특수 용도 `"\\Sent"`·`"\\Drafts"`·`"\\Trash"`·`"\\Junk"` 로 지목할 수 있다(itda-hyve 0.9.2 — 응답 `mailbox` 에 실제 이름, `special_use` 에 준 이름). 서버가 못 찾으면 `special_use_not_found` |
+| `mailbox` | string | 메일함 이름. 기본 `INBOX`. 한글 이름 그대로(예: `"보낸메일함"`). 보낸·임시·휴지통·스팸 메일함은 이름 대신 특수 용도 `"\\Sent"`·`"\\Drafts"`·`"\\Trash"`·`"\\Junk"` 로 지목할 수 있다(itda-hyve 0.10.1 — 응답 `mailbox` 에 실제 이름, `special_use` 에 준 이름). 서버가 못 찾으면 `special_use_not_found` |
 | `since` / `before` | string `YYYY-MM-DD` | 이 날짜 이후(포함) / 이전(미포함) 수신 |
 | `from` / `to` / `subject` / `text` | string | 부분 일치(`text` 는 제목·본문 전체) |
 | `unseen` / `flagged` | bool | 안 읽은 것만 / 별표만 |
@@ -94,7 +94,7 @@ Claude Desktop 연결을 안내하고 멈춘다(다른 서버의 도구·내장 
 - 모호한 요청("네이버 메일 읽어줘")은 먼저 `imap_search` 목록을 보여 주고, 사용자가 고른 것만 `imap_fetch` 한다. 여러 통을 한꺼번에 열지 않는다.
 - `text_truncated: true` 면 잘렸다고 알린다. 전문이 필요하면 `max_body_chars` 를 키워 다시 연다.
 - "보낸메일함 보여줘" 처럼 보낸·임시·휴지통·스팸 메일함이면 이름을 찾지 말고 `"mailbox": "\\Sent"` 식 특수 용도 이름으로 바로 부른다(`imap_list_mailboxes` 한 번이 줄어든다).
-  `invalid_input`·`not_found` 가 오면 itda-hyve 가 0.9.2 보다 옛 판이다 — 아래처럼 이름을 확인해 쓰고 업데이트를 한 줄 안내한다.
+  `invalid_input`·`not_found` 가 오면 itda-hyve 가 0.10.1 보다 옛 판이다 — 아래처럼 이름을 확인해 쓰고 업데이트를 한 줄 안내한다.
 - 그 밖에 메일함 이름이 불확실하면 `imap_list_mailboxes`(`{"account": "naver"}`, 개수까지 필요하면 `"with_status": true`)로 확인하고 `name` 을 그대로 쓴다.
 
 ## 계약 2 — 발송은 2단계 (`smtp_send`)

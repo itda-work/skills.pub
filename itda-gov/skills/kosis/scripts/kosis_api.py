@@ -1,25 +1,32 @@
-"""KOSIS 국가통계포털 OpenAPI 클라이언트.
+"""KOSIS 국가통계포털 OpenAPI — 호출 계획과 응답 파서 (파일 입력 전용).
 
-제안서/사업계획서에 필요한 통계 데이터 수집:
-    - 통합검색 (키워드 → 통계표 목록)
-    - 통계자료 조회 (orgId + tblId → 실제 데이터)
+네트워크는 itda-hyve 의 ``http_request`` 가 한다(itda-work/skills#45). 이 모듈은
+  1. 명령마다 부를 **호출 계획**(``http_request`` 인자 그대로)을 만들고
+  2. 그렇게 저장한 **응답 파일을 읽어** 오류 판정·분류축 해석·정리만 한다.
+직접 API 를 부르지 않고 키 값을 보지 않는다(``{{secret:KOSIS_API_KEY}}`` 자리표시자만 싣는다).
 
-엔드포인트: https://kosis.kr/openapi/
-인증: apiKey 쿼리 파라미터
+엔드포인트: https://kosis.kr/openapi/ (인증은 쿼리 ``apiKey``)
+통계자료 URL 은 ``Param/statisticsParameterData.do`` 다 — 2026-09-30 itda-hyve 실측에서 이 URL 은
+KOSIS 오류 JSON(err 10, 키 없이 보냄)을 줬고, 오타 ``Param/statisticsParamData.do`` 는 HTTP 404 HTML 이었다.
+
+응답 형태:
+    성공      행 배열 ``[{...}, ...]`` (getMeta TBL 은 단일 객체)
+    오류      ``{"err":"10","errMsg":"…"}`` — 옛 서버는 키에 따옴표가 없는 ``{err:"10",…}`` 도 준다
+    SDMX      Generic XML, 오류는 ``<error><err>21</err>…``
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
-import urllib.error
-import urllib.parse
-import urllib.request
+import re
 import xml.etree.ElementTree as ET
+from pathlib import Path
 from typing import Any
 
-logger = logging.getLogger(__name__)
+from hyve_input import HyveHTTPError, HyveInputError, read_input
 
-_TIMEOUT = 15
+logger = logging.getLogger(__name__)
 
 # 엔드포인트
 _SEARCH_URL = "https://kosis.kr/openapi/statisticsSearch.do"
@@ -37,16 +44,18 @@ _EXPL_URL = "https://kosis.kr/openapi/statisticsExplData.do"
 # 통계주요지표 설명자료 — pkNumberService.do, service=1 (매뉴얼 §2.7.2.1)
 _INDICATOR_URL = "https://kosis.kr/openapi/pkNumberService.do"
 
+SECRET = "{{secret:KOSIS_API_KEY}}"
+# Cowork 는 호출 하나를 60초에 끊는다 — 그보다 짧게.
+TIMEOUT_SEC = 50
+
 # 활용신청 페이지 — 인증키 관련 오류 시 사용자에게 자동 부착
 _KOSIS_APPLY_URL = "https://kosis.kr/openapi/"
 
 _KOSIS_SETUP_GUIDE = (
-    "\n[설정 안내] KOSIS_API_KEY를 확인하세요:\n"
-    f"  1. {_KOSIS_APPLY_URL} 접속 → 회원가입 → Open API → 활용신청\n"
-    "  2. 활용신청 즉시 자동 승인 (대기 없음). 마이페이지에서 인증키 확인\n"
-    "  3. 작업 폴더 루트(예: outputs/)에 .env 파일로 설정:\n"
-    "       KOSIS_API_KEY=발급받은_키\n"
-    "  4. 첫 호출 실패 시 점검 절차:\n"
+    "\n[설정 안내] KOSIS_API_KEY 를 확인하세요:\n"
+    f"  1. {_KOSIS_APPLY_URL} 접속 → 회원가입 → Open API → 활용신청(자동 승인, 마이페이지에서 인증키 확인)\n"
+    "  2. itda-hyve GUI 시크릿 탭에 KOSIS_API_KEY 이름으로 등록(키 값을 대화에 붙여 넣지 않는다)\n"
+    "  3. 첫 호출 실패 시 점검:\n"
     "     - Base64 키 끝 '=' 패딩 누락 여부 확인 (전체 복사 필수)\n"
     "     - 만료된 인증키는 마이페이지에서 기간 연장 가능\n"
     "     - 잠시(수 분) 후 재시도 — 신규 발급 직후 일시적 미반영 가능\n"
@@ -76,15 +85,15 @@ PERIOD_CODES = {
     "day": "D",
 }
 
+# 메타자료 조회유형 — 코드 발견(ITM)이 핵심 진입점
+META_TYPES = ("TBL", "ORG", "PRD", "ITM", "CMMT", "UNIT", "SOURCE", "WGT", "NCD")
+
 
 def _classify_kosis_error(error_code: str) -> tuple[str, str]:
     """KOSIS API 오류 코드를 사용자 메시지와 카테고리로 분류.
 
     정본 에러 코드 표(_ERROR_CODE_HINTS)에서 한글 설명을 가져오고,
-    인증키 관련(10/11/42)은 활용신청 URL을 자동 부착한다.
-
-    Args:
-        error_code: KOSIS API err 코드.
+    인증키 관련(10/11/42)은 활용신청 URL 과 시크릿 등록 안내를 붙인다.
 
     Returns:
         (사용자 메시지, 카테고리) 튜플.
@@ -109,12 +118,17 @@ def _classify_kosis_error(error_code: str) -> tuple[str, str]:
         )
     if error_code == "50":
         return (
-            f"{hint['desc']} (오류 코드: {error_code}) — 잠시 후 재시도하세요.",
+            f"{hint['desc']} (오류 코드: {error_code}) — 잠시 후 다시 받으세요.",
             hint["category"],
         )
-    if error_code in ("30", "31"):
+    if error_code == "31":
         return (
-            f"조회 결과 이슈 (오류 코드: {error_code}, {hint['desc']})",
+            f"조회 결과 이슈 (오류 코드: 31, {hint['desc']}) — 한 번에 4만 셀을 넘는다. 기간·항목·분류를 나눠 받으세요.",
+            hint["category"],
+        )
+    if error_code == "30":
+        return (
+            f"조회 결과 이슈 (오류 코드: 30, {hint['desc']})",
             hint["category"],
         )
     # 20, 21, 기타: setup
@@ -125,65 +139,213 @@ def _classify_kosis_error(error_code: str) -> tuple[str, str]:
 
 
 class KOSISAPIError(Exception):
-    """KOSIS API 호출 오류."""
+    """저장된 응답이 KOSIS 오류 응답이다 (본문의 err 코드)."""
 
     def __init__(self, message: str, error_code: str | None = None):
         super().__init__(message)
         self.error_code = error_code
 
 
-def _request(url: str, params: dict[str, str]) -> list[dict[str, Any]] | dict[str, Any]:
-    """KOSIS API 호출.
+class InputFileError(Exception):
+    """입력 파일을 가공할 수 없다 — 없음·이름 규칙 위반·절단·HTTP 오류·itda-hyve 실패·KOSIS 응답 아님.
 
-    Args:
-        url: 엔드포인트 URL.
-        params: 쿼리 파라미터.
+    ``kind`` 는 출력 JSON 의 ``error`` 값이다(``input``·``truncated``·``http``·``hyve``).
+    """
 
-    Returns:
-        파싱된 JSON 응답 (리스트 또는 딕셔너리).
+    def __init__(self, message: str, kind: str = "input"):
+        super().__init__(message)
+        self.kind = kind
+
+
+class IncompleteError(Exception):
+    """다음 단계 응답이 더 필요하다. ``next_calls`` 에 받을 호출이 담긴다(data 의 적응형 흐름)."""
+
+    def __init__(self, message: str, next_calls: list[dict[str, Any]], stage: str):
+        super().__init__(message)
+        self.next_calls = next_calls
+        self.stage = stage
+
+
+# --- 호출 계획 ---
+
+_NAME_SAFE = re.compile(r"[^A-Za-z0-9_.-]")
+
+
+def _safe(token: str) -> str:
+    """저장 이름 조각 — 영숫자·``_``·``.``·``-`` 만 남긴다(한글·공백은 ``_``)."""
+    return _NAME_SAFE.sub("_", str(token)) or "_"
+
+
+def query_hash(query: dict[str, Any]) -> str:
+    """질의 인자 전부의 짧은 지문(8자). 저장 이름에 실어 다른 질의의 파일이 섞이지 않게 한다."""
+    blob = json.dumps(query, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha1(blob.encode("utf-8")).hexdigest()[:8]
+
+
+def build_call(call_id: str, url: str, params: dict[str, str], save_as: str) -> dict[str, Any]:
+    """``http_request`` 한 번 — batch ``calls`` 한 칸 형태. 단독 호출은 ``args`` 만 쓴다."""
+    full = {"apiKey": SECRET, **{k: str(v) for k, v in params.items()}}
+    return {
+        "id": call_id,
+        "tool": "http_request",
+        "args": {"url": url, "params": full, "timeout_sec": TIMEOUT_SEC, "save_as": save_as},
+    }
+
+
+def plan_search(keyword: str, count: int = 10) -> dict[str, Any]:
+    name = f"kosis/search-{query_hash({'keyword': keyword, 'count': count})}.json"
+    return build_call("search", _SEARCH_URL, {
+        "method": "getList", "searchNm": keyword, "sort": "RANK",
+        "startCount": "1", "resultCount": str(count), "format": "json",
+    }, name)
+
+
+def info_save_name(org_id: str, tbl_id: str, meta_type: str, obj_id: str = "", itm_id: str = "") -> str:
+    base = f"kosis/info-{_safe(org_id)}-{_safe(tbl_id)}-{_safe(meta_type)}"
+    if obj_id or itm_id:
+        base += "-" + query_hash({"objId": obj_id, "itmId": itm_id})
+    return base + ".json"
+
+
+def plan_info(org_id: str, tbl_id: str, meta_type: str = "ITM", obj_id: str = "", itm_id: str = "") -> dict[str, Any]:
+    params = {"method": "getMeta", "orgId": org_id, "tblId": tbl_id, "type": meta_type, "format": "json"}
+    if obj_id:
+        params["objId"] = obj_id
+    if itm_id:
+        params["itmId"] = itm_id
+    return build_call(f"info-{meta_type}", _META_URL, params,
+                      info_save_name(org_id, tbl_id, meta_type, obj_id, itm_id))
+
+
+def plan_list(vw_cd: str = "MT_ZTITLE", parent_list_id: str = "") -> dict[str, Any]:
+    params = {"method": "getList", "vwCd": vw_cd, "format": "json", "jsonVD": "Y"}
+    if parent_list_id:
+        params["parentListId"] = parent_list_id
+    name = f"kosis/list-{_safe(vw_cd)}-{_safe(parent_list_id) if parent_list_id else 'root'}.json"
+    return build_call("list", _LIST_URL, params, name)
+
+
+def plan_meta(stat_id: str = "", org_id: str = "", tbl_id: str = "", meta_itm: str = "ALL") -> dict[str, Any]:
+    params = {"method": "getList", "metaItm": meta_itm, "format": "json", "jsonVD": "Y"}
+    if stat_id:
+        params["statId"] = stat_id
+        target = _safe(stat_id)
+    else:
+        if not (org_id and tbl_id):
+            raise ValueError("meta 는 --stat-id 또는 --org-id·--tbl-id 가 필요합니다")
+        params["orgId"] = org_id
+        params["tblId"] = tbl_id
+        target = f"{_safe(org_id)}-{_safe(tbl_id)}"
+    return build_call("meta", _EXPL_URL, params, f"kosis/meta-{target}-{_safe(meta_itm)}.json")
+
+
+def plan_indicator(jipyo_id: str, page_no: int = 1, num_of_rows: int = 10) -> dict[str, Any]:
+    params = {"method": "getList", "service": "1", "serviceDetail": "pkAll", "jipyoId": jipyo_id,
+              "pageNo": str(page_no), "numOfRows": str(num_of_rows), "format": "json"}
+    return build_call("indicator", _INDICATOR_URL, params,
+                      f"kosis/indicator-{_safe(jipyo_id)}-p{page_no}-n{num_of_rows}.json")
+
+
+# --- 응답 파일 판독 ---
+
+def _read_bytes(path: str | Path) -> bytes:
+    """입력 파일에서 응답 본문을 꺼낸다 — hyve 층 판독은 공용 ``hyve_input`` 이 한다.
+
+    HTTP 오류면 본문의 KOSIS err 를 먼저 본다(그쪽이 더 구체적이다). 403 은 게이트웨이 권한 거부다.
+    """
+    p = Path(path).expanduser()
+    try:
+        return read_input(p).data
+    except HyveHTTPError as exc:
+        _raise_kosis_error(exc.body)
+        if exc.status == 403:
+            raise InputFileError(
+                f"권한 거부 (HTTP 403) — 활용신청이 필요할 수 있습니다({p.name}).{_KOSIS_SETUP_GUIDE}",
+                kind="http",
+            ) from exc
+        raise InputFileError(str(exc), kind=exc.kind) from exc
+    except HyveInputError as exc:
+        raise InputFileError(str(exc), kind=exc.kind) from exc
+
+
+def _raise_kosis_error(body: bytes) -> None:
+    """본문이 KOSIS 오류 형태(JSON·따옴표 없는 JSON·XML)면 KOSISAPIError. 아니면 조용히 돌아온다."""
+    text = body.decode("utf-8", "replace").strip()
+    code = msg = None
+    if text.startswith("<"):
+        if "<err>" in text:
+            try:
+                root = ET.fromstring(text)
+                code = (root.findtext("err") or "").strip()
+                msg = (root.findtext("errMsg") or "").strip()
+            except ET.ParseError:
+                m = re.search(r"<err>\s*(\w+)\s*</err>", text)
+                code, msg = (m.group(1) if m else ""), ""
+    elif text.startswith("{") and "err" in text[:200]:
+        data: Any = None
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError:
+            try:
+                data = _fix_unquoted_json(text)
+            except KOSISAPIError:
+                m = re.search(r'"?err"?\s*:\s*"?(\w+)"?', text)
+                code, msg = (m.group(1), "") if m else (None, None)
+        if isinstance(data, dict) and "err" in data:
+            code, msg = str(data.get("err", "")), str(data.get("errMsg", ""))
+    if code is None:
+        return
+    hint_msg, _cat = _classify_kosis_error(code)
+    raise KOSISAPIError(f"KOSIS API 오류 ({code}): {msg or '알 수 없는 오류'} | {hint_msg}", error_code=code or None)
+
+
+def load_json(path: str | Path) -> list[dict[str, Any]] | dict[str, Any]:
+    """저장된 KOSIS JSON 응답 파일 하나를 읽는다 — 오류 응답이면 예외.
 
     Raises:
-        KOSISAPIError: 네트워크 오류, 파싱 실패, API 오류.
+        InputFileError: 파일 없음·절단·HTTP 오류·itda-hyve 실패·KOSIS 응답 아님(HTML 오류 페이지 등).
+        KOSISAPIError: 본문이 KOSIS 오류(err 코드).
     """
-    query = urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
-    full_url = f"{url}?{query}"
-
-    try:
-        with urllib.request.urlopen(full_url, timeout=_TIMEOUT) as resp:
-            raw = resp.read()
-    except urllib.error.HTTPError as exc:
-        # @MX:NOTE: HTTP 403은 게이트웨이 단계 권한 거부 — 활용신청 안내 부착.
-        if exc.code == 403:
-            raise KOSISAPIError(
-                f"권한 거부 (HTTP 403) — 활용신청이 필요할 수 있습니다."
-                f"{_KOSIS_SETUP_GUIDE}",
-                error_code="HTTP_403",
-            ) from exc
-        raise KOSISAPIError(f"네트워크 오류: {exc}") from exc
-    except urllib.error.URLError as exc:
-        raise KOSISAPIError(f"네트워크 오류: {exc}") from exc
-
-    text = raw.decode("utf-8")
-
-    # KOSIS 에러 응답은 비표준 JSON (키에 따옴표 없음):
-    #   {err:"10",errMsg:"인증KEY값이 누락되었습니다."}
-    # 표준 JSON으로 변환 후 파싱
+    p = Path(path).expanduser()
+    body = _read_bytes(p)
+    _raise_kosis_error(body)
+    text = body.decode("utf-8", "replace").lstrip("﻿")
+    stripped = text.lstrip()
+    if stripped.startswith("<"):
+        raise InputFileError(
+            f"KOSIS JSON 응답이 아닙니다({p.name}) — HTML·XML 이 왔다. 호출 URL 이 plan 이 준 것과 같은지 확인하세요"
+            " (오타 URL 은 HTTP 404 HTML 을 준다)."
+        )
     try:
         data = json.loads(text)
     except json.JSONDecodeError:
-        data = _fix_unquoted_json(text)
-
-    # 에러 응답 확인 — 정본 한글 hint + 활용신청 URL 자동 부착
-    if isinstance(data, dict) and "err" in data:
-        err_code = str(data.get("err", ""))
-        err_msg = data.get("errMsg", "알 수 없는 오류")
-        hint_msg, _category = _classify_kosis_error(err_code)
-        raise KOSISAPIError(
-            f"KOSIS API 오류 ({err_code}): {err_msg} | {hint_msg}",
-            error_code=err_code,
-        )
-
+        try:
+            data = _fix_unquoted_json(text)
+        except KOSISAPIError as exc:
+            raise InputFileError(
+                f"KOSIS 응답을 JSON 으로 읽지 못했습니다({p.name}) — 본문이 잘렸을 수 있다: {exc}",
+                kind="truncated",
+            ) from exc
+    if not isinstance(data, (list, dict)):
+        raise InputFileError(f"KOSIS 응답 형태가 아닙니다({p.name}): {type(data).__name__}")
     return data
+
+
+def load_sdmx(path: str | Path) -> str:
+    """저장된 SDMX(Generic) 응답 파일을 읽는다 — 오류 응답이면 예외."""
+    p = Path(path).expanduser()
+    body = _read_bytes(p)
+    _raise_kosis_error(body)
+    text = body.decode("utf-8", "replace").lstrip("﻿")
+    try:
+        root = ET.fromstring(text)
+    except ET.ParseError as exc:
+        raise InputFileError(
+            f"SDMX XML 을 읽지 못했습니다({p.name}) — 본문이 잘렸거나 XML 이 아니다: {exc}", kind="truncated",
+        ) from exc
+    if not root.tag.endswith("GenericData"):
+        raise InputFileError(f"SDMX Generic 응답이 아닙니다({p.name}): 루트 {root.tag}")
+    return text
 
 
 def _fix_unquoted_json(text: str) -> dict[str, Any] | list[dict[str, Any]]:
@@ -257,41 +419,6 @@ def _fix_unquoted_json(text: str) -> dict[str, Any] | list[dict[str, Any]]:
         raise KOSISAPIError(f"JSON 파싱 실패: {exc}") from exc
 
 
-# @MX:ANCHOR: [AUTO] KOSIS 통합검색의 핵심 함수.
-# @MX:REASON: fan_in >= 3 (collect_stats의 search/data 서브커맨드); 통계표 탐색 진입점.
-def search_statistics(
-    api_key: str,
-    keyword: str,
-    start_count: int = 1,
-    result_count: int = 10,
-) -> list[dict[str, Any]]:
-    """키워드로 통계표를 검색.
-
-    Args:
-        api_key: KOSIS 인증키.
-        keyword: 검색 키워드 (예: "인구", "GDP", "시장 규모").
-        start_count: 페이지 번호 (기본 1).
-        result_count: 페이지당 결과 수 (기본 10).
-
-    Returns:
-        통계표 목록. 각 항목:
-        {ORG_ID, ORG_NM, TBL_ID, TBL_NM, STAT_ID, STAT_NM, ...}
-    """
-    params = {
-        "method": "getList",
-        "apiKey": api_key,
-        "searchNm": keyword,
-        "sort": "RANK",
-        "startCount": str(start_count),
-        "resultCount": str(result_count),
-        "format": "json",
-    }
-
-    data = _request(_SEARCH_URL, params)
-    if isinstance(data, list):
-        return data
-    return []
-
 
 # --- 분류축 슬롯(objL 번호) 해석 ---
 #
@@ -315,34 +442,28 @@ def _axis_sort_key(axis: dict[str, Any]) -> int:
     return int(axis.get("slot") or 0)
 
 
-def get_table_axes(
-    api_key: str,
-    org_id: str,
-    tbl_id: str,
-) -> dict[str, Any]:
-    """통계표의 분류축 구조(objL 슬롯)와 항목 코드를 해석.
+def _as_list(data: list[dict[str, Any]] | dict[str, Any]) -> list[dict[str, Any]]:
+    """KOSIS 응답을 항상 리스트로 정규화 (getMeta type=TBL/ORG 등은 단일 dict)."""
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        return [data]
+    return []
+
+
+def table_axes(itm_rows: list[dict[str, Any]], tbl_rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    """getMeta type=ITM(과 선택적으로 TBL) 응답에서 분류축 구조(objL 슬롯)와 항목 코드를 푼다.
 
     getMeta type=ITM 응답의 OBJ_ID_SN 을 그대로 objL 슬롯으로 쓴다 — 추측하지 않는다.
 
-    Args:
-        api_key: KOSIS 인증키.
-        org_id: 기관 코드.
-        tbl_id: 통계표 ID.
-
     Returns:
-        {
-          "table_name": str,
-          "items": [{"id", "name", "unit_id", "unit_name"}],
-          "axes": [{"slot": int, "obj_id", "obj_name",
-                    "values": [{"code", "name", "parent"}]}],  # slot 오름차순
-        }
+        {"table_name": str, "items": [{"id","name","unit_id","unit_name"}],
+         "axes": [{"slot": int, "obj_id", "obj_name", "values": [{"code","name","parent"}]}]}  # slot 오름차순
     """
-    rows = get_table_meta(api_key, org_id, tbl_id, meta_type="ITM")
-
     items: list[dict[str, str]] = []
     axis_map: dict[str, dict[str, Any]] = {}
 
-    for row in rows:
+    for row in itm_rows:
         obj_id = row.get("OBJ_ID", "") or ""
         if obj_id in _ITEM_AXIS_IDS or row.get("OBJ_NM") == "항목":
             items.append({
@@ -372,13 +493,8 @@ def get_table_axes(
     axes.sort(key=_axis_sort_key)
 
     table_name = ""
-    try:
-        tbl_meta = get_table_meta(api_key, org_id, tbl_id, meta_type="TBL")
-        if tbl_meta:
-            table_name = tbl_meta[0].get("TBL_NM", "") or ""
-    except KOSISAPIError:
-        table_name = ""
-
+    if tbl_rows:
+        table_name = tbl_rows[0].get("TBL_NM", "") or ""
     return {"table_name": table_name, "items": items, "axes": axes}
 
 
@@ -516,230 +632,246 @@ def _parse_sdmx_generic(
     return rows
 
 
-def _request_sdmx(url: str, params: dict[str, str]) -> str:
-    """SDMX(XML) 응답을 원문 문자열로 받는다 — 오류 응답은 KOSISAPIError 로 승격."""
-    query = urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
-    try:
-        with urllib.request.urlopen(f"{url}?{query}", timeout=_TIMEOUT) as resp:
-            text = resp.read().decode("utf-8")
-    except urllib.error.URLError as exc:
-        raise KOSISAPIError(f"네트워크 오류: {exc}") from exc
 
-    if "<err>" in text:
-        try:
-            root = ET.fromstring(text)
-            err_code = (root.findtext("err") or "").strip()
-            err_msg = (root.findtext("errMsg") or "").strip()
-        except ET.ParseError:
-            err_code, err_msg = "", text[:200]
-        hint_msg, _cat = _classify_kosis_error(err_code)
-        raise KOSISAPIError(
-            f"KOSIS API 오류 ({err_code}): {err_msg} | {hint_msg}",
-            error_code=err_code or None,
+# --- data: 적응형 3단 흐름 (1차 JSON → getMeta 로 축 재매핑 → JSON 재호출 또는 SDMX) ---
+#
+# 옛 스크립트는 한 실행 안에서 1~3번 불렀다. 지금은 스크립트가 다음에 받을 호출을 ``next_calls``
+# 로 내고, 모델이 itda-hyve 로 받아 **지금까지의 파일 전부**를 다시 넘기는 루프다. 단계는 파일
+# 이름이 가른다 — ``data-<org>-<tbl>-<질의지문>-{json1|json2|sdmx}`` · ``info-<org>-<tbl>-{ITM|TBL}``.
+
+_DATA_NAME_RE = re.compile(r"^data-(?P<org>[^-]+)-(?P<tbl>.+)-(?P<qh>[0-9a-f]{8})-(?P<stage>json1|json2|sdmx)\.(?:json|xml)$")
+_INFO_NAME_RE = re.compile(r"^info-(?P<org>[^-]+)-(?P<tbl>.+)-(?P<type>ITM|TBL)\.json$")
+
+
+class DataQuery:
+    """data 명령의 질의 — plan 과 가공이 같은 인자로 같은 지문·호출을 만든다."""
+
+    def __init__(
+        self,
+        org_id: str,
+        tbl_id: str,
+        itm_id: str = "ALL",
+        obj_l1: str = "ALL",
+        obj_l2: str = "",
+        obj_l3: str = "",
+        obj_l4: str = "",
+        prd_se: str = "Y",
+        start_prd_de: str = "",
+        end_prd_de: str = "",
+        new_est_prd_cnt: int | None = None,
+    ):
+        self.org_id = org_id
+        self.tbl_id = tbl_id
+        self.itm_id = itm_id or "ALL"
+        logical = [obj_l1 or "ALL", obj_l2 or "", obj_l3 or "", obj_l4 or ""]
+        while len(logical) > 1 and not logical[-1]:
+            logical.pop()
+        self.logical = logical
+        self.prd_se = prd_se
+        self.start_prd_de = "" if new_est_prd_cnt is not None else (start_prd_de or "")
+        self.end_prd_de = "" if new_est_prd_cnt is not None else (end_prd_de or "")
+        self.new_est_prd_cnt = new_est_prd_cnt
+
+    def fingerprint(self) -> str:
+        return query_hash({
+            "org": self.org_id, "tbl": self.tbl_id, "itm": self.itm_id, "obj": self.logical,
+            "prd": self.prd_se, "start": self.start_prd_de, "end": self.end_prd_de,
+            "recent": self.new_est_prd_cnt,
+        })
+
+    def save_name(self, stage: str) -> str:
+        ext = "xml" if stage == "sdmx" else "json"
+        return f"kosis/data-{_safe(self.org_id)}-{_safe(self.tbl_id)}-{self.fingerprint()}-{stage}.{ext}"
+
+    def params(self, slot_values: dict[int, str]) -> dict[str, str]:
+        return _build_data_params(
+            self.org_id, self.tbl_id, self.itm_id, slot_values,
+            self.prd_se, self.start_prd_de, self.end_prd_de, self.new_est_prd_cnt,
         )
-    return text
+
+    def naive_slots(self) -> dict[int, str]:
+        return {i: v for i, v in enumerate(self.logical, start=1)}
+
+    def first_call(self) -> dict[str, Any]:
+        return build_call("data-json1", _DATA_URL, self.params(self.naive_slots()), self.save_name("json1"))
+
+    def meta_calls(self) -> list[dict[str, Any]]:
+        return [plan_info(self.org_id, self.tbl_id, "ITM"), plan_info(self.org_id, self.tbl_id, "TBL")]
+
+    def remapped_slots(self, structure: dict[str, Any]) -> dict[int, str]:
+        """논리 순서 값 → 실제 슬롯 (부족분은 ALL)."""
+        slot_values: dict[int, str] = {}
+        for idx, axis in enumerate(structure["axes"]):
+            value = self.logical[idx] if idx < len(self.logical) else ""
+            slot_values[int(axis["slot"])] = value or "ALL"
+        return slot_values
+
+    def json2_call(self, slot_values: dict[int, str]) -> dict[str, Any]:
+        return build_call("data-json2", _DATA_URL, self.params(slot_values), self.save_name("json2"))
+
+    def sdmx_call(self, slot_values: dict[int, str]) -> dict[str, Any]:
+        params = self.params(slot_values)
+        params["format"] = "sdmx"
+        params["type"] = "Generic"
+        params.pop("jsonVD", None)
+        return build_call("data-sdmx", _DATA_URL, params, self.save_name("sdmx"))
 
 
-def get_statistics_data_ex(
-    api_key: str,
-    org_id: str,
-    tbl_id: str,
-    itm_id: str = "ALL",
-    obj_l1: str = "ALL",
-    obj_l2: str = "",
-    obj_l3: str = "",
-    obj_l4: str = "",
-    prd_se: str = "Y",
-    start_prd_de: str = "",
-    end_prd_de: str = "",
-    new_est_prd_cnt: int | None = None,
-) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """통계자료 조회 + 진단 정보.
+def _classify_data_files(query: DataQuery, paths: list[str]) -> dict[str, Path]:
+    """입력 파일을 단계별로 가른다. 다른 질의·다른 표의 파일이나 이름 규칙 위반은 오류."""
+    found: dict[str, Path] = {}
+    qh = query.fingerprint()
+    org, tbl = _safe(query.org_id), _safe(query.tbl_id)
+    for raw in paths:
+        p = Path(raw).expanduser()
+        m = _DATA_NAME_RE.match(p.name)
+        if m:
+            if (m["org"], m["tbl"]) != (org, tbl):
+                raise InputFileError(f"다른 통계표의 파일입니다: {p.name} (지금 질의 {query.org_id}/{query.tbl_id})")
+            if m["qh"] != qh:
+                raise InputFileError(
+                    f"다른 조회 조건으로 받은 파일입니다: {p.name} (지금 질의 지문 {qh}) — "
+                    "plan 과 같은 인자(--item·--obj1~4·--period·--start/--end/--recent)로 가공하세요"
+                )
+            key = m["stage"]
+        else:
+            m = _INFO_NAME_RE.match(p.name)
+            if not m:
+                raise InputFileError(
+                    f"파일 이름이 규칙과 다릅니다: {p.name} — plan·next_calls 가 준 save_as 를 그대로 쓰세요"
+                )
+            if (m["org"], m["tbl"]) != (org, tbl):
+                raise InputFileError(f"다른 통계표의 메타 파일입니다: {p.name}")
+            key = f"meta-{m['type']}"
+        if key in found:
+            raise InputFileError(f"같은 단계 파일이 두 번 들어왔습니다: {found[key].name}, {p.name}")
+        found[key] = p
+    return found
 
-    obj_l1~obj_l4 는 **통계표의 1~4번째 분류축**(논리 순서)이다. 실제 objL 슬롯은
-    getMeta 의 OBJ_ID_SN 이 정하며, 필요할 때만 해석한다(정상 표는 추가 호출 0).
+
+def _need(message: str, calls: list[dict[str, Any]], stage: str) -> IncompleteError:
+    return IncompleteError(message, calls, stage)
+
+
+def resolve_data(query: DataQuery, paths: list[str]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """저장된 파일들로 data 를 끝까지 푼다. 다음 응답이 필요하면 :class:`IncompleteError`.
 
     Returns:
         (행 목록, 진단 dict). 진단:
         {"transport": "json"|"sdmx", "axis_slots": [int], "resolved": bool,
-         "axes": [{"slot","obj_id","obj_name"}], "notes": [str]}
+         "axes": [{"slot","obj_id","obj_name"}], "notes": [str], "stage": str}
     """
-    logical = [obj_l1 or "ALL", obj_l2, obj_l3, obj_l4]
-    while len(logical) > 1 and not logical[-1]:
-        logical.pop()
-
+    files = _classify_data_files(query, paths)
     notes: list[str] = []
 
-    def _json_call(slot_values: dict[int, str]) -> list[dict[str, Any]]:
-        params = _build_data_params(
-            org_id, tbl_id, itm_id, slot_values,
-            prd_se, start_prd_de, end_prd_de, new_est_prd_cnt,
-        )
-        params["apiKey"] = api_key
-        data = _request(_DATA_URL, params)
-        return data if isinstance(data, list) else []
+    if "json1" not in files:
+        raise _need("1차 응답 파일이 없습니다 — next_calls 의 호출을 받아 함께 넘기세요", [query.first_call()], "json1")
 
-    naive_slots = {i: v for i, v in enumerate(logical, start=1)}
-    # 1차 시도는 논리 순서 = objL 슬롯(대다수 통계표의 사실). 정상 표는 여기서 끝나
-    # 추가 호출이 0 이다. 슬롯이 어긋난 표는 KOSIS 가 오류 20/21 로 거부하므로,
-    # 그때만 getMeta 로 실제 슬롯을 실측해 재시도한다(추측 금지).
+    naive = query.naive_slots()
     try:
-        rows = _json_call(naive_slots)
+        rows = _as_list(load_json(files["json1"]))
         return rows, {
             "transport": "json",
-            "axis_slots": sorted(s for s, v in naive_slots.items() if v),
-            "resolved": False,
-            "axes": [],
-            "notes": notes,
+            "axis_slots": sorted(s for s, v in naive.items() if v),
+            "resolved": False, "axes": [], "notes": notes, "stage": "json1",
         }
     except KOSISAPIError as exc:
+        # 슬롯이 어긋난 표는 KOSIS 가 오류 20/21 로 거부한다 — 그때만 getMeta 로 실제 슬롯을 실측한다(추측 금지).
         if exc.error_code not in ("20", "21"):
             raise
-        naive_error: KOSISAPIError = exc
-        notes.append(
-            f"기본 슬롯(objL1~) 호출이 오류 {exc.error_code} 로 거부돼 "
-            "통계표 분류축 구조(getMeta OBJ_ID_SN)를 실측해 재시도했습니다."
-        )
+        naive_error = exc
+    notes.append(
+        f"기본 슬롯(objL1~) 호출이 오류 {naive_error.error_code} 로 거부돼 "
+        "통계표 분류축 구조(getMeta OBJ_ID_SN)를 받아 다시 불렀습니다."
+    )
 
-    # --- 구조 재확인 (objL 슬롯 실측) ---
+    if "meta-ITM" not in files:
+        raise _need(
+            f"1차 호출이 오류 {naive_error.error_code} 로 거부됐습니다 — 분류축 구조(getMeta ITM·TBL)를 받아 "
+            "지금까지의 파일과 함께 넘기세요",
+            query.meta_calls(), "meta",
+        )
     try:
-        structure = get_table_axes(api_key, org_id, tbl_id)
+        itm_rows = _as_list(load_json(files["meta-ITM"]))
     except KOSISAPIError as exc:
         raise KOSISAPIError(
             f"{naive_error} | 분류축 구조 조회도 실패했습니다({exc}). "
-            f"`info --org-id {org_id} --tbl-id {tbl_id}` 로 축을 직접 확인하세요.",
+            f"`info --org-id {query.org_id} --tbl-id {query.tbl_id}` 로 축을 직접 확인하세요.",
             error_code=naive_error.error_code,
         ) from exc
+    tbl_rows: list[dict[str, Any]] = []
+    if "meta-TBL" in files:
+        try:
+            tbl_rows = _as_list(load_json(files["meta-TBL"]))
+        except KOSISAPIError as exc:
+            notes.append(f"통계표 이름(getMeta TBL)을 받지 못했습니다: {exc.error_code}")
 
-    axes = structure["axes"]
-    if not axes:
+    structure = table_axes(itm_rows, tbl_rows)
+    if not structure["axes"]:
         raise KOSISAPIError(
-            f"{naive_error} | 이 통계표({org_id}/{tbl_id})의 분류축 메타(getMeta type=ITM)가 "
+            f"{naive_error} | 이 통계표({query.org_id}/{query.tbl_id})의 분류축 메타(getMeta type=ITM)가 "
             "비어 있습니다 — KOSIS 사이트에서 통계표 제공 상태를 확인하세요.",
             error_code=naive_error.error_code,
         )
 
-    # 논리 순서 값 → 실제 슬롯 (부족분은 ALL)
-    slot_values: dict[int, str] = {}
-    for idx, axis in enumerate(axes):
-        value = logical[idx] if idx < len(logical) else ""
-        slot_values[int(axis["slot"])] = value or "ALL"
-
+    slot_values = query.remapped_slots(structure)
     slots = sorted(slot_values)
     axis_summary = [
         {"slot": int(a["slot"]), "obj_id": a["obj_id"], "obj_name": a["obj_name"]}
-        for a in axes
+        for a in structure["axes"]
     ]
 
     if slots and slots[0] == 1:
         # 슬롯 1 이 있는 표 — JSON 이 정상 동작한다.
+        if "json2" not in files:
+            raise _need("분류축 슬롯을 다시 맞춘 호출을 받아 지금까지의 파일과 함께 넘기세요",
+                        [query.json2_call(slot_values)], "json2")
         try:
-            rows = _json_call(slot_values)
+            rows = _as_list(load_json(files["json2"]))
         except KOSISAPIError as exc:
             if exc.error_code == "21":
                 raise KOSISAPIError(
                     f"{exc} | 이 통계표의 분류축은 {_describe_axes(structure)} 입니다. "
-                    f"`info --org-id {org_id} --tbl-id {tbl_id}` 로 코드를 확인하세요.",
+                    f"`info --org-id {query.org_id} --tbl-id {query.tbl_id}` 로 코드를 확인하세요.",
                     error_code=exc.error_code,
                 ) from exc
             raise
         if not rows:
             notes.append("KOSIS 가 빈 응답을 돌려줬습니다 — 조회 조건(시점·분류값)을 확인하세요.")
-        return rows, {
-            "transport": "json", "axis_slots": slots, "resolved": True,
-            "axes": axis_summary, "notes": notes,
-        }
+        return rows, {"transport": "json", "axis_slots": slots, "resolved": True,
+                      "axes": axis_summary, "notes": notes, "stage": "json2"}
 
     # 슬롯 1 이 없는 표 — KOSIS JSON 직렬화가 빈 배열을 내므로 SDMX 가 정본이다.
     notes.append(
         f"이 통계표의 첫 분류축이 objL{slots[0]} 입니다(objL1 없음). "
         "KOSIS JSON 은 이런 표에 빈 응답을 돌려주므로 SDMX(Generic) 경로로 조회했습니다."
     )
-    params = _build_data_params(
-        org_id, tbl_id, itm_id, slot_values,
-        prd_se, start_prd_de, end_prd_de, new_est_prd_cnt,
-    )
-    params["format"] = "sdmx"
-    params["type"] = "Generic"
-    params.pop("jsonVD", None)
-    params["apiKey"] = api_key
+    if "sdmx" not in files:
+        raise _need("첫 분류축이 objL1 이 아닌 표입니다 — SDMX 호출을 받아 지금까지의 파일과 함께 넘기세요",
+                    [query.sdmx_call(slot_values)], "sdmx")
     try:
-        xml_text = _request_sdmx(_DATA_URL, params)
+        xml_text = load_sdmx(files["sdmx"])
     except KOSISAPIError as exc:
         if exc.error_code in ("20", "21"):
             raise KOSISAPIError(
                 f"{exc} | 이 통계표의 분류축은 {_describe_axes(structure)} 입니다. "
-                f"`info --org-id {org_id} --tbl-id {tbl_id}` 로 코드를 확인하세요.",
+                f"`info --org-id {query.org_id} --tbl-id {query.tbl_id}` 로 코드를 확인하세요.",
                 error_code=exc.error_code,
             ) from exc
         raise
-    rows = _parse_sdmx_generic(xml_text, structure, org_id, tbl_id)
+    rows = _parse_sdmx_generic(xml_text, structure, query.org_id, query.tbl_id)
     if not rows:
         notes.append("SDMX 응답에도 관측값이 없습니다 — 조회 조건(시점·분류값)을 확인하세요.")
-    return rows, {
-        "transport": "sdmx", "axis_slots": slots, "resolved": True,
-        "axes": axis_summary, "notes": notes,
-    }
-
-
-def get_statistics_data(
-    api_key: str,
-    org_id: str,
-    tbl_id: str,
-    itm_id: str = "ALL",
-    obj_l1: str = "ALL",
-    obj_l2: str = "",
-    obj_l3: str = "",
-    obj_l4: str = "",
-    prd_se: str = "Y",
-    start_prd_de: str = "",
-    end_prd_de: str = "",
-    new_est_prd_cnt: int | None = None,
-) -> list[dict[str, Any]]:
-    """통계자료 조회 (파라미터 방식).
-
-    Args:
-        api_key: KOSIS 인증키.
-        org_id: 기관 코드 (예: "101" = 통계청).
-        tbl_id: 통계표 ID (예: "DT_1B04005N").
-        itm_id: 항목 ID ("ALL" 또는 "T2+T3" 등).
-        obj_l1: 1번째 분류축 값 ("ALL" 또는 특정 코드).
-        obj_l2: 2번째 분류축 값.
-        obj_l3: 3번째 분류축 값.
-        obj_l4: 4번째 분류축 값.
-        prd_se: 수록주기 ("Y"=연, "M"=월, "Q"=분기).
-        start_prd_de: 시작 시점 (예: "2020").
-        end_prd_de: 종료 시점 (예: "2024").
-        new_est_prd_cnt: 최근 N개 시점 (start/end 대신 사용).
-
-    Returns:
-        통계 데이터 목록. 각 항목:
-        {TBL_NM, C1, C1_NM, ITM_ID, ITM_NM, UNIT_NM, PRD_DE, DT, ...}
-    """
-    rows, _diag = get_statistics_data_ex(
-        api_key, org_id, tbl_id, itm_id=itm_id,
-        obj_l1=obj_l1, obj_l2=obj_l2, obj_l3=obj_l3, obj_l4=obj_l4,
-        prd_se=prd_se, start_prd_de=start_prd_de, end_prd_de=end_prd_de,
-        new_est_prd_cnt=new_est_prd_cnt,
-    )
-    return rows
+    return rows, {"transport": "sdmx", "axis_slots": slots, "resolved": True,
+                  "axes": axis_summary, "notes": notes, "stage": "sdmx"}
 
 
 def parse_value(dt_str: str) -> float | None:
-    """KOSIS DT 필드 값을 숫자로 변환.
-
-    KOSIS는 모든 값을 문자열로 반환하므로 변환이 필요.
-
-    Args:
-        dt_str: DT 필드 값 (예: "51740000", "-", "").
-
-    Returns:
-        숫자 값, 또는 None (데이터 없음).
-    """
-    if not dt_str or dt_str.strip() in ("-", "…", "x", "X", ""):
+    """KOSIS DT 필드 값을 숫자로 변환 (``-``·``…``·``x`` 등은 None)."""
+    if not dt_str or str(dt_str).strip() in ("-", "…", "x", "X", ""):
         return None
     try:
-        return float(dt_str.replace(",", ""))
+        return float(str(dt_str).replace(",", ""))
     except ValueError:
         return None
 
@@ -750,13 +882,8 @@ def summarize_data(
 ) -> list[dict[str, Any]]:
     """통계 데이터를 제안서용 요약 형태로 정리.
 
-    Args:
-        data: get_statistics_data()의 반환값.
-        value_field: 값 필드명 (기본: "DT").
-
     Returns:
-        정리된 데이터:
-        [{period, item_name, category, value, unit}, ...]
+        [{period, item_name, category, value, unit, ...}, ...] — 값이 숫자가 아닌 행은 뺀다.
     """
     results: list[dict[str, Any]] = []
 
@@ -786,208 +913,23 @@ def summarize_data(
     return results
 
 
-def _as_list(data: list[dict[str, Any]] | dict[str, Any]) -> list[dict[str, Any]]:
-    """KOSIS 응답을 항상 리스트로 정규화.
+def find_region_code(itm_rows: list[dict[str, Any]], region: str) -> list[dict[str, Any]]:
+    """자연어 지역명을 통계표별 분류(objL) 코드로 매핑 — getMeta type=ITM 응답에서만 찾는다.
 
-    getMeta type=TBL/ORG 등은 단일 dict, type=ITM/PRD 등은 list 를 반환한다.
-    """
-    if isinstance(data, list):
-        return data
-    if isinstance(data, dict):
-        return [data]
-    return []
-
-
-# 메타자료 조회유형 — 코드 발견(ITM)이 핵심 진입점
-META_TYPES = ("TBL", "ORG", "PRD", "ITM", "CMMT", "UNIT", "SOURCE", "WGT", "NCD")
-
-
-def get_table_meta(
-    api_key: str,
-    org_id: str,
-    tbl_id: str,
-    meta_type: str = "ITM",
-    obj_id: str = "",
-    itm_id: str = "",
-) -> list[dict[str, Any]]:
-    """통계표 메타(구조) 조회 — objL·itmId 코드 발견의 정본.
-
-    get_statistics_data 에 넘길 objL/itmId 값을 모를 때, type=ITM 으로
-    분류(OBJ_ID/OBJ_NM)와 항목(ITM_ID/ITM_NM) 코드를 확보한다.
-    통계자료와 동일 endpoint(statisticsData.do)에 method=getMeta 만 붙인다.
-
-    Args:
-        api_key: KOSIS 인증키.
-        org_id: 기관 코드.
-        tbl_id: 통계표 ID.
-        meta_type: 조회유형 (META_TYPES 중 하나, 기본 ITM=분류항목).
-        obj_id: 특정 분류 ID 로 필터 (ITM 유형, 선택).
-        itm_id: 특정 자료코드 ID 로 필터 (ITM 유형, 선택).
+    코드↔이름 대조는 KOSIS 응답 원본에서만 하고 추측하지 않는다(data-accuracy).
+    getMeta type=ITM 실측 구조(#1145): 각 행은 분류값 1건. OBJ_ID/OBJ_NM=분류축,
+    ITM_ID/ITM_NM=값 코드/이름(항목축 OBJ_ID="ITEM"은 제외).
 
     Returns:
-        메타 레코드 목록. type=ITM 예:
-        [{OBJ_ID, OBJ_NM, ITM_ID, ITM_NM, UNIT_NM, UP_ITM_ID, OBJ_ID_SN}, ...]
+        매칭 후보 목록 (일치도 높은 순): [{code, name, axis_id, axis_name}, ...]
     """
-    params: dict[str, str] = {
-        "method": "getMeta",
-        "apiKey": api_key,
-        "orgId": org_id,
-        "tblId": tbl_id,
-        "type": meta_type,
-        "format": "json",
-    }
-    if obj_id:
-        params["objId"] = obj_id
-    if itm_id:
-        params["itmId"] = itm_id
-
-    return _as_list(_request(_META_URL, params))
-
-
-def list_statistics(
-    api_key: str,
-    vw_cd: str = "MT_ZTITLE",
-    parent_list_id: str = "",
-) -> list[dict[str, Any]]:
-    """통계목록 트리 탐색 — 주제별/기관별/국제/지역 통계표를 드릴다운.
-
-    통합검색으로 안 잡히는 국제·OECD 통계(vwCd=MT_RTITLE)나
-    지자체 통계(MT_ATITLE01/MT_GTITLE01)의 진입로.
-
-    Args:
-        api_key: KOSIS 인증키.
-        vw_cd: 서비스뷰 코드 (MT_ZTITLE=주제별, MT_OTITLE=기관별,
-            MT_RTITLE=국제통계연감, MT_ATITLE01=지역통계 주제별,
-            MT_GTITLE01=e-지방지표 주제별, MT_BUKHAN=북한통계 등).
-        parent_list_id: 시작 목록 ID (생략 시 최상위 레벨).
-
-    Returns:
-        목록 노드 목록. 각 항목:
-        {VW_CD, LIST_ID, LIST_NM, ORG_ID, TBL_ID, TBL_NM, STAT_ID, SEND_DE}
-        TBL_ID 가 있으면 잎(통계표), 없으면 하위 드릴다운 대상.
-    """
-    params: dict[str, str] = {
-        "method": "getList",
-        "apiKey": api_key,
-        "vwCd": vw_cd,
-        "format": "json",
-        "jsonVD": "Y",
-    }
-    if parent_list_id:
-        params["parentListId"] = parent_list_id
-
-    return _as_list(_request(_LIST_URL, params))
-
-
-def get_stat_explanation(
-    api_key: str,
-    stat_id: str = "",
-    org_id: str = "",
-    tbl_id: str = "",
-    meta_itm: str = "ALL",
-) -> list[dict[str, Any]]:
-    """통계설명자료 조회 — 작성목적·법적근거·조사주기 등.
-
-    Args:
-        api_key: KOSIS 인증키.
-        stat_id: 통계조사 ID (orgId+tblId 대신 단독 사용 가능).
-        org_id: 기관 코드 (stat_id 없을 때).
-        tbl_id: 통계표 ID (stat_id 없을 때).
-        meta_itm: 요청 항목 (ALL=전체, statsNm=조사명, writingPurps=조사목적,
-            basisLaw=법적근거 등 28종, 매뉴얼 §2.4).
-
-    Returns:
-        설명 레코드 (통상 1건):
-        [{statsNm, statsKind, basisLaw, writingPurps, statsPeriod, ...}]
-    """
-    params: dict[str, str] = {
-        "method": "getList",
-        "apiKey": api_key,
-        "metaItm": meta_itm,
-        "format": "json",
-        "jsonVD": "Y",
-    }
-    if stat_id:
-        params["statId"] = stat_id
-    else:
-        params["orgId"] = org_id
-        params["tblId"] = tbl_id
-
-    return _as_list(_request(_EXPL_URL, params))
-
-
-def get_indicator(
-    api_key: str,
-    jipyo_id: str,
-    page_no: int = 1,
-    num_of_rows: int = 10,
-) -> list[dict[str, Any]]:
-    """통계주요지표 설명자료 조회 — 지표 개념·선정방법·출처.
-
-    지표 고유번호별 설명자료조회(매뉴얼 §2.7.2.1, pkNumberService.do).
-
-    Args:
-        api_key: KOSIS 인증키.
-        jipyo_id: 지표 ID.
-        page_no: 페이지 번호.
-        num_of_rows: 페이지당 건수.
-
-    Returns:
-        지표 설명 목록:
-        [{statJipyoId, statJipyoNm, jipyoExplan, jipyoExplan1}, ...]
-    """
-    params: dict[str, str] = {
-        "method": "getList",
-        "service": "1",
-        "serviceDetail": "pkAll",
-        "apiKey": api_key,
-        "jipyoId": jipyo_id,
-        "pageNo": str(page_no),
-        "numOfRows": str(num_of_rows),
-        "format": "json",
-    }
-    return _as_list(_request(_INDICATOR_URL, params))
-
-
-def find_region_code(
-    api_key: str,
-    org_id: str,
-    tbl_id: str,
-    region: str,
-) -> list[dict[str, Any]]:
-    """자연어 지역명을 통계표별 분류(objL) 코드로 매핑.
-
-    통계표의 지역 분류(getMeta type=ITM 의 OBJ 값들)를 받아
-    지역명과 부분일치하는 후보를 반환한다. 코드↔이름 대조는
-    KOSIS 응답 원본에서만 하고 추측하지 않는다(data-accuracy).
-
-    Args:
-        api_key: KOSIS 인증키.
-        org_id: 기관 코드.
-        tbl_id: 통계표 ID.
-        region: 지역명 (예: "인천 서구", "강남구").
-
-    Returns:
-        매칭 후보 목록 (일치도 높은 순):
-        [{code, name, axis_id, axis_name}, ...]
-        code=분류값 코드(ITM_ID — objL 인자로 사용), name=지역 국문명(ITM_NM),
-        axis_name=분류축 이름(OBJ_NM, 예: "시도별") — 어느 objL 축인지 식별용.
-
-    Note:
-        getMeta type=ITM 실측 구조(#1145): 각 행은 분류값 1건.
-        OBJ_ID/OBJ_NM=분류축(항목/성별/시도별 등), ITM_ID/ITM_NM=값 코드/이름.
-        지역명은 ITM_NM 에, 코드는 ITM_ID 에 있다(항목축 OBJ_ID="ITEM"은 제외).
-    """
-    meta = get_table_meta(api_key, org_id, tbl_id, meta_type="ITM")
-
     tokens = [t for t in region.replace(",", " ").split() if t]
     scored: list[tuple[int, dict[str, Any]]] = []
     seen: set[tuple[str, str]] = set()
 
-    for row in meta:
+    for row in itm_rows:
         axis_id = row.get("OBJ_ID", "")
         axis_name = row.get("OBJ_NM", "")
-        # 항목축(측정 지표)은 지역 후보가 아니므로 제외
         if axis_id == "ITEM" or axis_name == "항목":
             continue
         name = row.get("ITM_NM", "")

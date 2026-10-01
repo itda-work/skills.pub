@@ -1,5 +1,57 @@
 # Changelog — itda-work/weather-here
 
+## [0.15.0] — 2026-10-01 (itda-work/skills#46)
+
+> ⚠️ **배포 차단** — itda-hyve 0.10.4(itda-work/itda-hyve#31 — `final_url`·저장 경로에 키가 평문으로 남던 결함 수정) 공개 **뒤에** 배포한다.
+> 이 경계는 도구 목록으로 가를 수 없어 스킬이 판별하지 못한다. `compatibility` 는 itda-hyve 0.10.4 이상 하나다.
+> 0.10.4 는 기본 User-Agent 도 범용 `Mozilla/5.0` 으로 바꾼다 — 이 스킬의 호출은 UA 헤더를 싣지 않으므로, 그 전 판에서는 Open-Meteo 서버 로그에 제품명이 남는다.
+
+### Changed
+
+- **BREAKING — 날씨도 itda-hyve 가 받는다** (규칙 `cowork-network-via-hyve`). 스크립트의 Open-Meteo 직접 호출(`openmeteo_client.fetch`)을 지웠다. 위치만 주고 실행하던 옛 호출(`weather_here.py 부산`)은 이제 exit 2 로 다음 할 일을 안내한다 — `--weather-request` 로 호출 인자를 받고, itda-hyve 가 저장한 응답을 `--weather-input` 으로 넘긴다(지역명 1회, 현재 위치 2회 호출).
+- **BREAKING — `--weather-request` 출력** — 옛판은 `{"url","params"}` 였다. 이제 `{"status":"ok","call":{url,params,timeout_sec:50,save_dir?,save_as},"then":…}` 이고 `call` 을 그대로 `http_request` 에 보낸다. 저장 이름 `weather-here/openmeteo-<위도>_<경도>-<YYYYMMDDHHMM>.json`(KST).
+- **BREAKING — 스크립트 직접 IP 조회 제거** — 로컬(Cowork 아님)에서 인자 없이 실행하면 ipapi.co·ipwho.is 를 직접 부르던 경로(`geo_locator.locate_by_ip`)와 Cowork 판별(`_in_cowork_sandbox`)을 지웠다. 위치 입력이 없으면 어디서든 exit 3 과 `location` 도구 안내다.
+- **BREAKING — IP 서비스 응답을 위치로 받지 않는다** — `compatibility` 가 itda-hyve 0.10.4 이상이라 `location`(0.10.1+)이 늘 있다. `location` 이 실패하면 지역명을 안내하고 IP 서비스를 따로 부르지 않는다(사용자 IP 를 외부로 더 보내지 않는다). 그 규칙을 코드로도 지킨다 — `--geo-input` 에 ipapi.co·ipwho.is 응답(본문·응답 JSON 전체)을 주면 사유와 함께 exit 3 이다(W9 리뷰 m1). `ip_single`·`ipapi`·`ipwho` 출처와 `_extract_latlon` 을 지웠다.
+- **BREAKING — 묵은 위치 파일 거부** — `location` 응답의 `as_of` 가 1시간 넘게 지났거나 미래면 exit 3(W9 리뷰 m2). `as_of` 가 없으면 대조하지 않는다. `…Z`(호스트 시간대 UTC 의 RFC3339)도 Python 3.10 에서 읽는다(W9 재확인 m1).
+- **BREAKING — 날씨 파일 식별** — 저장 이름이 `openmeteo-<위도>_<경도>-<YYYYMMDDHHMM>.json`(`--weather-request` 가 정한 이름) 이어야 하고 이름의 좌표가 요청 좌표와 넷째 자리까지 같아야 한다. 응답 좌표 허용 차를 **0.5° → 0.1°**(격자 맞춤 실측 최대 0.053° — 리뷰 11점)로 줄였다 — 옛 값은 대전 파일을 세종·청주 등 7곳 이름으로 통과시켰다(W9 리뷰 M2). NaN·무한 좌표는 거부, 경도는 날짜변경선에서 접는다(m5). 예보 첫 날(`daily.time`)이 응답 시간대의 오늘이 아니면(자정을 넘긴 파일) 거부한다(m6).
+- `then` 은 다음 명령의 위치 인자를 셸 인용해 싣고(`shlex.quote` — 공백·한글 경로), `<save_dir>/…` 대신 `--weather-input <저장한 파일>` 이다(m7). SKILL 에 Windows 경로는 작은따옴표로.
+- hyve 층 판독(본문 그대로·응답 JSON 전체·실패 자리·HTTP 오류·절단)을 공용 `shared/hyve_input.py` 로 — `geo_locator.unwrap_response` 를 지웠다. 파일 없음 사유 문구가 "입력 파일이 없습니다" 로 바뀌었다.
+- Open-Meteo 를 계속 쓰는 판단을 `references/open-meteo-decision.md` 에 남겼다(스킬 판 표기는 0.12.0 — 초판은 SPEC 판 0.4.0 으로 잘못 적었다, m9) — `api.open-meteo.com/robots.txt` 가 `Disallow: /` 이나 공개 무키 API 호스트의 색인 차단으로 보고, 요청 1건당 1회 조회는 크롤링이 아니라는 사용자 결정(2026-10-01). 기각한 대안(기상청 교체·보류)과 bai-notice(W10 — 사이트 내부 API 만 골라 막음)와의 차이를 함께 적었다.
+
+### Added
+
+- `--location-request [--save-dir DIR]` — itda-hyve `location` 인자(`save_as` = `weather-here/location-<YYYYMMDDHHMM>.json`)를 낸다 — 위치 파일 이름도 스크립트가 정한다(W9 리뷰 m2).
+- `--save-dir DIR` — `--weather-request`·`--location-request` 의 `save_dir`. itda-hyve 가 쓸 **호스트** 절대 경로를 받는다: `/Users/…`·`C:\…`·`C:/…`·`\\서버\…`(Cowork 의 리눅스 파이썬은 Windows 경로를 상대 경로로 본다 — W10 M1). 상대 경로는 exit 2.
+- `--weather-input` 의 **묵은 파일 거부** — 관측 시각(`current.time` + `utc_offset_seconds`)이 3시간 넘게 지났거나 1시간 넘게 미래면 exit 1. 시각이 없으면 거부한다.
+- 실측 픽스처 `openmeteo-36.3471_127.3866-202610010127.json`(2026-10-01 itda-hyve 로 받은 원본 — 이름이 곧 저장 이름 계약). Windows 콘솔(cp949) stdout·stderr 테스트, SKILL 예시 JSON ↔ 출력 대조, 배포형 맨 프로세스 테스트(publish 의 shared 주입 계산을 그대로 써서 scripts 를 복사해 돈다), 경도 축·이웃 지역·offset 없음·미래 경계·`then` 인용 테스트(W9 리뷰 m4). 테스트 임시 폴더는 회차 끝에 지운다.
+- SKILL Step 2 에 itda-hyve 가 없을 때(설치 안내 후 멈춤 — 지역명을 묻지 않는다)·`location` 없는 옛 판(업데이트 안내)·Cowork 연결 폴더 없음(연결 요청 후 멈춤) 분기(m3). `invalid_input` 은 메시지가 "이미 있다" 일 때만 재사용 규칙.
+
+### Fixed
+
+- **`--detail` 풍속 단위** — Open-Meteo 기본 풍속 단위는 km/h 인데(`current_units.wind_speed_10m`, 2026-10-01 실측) "m/s" 를 붙여 3.6배로 표시했다. 응답의 단위로 m/s 로 환산한다(요청은 바꾸지 않는다). 단위를 모르면 "정보 없음".
+
+### Removed
+
+- `scripts/http_util.py`(`urllib.request` 래퍼)와 그 테스트, 라이브 테스트 `tests/test_weather_here_live.py`(저장소 `just live-check` 줄 포함).
+
+## [0.14.2] — 2026-09-30 (itda-work/skills#46, #47)
+
+### Changed
+
+- 공개된 적 없는 itda-hyve 판(0.9.1~0.10.0) 표기를 공개판 0.10.1 로 맞췄다(0.9.0 다음 공개판이 0.10.1 — 그 사이 판은 사용자가 설치할 수 없다, itda-work/skills#46). `location` 경로를 `itda-hyve 0.10.1 이상`, IP 한 곳 경로를 `location 이 없는 0.9.0` 으로(compatibility·SKILL.md 판별 표·GUIDE.md·`weather_here.py` 안내 문구). 경로를 고르는 기준(도구 목록의 `location` 유무)은 그대로다.
+- `references/netbridge.md` 사본을 정본과 동기화 — itda-hyve 기능 판 표기를 공개판 기준으로 바꿨다(0.9.1~0.10.0 은 공개되지 않은 개발판이라 그 사이 기능을 모두 0.10.1 로 적는다, itda-work/skills#46).
+
+### Fixed
+
+- **SKILL_DIR 확정 블록이 새 Cowork 배치에서 빈 값을 내던 것** — Cowork 가 플러그인을 `/root/.claude/plugins/synced/` 에 두고
+  `CLAUDE_PLUGIN_ROOT` 를 주지 않자 옛 블록의 1·2순위가 둘 다 비었다. 새 블록(규칙 `skill-dir-resolution` 정본)은 스킬을 불러올 때 받은
+  base directory 를 먼저 넣게 하고 그 값을 검증해 쓴다. 넣지 못했을 때만 설정 홈(`CLAUDE_CONFIG_DIR`)의 동기화본·Code 캐시와
+  Cowork 배치를 찾으며, 후보마다 `SKILL.md` 를 확인하고 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다. PowerShell 블록도 같은 계약으로 바꿨다.
+- **새 Cowork 배치에서 Cowork 로 판정하지 못하던 것** — `_in_cowork_sandbox()` 가 `/sessions/…` 만 봐서, 플러그인이
+  `/root/.claude/plugins/synced/…` 에 놓인 새 배치에서는 로컬로 판정했다. 그러면 스크립트가 클라우드 IP 로 위치를 잡는다(#33 의 샌프란시스코).
+  이제 `/root/.claude/plugins/synced/` 로 시작하는 경로도 Cowork 다. macOS 의 `~/.claude/plugins/synced` 는 로컬로 남는다. 판정 근거는 여전히
+  스크립트 위치다 — Cowork 에는 Claude Code 표준 환경변수가 주입되지 않는다(능력 지도 §3.5).
+
 ## [0.14.1] — 2026-09-29 (itda-work/skills#44)
 
 ### Changed

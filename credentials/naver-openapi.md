@@ -41,9 +41,15 @@
 | Client ID | `NAVER_CLIENT_ID` |
 | Client Secret | `NAVER_CLIENT_SECRET` |
 
-```dotenv
-NAVER_CLIENT_ID=발급받은_클라이언트ID
-NAVER_CLIENT_SECRET=발급받은_클라이언트시크릿
+키는 Claude Code 설정 파일(`~/.claude/settings.json`)의 `env` 에 넣습니다(설정을 바꾼 뒤 Claude Code 를 다시 시작). 스킬이 itda-hyve 경로를 지원하면 itda-hyve 앱의 **시크릿** 탭에 같은 이름으로 등록해도 됩니다 — 어느 경로가 되는지는 각 스킬 GUIDE 에 적혀 있습니다. `.env` 같은 파일은 스킬이 읽지 않습니다(itda-work/skills#45).
+
+```json
+{
+  "env": {
+    "NAVER_CLIENT_ID": "발급받은_클라이언트ID",
+    "NAVER_CLIENT_SECRET": "발급받은_클라이언트시크릿"
+  }
+}
 ```
 
 ## 4. 한도·주의사항
@@ -57,5 +63,6 @@ NAVER_CLIENT_SECRET=발급받은_클라이언트시크릿
 
 - `itda-doc/blog-seo` — 블로그 문서수·검색 트렌드
 - `itda-travel/eatery-trend` — 데이터랩 surge·지역검색 가게 매핑·블로그검색 거품 필터
+- `itda-web/web-search` — 네이버 web·뉴스·블로그 검색(사용 API: 검색)
 
-> `itda-web/web-search`의 네이버 검색은 별도 변수(`NAVER_SEARCH_CLIENT_ID/SECRET`)를 쓰지만 발급 절차는 본 문서와 동일합니다(사용 API: 검색).
+> `itda-web/web-search` 는 키를 **itda-hyve 앱의 시크릿 탭**에서만 읽습니다 — 같은 이름(`NAVER_CLIENT_ID`·`NAVER_CLIENT_SECRET`)으로 등록하면 되고, 위 3절의 설정 파일 `env` 는 이 스킬이 읽지 않습니다(itda-work/skills#45).

@@ -1,5 +1,11 @@
 # Changelog — work-plan
 
+## [0.14.1] — 2026-09-30 (itda-work/skills#45·#46)
+
+### Changed
+
+- `references/ground-check-rules.md` 의 `KO_DATA_API_KEY` 사용 스킬에서 `funding` 을 뺐다 — funding 3.0.0 은 키 없이 공개 공고 페이지를 itda-hyve 로 받는다. 스킬 카탈로그(`references/skill-catalog.md`, 생성물)도 다시 만들었다(funding 키 칸 "없음").
+
 ## [0.14.0] — 2026-09-28 (itda-work/skills#23)
 
 ### Changed

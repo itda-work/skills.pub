@@ -2,7 +2,7 @@
 
 검증 스킬팩 — 남의 주장·원인·시장 자료·회의 기록을 믿기 전에 근거로 검증한다: 1차 출처 강제(ground-check)·경쟁 가설 반증(investigate)·시장조사(market-scan)·회의 신뢰성 검수(meeting-reliability).
 
-> 2026-09-05 재정비(#1648)로 구 `itda-audit`(meeting-reliability) 에 구 `itda-work` 의 ground-check·investigate·market-scan 이 합류했습니다. 목적은 하나 — **믿기 전에 근거로 검증한다**. ground-check·market-scan 은 웹 수집 폴백·엔진으로 `itda-web`(web-reader·web-search) 를 쓰므로 함께 설치를 권합니다(미설치면 WebFetch 만으로 진행하고 그 사실을 보고합니다).
+> 2026-09-05 재정비(#1648)로 구 `itda-audit`(meeting-reliability) 에 구 `itda-work` 의 ground-check·investigate·market-scan 이 합류했습니다. 목적은 하나 — **믿기 전에 근거로 검증한다**. ground-check·market-scan 은 웹 수집 엔진·폴백으로 `itda-web`(web-search, v14.1 부터 다시 web-reader) 를 쓰므로 함께 설치를 권합니다(미설치면 WebFetch 만으로 진행하고 그 사실을 보고합니다).
 
 ## 포함 스킬
 

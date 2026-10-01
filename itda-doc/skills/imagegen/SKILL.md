@@ -6,17 +6,17 @@ description: >
   실측으로 검증한 케이스 카드(cases/, 9종)로 프롬프트를 짜고, 생성은 itda-hyve 가 사용자 PC 에 설치한 codex 로 합니다. 여러 장은 한꺼번에 병렬로 만듭니다.
   [책임 경계] 본 스킬은 이미지 새로 생성 전담 — 이미 있는 이미지의 크기·여백·포맷 가공은 itda-doc:imagekit.
 license: MIT
-compatibility: "Claude Code & Cowork. itda-hyve 0.10.0 이상(로컬 MCP 서버) + itda-hyve 에이전트 탭에서 설치·로그인한 codex 계정(ChatGPT 구독) 필요. macOS(Apple Silicon)."
+compatibility: "Claude Code & Cowork. itda-hyve 0.10.1 이상(로컬 MCP 서버) + itda-hyve 에이전트 탭에서 설치·로그인한 codex 계정(ChatGPT 구독) 필요. macOS(Apple Silicon)."
 allowed-tools: "mcp__remote-devices__itda-hyve__accounts_list, mcp__remote-devices__itda-hyve__agent_run, mcp__remote-devices__itda-hyve__job_status, Read"
 user-invocable: true
 argument-hint: "[케이스: blog-hero|slide-visual|icon-logo|character-illust|video-illust|figurine|photoreal-portrait|product-catalog|poster] <주제> [장수]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "1.0.1"
+  version: "1.0.3"
   category: "media"
   status: "experimental"
   created_at: "2026-05-30"
-  updated_at: "2026-09-29"
+  updated_at: "2026-10-01"
   tags: "image-generation, codex, chatgpt, itda-hyve, agent-run, job, parallel, prompt-template, quality, content, blog, slide, poster"
 ---
 
@@ -46,7 +46,7 @@ metadata:
 2. **`accounts_list` 의 `agents[]` 를 본다**(인자 없음).
 
    ```json
-   {"server_version": "0.10.0", "accounts": [],
+   {"server_version": "0.10.1", "accounts": [],
     "agents": [{"name": "codex", "kind": "codex", "default": true, "recipes": ["codex.imagegen"], "available": true,
                 "version": "codex-cli 0.157.0", "verified": true, "logged_in": true,
                 "checked_at": "2026-09-28T03:44:10Z", "login_checked_at": "2026-09-28T03:44:10Z"}]}
@@ -54,8 +54,8 @@ metadata:
 
    | 보이는 것 | 할 일 |
    |---|---|
-   | `server_version` 이 없거나 0.10.0 미만 | itda-hyve 가 옛 판이다(에이전트 탭은 0.10.0 부터 있다). "itda-hyve 를 최신판으로 업데이트해 주세요(https://itda.work/hyve/)" 라고 안내하고 멈춘다 |
-   | `server_version` 은 0.10.0 이상인데 `agents` 가 없다 | "itda-hyve 창의 **에이전트** 탭에서 **codex 설치** → 계정 추가 → **로그인** 을 해 주세요. 처음 추가했다면 Claude Desktop 을 다시 시작해야 합니다" 라고 안내하고 멈춘다 |
+   | `server_version` 이 없거나 0.10.1 미만 | itda-hyve 가 옛 판이다(에이전트 탭은 공개판 0.10.1 부터 있다). "itda-hyve 를 최신판으로 업데이트해 주세요(https://itda.work/hyve/)" 라고 안내하고 멈춘다 |
+   | `server_version` 은 0.10.1 이상인데 `agents` 가 없다 | "itda-hyve 창의 **에이전트** 탭에서 **codex 설치** → 계정 추가 → **로그인** 을 해 주세요. 처음 추가했다면 Claude Desktop 을 다시 시작해야 합니다" 라고 안내하고 멈춘다 |
    | `available: false` | `reason` 을 그대로 전하고 멈춘다. 사유가 codex 설치면 "itda-hyve 창의 에이전트 탭에서 **codex 설치** 를 눌러 주세요" 로 안내한다(따로 설치한 codex 로는 대신할 수 없다). 단 **Intel Mac 은 아직 지원하지 않는다**(지금은 Apple Silicon Mac 만). 지금 `reason` 은 Intel 과 미설치를 가르지 못한다(itda-hyve#23) — 사용자가 Intel Mac 이라고 했거나, 에이전트 탭의 설치가 "이 플랫폼용으로 검증한 판이 없음" 으로 실패했다고 하면, 지원하지 않는다고 알리고 설치를 되풀이해 안내하지 않는다. 그 밖에 재시작 필요·Windows 등 |
    | **`logged_in: false`** | **codex 로그인이 안 돼 있다.** "itda-hyve 창의 에이전트 탭에서 **로그인** 을 눌러 주세요 — 브라우저가 열리면 ChatGPT 로 로그인합니다(터미널은 필요 없고, 끝나면 저절로 확인됩니다 — 표시가 안 바뀌면 **상태 확인**)" 라고 안내하고 멈춘다. 사용자가 로그인했다고 하면 그때 진행한다 |
    | `logged_in` 이 없다 | 아직 한 번도 확인하지 않았다. 진행한다 — 로그인이 없으면 작업이 곧바로 `not_logged_in` 으로 끝난다(아래 트러블슈팅) |

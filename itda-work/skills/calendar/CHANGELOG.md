@@ -3,6 +3,18 @@
 All notable changes to the `calendar` skill are documented here.
 This skill follows the itda-skills SPEC workflow (SPEC-CALENDAR-001).
 
+## [0.7.3] — 2026-10-01 (itda-work/skills#46)
+
+### Changed
+
+- `references/netbridge.md` 사본을 정본과 동기화 — `secret_missing` 은 그 소스 하나에 대한 멈춤이다: 다른 경로로 키를 넣지 않고(같은 API 를 다른 통로·다른 키로 부르지 않는다), 여러 소스를 묶는 스킬은 그 소스만 빼고 계속할 수 있다. 앞 판 뒤에 사본이 바뀌어 배포본 내용이 달라졌으므로 patch 를 올린다(skills v14.0.0 준비).
+
+## [0.7.2] — 2026-09-30 (itda-work/skills#46)
+
+### Changed
+
+- `references/netbridge.md` 사본을 정본과 동기화 — itda-hyve 기능 판 표기를 공개판 기준으로 바꿨다(0.9.1~0.10.0 은 공개되지 않은 개발판이라 그 사이 기능을 모두 0.10.1 로 적는다, itda-work/skills#46).
+
 ## [0.7.1] — 2026-09-29 (itda-work/skills#44)
 
 ### Changed

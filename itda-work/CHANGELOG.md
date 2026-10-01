@@ -2,6 +2,25 @@
 
 이 플러그인의 주요 변경 사항을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/), 버전은 [SemVer](https://semver.org/)를 따릅니다.
 
+## [4.0.0] - 2026-10-01
+
+> 요구: **itda-hyve 0.10.4 이상**(exchange-rate·weather-here·morning-brief). itda-hyve 0.10.4 를 먼저 설치·업데이트한 뒤 이 판을 설치한다 — 0.10.3 이하는 응답 `final_url` 등에 시크릿이 되비치고 기본 User-Agent 에 제품명이 실린다.
+
+### BREAKING
+
+- **`exchange-rate` 0.11.0 — 요청은 itda-hyve, 스크립트는 `plan`·`show` 가공만** (itda-work/skills#46). 키 없는 서울외국환중개 조회를 itda-hyve 가 받는다. 휴일 폴백은 요청 날짜 앞 14일 창 한 번으로 스크립트가 정하고, 월평균은 요청한 달만 받는다. 실패는 stdout JSON(`status: "error"`)이다. 통화 목록을 사이트와 맞춰 58종으로, `위안`·`인민폐` 는 CNH 로.
+- **`weather-here` 0.15.0 — 날씨도 itda-hyve** (itda-work/skills#46). 스크립트의 Open-Meteo 직접 호출과 직접 IP 조회를 지웠다. 위치는 itda-hyve `location`, 날씨는 itda-hyve `http_request` 로 받고 스크립트는 판독만 한다. `location` 이 실패하면 IP 서비스를 따로 부르지 않고 지역명을 묻는다. `--detail` 풍속이 km/h 를 m/s 로 표시하던 결함도 고쳤다.
+- **`morning-brief` 0.12.4 — 요구 판 itda-hyve 0.10.4** — 0.10.1~0.10.3 은 `hyve_outdated` 로 멈춘다. 환율 절을 새 exchange-rate 흐름으로(옛 인자 호출이 없어져 환율 절이 늘 비던 결함), 날씨 예보를 늘 itda-hyve 로 받는다.
+
+### Changed
+
+- `calendar` 0.7.3 · `email` 0.38.3 · `time-audit` 0.3.3 — 공개된 적 없는 itda-hyve 판 표기(0.9.1~0.10.0)를 공개판 0.10.1 로 맞췄고 `references/netbridge.md` 사본을 정본과 동기화했다(`secret_missing` 은 그 소스 하나에 대한 멈춤, itda-work/skills#46).
+- `work-plan` 0.14.1 — 스킬 카탈로그를 현재 공개 스킬로 다시 만들었다(제거한 스킬과 배포 보류한 `itda-web:web-reader` 가 빠졌다).
+
+### Fixed
+
+- **SKILL_DIR 확정 블록**(itda-work/skills#47) — 새 Cowork 배치(`/root/.claude/plugins/synced/…`, `CLAUDE_PLUGIN_ROOT` 없음)에서 빈 값을 내던 옛 블록을 바꿨다. 스킬을 불러올 때 받은 base directory 를 먼저 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾으며, 후보가 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다(PowerShell 블록도 같은 계약). `exchange-rate` · `morning-brief` · `stakeholder-map` 0.1.5 · `task-brief` 0.2.4 · `time-audit` · `weather-here` · `work-redesign` 0.3.2.
+
 ## [3.0.1] - 2026-09-29
 
 ### Changed

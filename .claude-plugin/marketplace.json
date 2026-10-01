@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "대한민국 직장인·공공업무·투자자를 위한 Claude Code 스킬 마켓플레이스",
-    "version": "13.0.1",
+    "version": "14.0.0",
     "language": "ko"
   },
   "plugins": [
@@ -38,17 +38,17 @@
     {
       "name": "itda-dev",
       "source": "./itda-dev",
-      "description": "개발 환경을 돕는다 — Cloudflare Tunnel 노출, 에이전트·스킬 하네스 설계, 개발도구 릴리즈 요약, Orca 활용 코칭, Windows 랩(Parallels 클론), Claude·Codex 사용량 조회."
+      "description": "개발 환경을 돕는다 — Cloudflare Tunnel 노출, 에이전트·스킬 하네스 설계, 개발도구 릴리즈 요약, Orca 활용 코칭, Windows 랩(Parallels 클론·실기 SSH), Claude·Codex 사용량 조회."
     },
     {
       "name": "itda-web",
       "source": "./itda-web",
-      "description": "웹에서 찾고 가져온다 — 다중 엔진 검색, EUC-KR·WAF 정적 fetch, 정보원 정찰, Aside 브라우저 MCP, 네이버 블로그 읽기. 가장 싼 경로부터."
+      "description": "웹에서 찾고 가져온다 — 다중 엔진 검색, Aside 브라우저 MCP(로그인·JS 페이지). 가장 싼 경로부터."
     },
     {
       "name": "itda-travel",
       "source": "./itda-travel",
-      "description": "여행을 계획한다 — 고속열차 검색·예약(2026-09-01 SRT의 KTX 통합 반영), 항공권 최저가 비교, 숙소 요금 비교, 카카오맵 근처 장소, 여행지 유행 맛집 탐지."
+      "description": "여행을 계획한다 — 고속열차 검색·예약(2026-09-01 SRT의 KTX 통합 반영), 숙소 요금 비교, 여행지 유행 맛집 탐지."
     },
     {
       "name": "itda-org-mmaa",

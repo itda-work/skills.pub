@@ -1,41 +1,36 @@
-"""한국은행 ECOS OpenAPI 클라이언트.
+"""한국은행 ECOS OpenAPI 응답 파서 (파일 입력 전용).
 
-제안서/사업계획서에 필요한 거시경제 지표 수집:
-    - 100대 주요 경제지표 (KeyStatisticList)
-    - 통계 데이터 조회 (StatisticSearch)
-    - 통계표 목록 (StatisticTableList)
-    - 세부항목 목록 (StatisticItemList)
+네트워크는 itda-hyve 의 ``http_request`` 가 한다(itda-work/skills#45). 이 모듈은 그렇게 저장한
+**응답 JSON 파일을 읽어** 오류 판정·전량 대조·정리만 한다 — 직접 API 를 부르지 않는다.
 
-엔드포인트: https://ecos.bok.or.kr/api/
-인증: PATH 기반 (URL 경로에 인증키 포함)
+서비스(URL 경로 첫 세그먼트)와 응답 최상위 키가 같다:
+    - KeyStatisticList (100대 통계지표)
+    - StatisticSearch (통계 조회)
+    - StatisticTableList (서비스 통계 목록)
+    - StatisticItemList (통계 세부항목 목록)
+    - StatisticWord (통계용어사전)
+
+응답 형태 (2026-09-30 itda-hyve 실측):
+    성공  {"<서비스>": {"list_total_count": N, "row": [...]}}
+    오류  {"RESULT": {"CODE": "ERROR-101", "MESSAGE": "..."}}   ← HTTP 200 으로 온다
 """
 from __future__ import annotations
 
 import json
-import logging
-import urllib.error
-import urllib.parse
-import urllib.request
+import re
+from pathlib import Path
 from typing import Any
 
-logger = logging.getLogger(__name__)
-
-_BASE_URL = "https://ecos.bok.or.kr/api"
-_TIMEOUT = 15
+from hyve_input import HyveInputError, read_input
 
 # 활용신청 페이지 — 인증키 관련 오류 시 사용자에게 자동 부착
 _ECOS_APPLY_URL = "https://ecos.bok.or.kr/api/"
 
 _ECOS_SETUP_GUIDE = (
-    "\n[설정 안내] ECOS_API_KEY를 확인하세요:\n"
-    f"  1. {_ECOS_APPLY_URL} 접속 → 회원가입 → 인증키 신청\n"
-    "  2. 인증키 즉시 발급 (가입 시 자동 부여)\n"
-    "  3. 작업 폴더 루트(예: outputs/)에 .env 파일로 설정:\n"
-    "       ECOS_API_KEY=발급받은_키\n"
-    "  4. 첫 호출 실패 시 점검 절차:\n"
-    "     - 키 문자열 정확성 확인 (앞뒤 공백 제거)\n"
-    "     - URL 인코딩 이슈는 본 스크립트에서 자동 처리됨\n"
-    "     - 잠시(수 분) 후 재시도 — 발급 직후 일시적 미반영 가능\n"
+    "\n[설정 안내] ECOS 인증키를 확인하세요:\n"
+    f"  1. {_ECOS_APPLY_URL} 접속 → 회원가입 → 인증키 신청 (가입 시 즉시 발급)\n"
+    "  2. itda-hyve GUI 시크릿 탭에 ECOS_API_KEY 로 등록 (앞뒤 공백 없이)\n"
+    "  3. 발급 직후에는 수 분간 미반영일 수 있다 — 잠시 뒤 다시 조회\n"
 )
 
 # 정본 에러 코드 매핑 (출처: 한국은행 ECOS API개발명세서 6종 공통)
@@ -56,14 +51,22 @@ _ERROR_CODE_HINTS: dict[str, dict[str, Any]] = {
     "ERROR-602": {"desc": "과도한 OpenAPI 호출로 이용 제한", "category": "transient", "needs_apply_url": False},
 }
 
-# 주기 코드
-PERIOD_CODES = {
-    "year": "A",
-    "semi": "S",
-    "quarter": "Q",
-    "month": "M",
-    "day": "D",
+# 명령 → 서비스(응답 최상위 키)
+SERVICES = {
+    "key": "KeyStatisticList",
+    "search": "StatisticSearch",
+    "items": "StatisticItemList",
+    "tables": "StatisticTableList",
+    "word": "StatisticWord",
 }
+
+# 한 요청의 행 범위(시작~끝 건수). SKILL.md 의 쪽 이어받기 규칙과 같은 값이다.
+PAGE_ROWS = 1000
+# 남은 호출이 이보다 많으면(= list_total_count 5,000행 초과) 받기 전에 사용자에게 확인받는다(SKILL.md 호출 예산).
+CONFIRM_CALLS = 5
+
+# 저장 이름 규칙 — 끝의 ``-r<시작행>.json`` 이 그 파일의 행 범위 시작이다. 응답 본문에는 행 범위가 없다.
+_START_RE = re.compile(r"-r(\d+)\.json$")
 
 
 def _classify_ecos_error(error_code: str) -> tuple[str, str]:
@@ -72,9 +75,6 @@ def _classify_ecos_error(error_code: str) -> tuple[str, str]:
     정본 매핑(_ERROR_CODE_HINTS)에서 한글 설명을 가져오고, 인증키 관련
     오류(INFO-100)는 활용신청 URL을 자동 부착한다.
 
-    Args:
-        error_code: ECOS API CODE 값 (예: "INFO-100", "ERROR-602").
-
     Returns:
         (사용자 메시지, 카테고리) 튜플.
         카테고리: "setup" | "transient" | "data" | "general"
@@ -82,7 +82,7 @@ def _classify_ecos_error(error_code: str) -> tuple[str, str]:
     hint = _ERROR_CODE_HINTS.get(error_code)
     if hint is None:
         return (
-            f"ECOS API 오류 (코드: {error_code}) — 요청 파라미터 또는 서버 상태를 확인하세요.",
+            f"ECOS API 오류 (코드: {error_code}) — 요청 URL 의 경로 세그먼트 또는 서버 상태를 확인하세요.",
             "general",
         )
 
@@ -93,12 +93,12 @@ def _classify_ecos_error(error_code: str) -> tuple[str, str]:
         )
     if error_code == "ERROR-602":
         return (
-            f"{hint['desc']} ({error_code}) — 잠시 후 재시도하세요.",
+            f"{hint['desc']} ({error_code}) — 잠시 후 다시 받으세요(연달아 다시 부르지 않는다).",
             hint["category"],
         )
     if error_code == "ERROR-400":
         return (
-            f"{hint['desc']} ({error_code}) — 검색 범위를 줄여서 다시 시도하세요.",
+            f"{hint['desc']} ({error_code}) — 검색 범위를 줄여서 다시 받으세요.",
             hint["category"],
         )
     if error_code == "ERROR-101":
@@ -113,257 +113,236 @@ def _classify_ecos_error(error_code: str) -> tuple[str, str]:
         hint["category"],
     )
 
+
 class ECOSAPIError(Exception):
-    """ECOS API 호출 오류."""
+    """저장된 응답이 성공 응답이 아니다 (본문의 RESULT.CODE)."""
 
     def __init__(self, message: str, error_code: str | None = None):
         super().__init__(message)
         self.error_code = error_code
 
 
-def _build_url(*segments: str) -> str:
-    """PATH 기반 URL 생성.
+class InputFileError(Exception):
+    """입력 파일을 가공할 수 없다 — 없음·절단·HTTP 오류·itda-hyve 실패·형식 불일치.
 
-    ECOS API는 쿼리 파라미터가 아닌 경로(path) 기반으로 파라미터를 전달.
-    한글 검색어(StatisticWord의 단어 등) 비-ASCII 세그먼트는 percent-encoding
-    해야 한다. encode 없이 전송하면 urllib이 'ascii' codec UnicodeEncodeError로
-    실패한다 (라이브 검증: word --word "GDP디플레이터" 크래시, 2026-06-09).
-
-    Args:
-        segments: URL 경로 세그먼트.
-
-    Returns:
-        완성된 URL (trailing slash 포함, 각 세그먼트 percent-encoded).
+    ``kind`` 는 출력 JSON 의 ``error`` 값이다(``input``·``truncated``·``http``·``hyve``).
     """
-    encoded = [urllib.parse.quote(str(s), safe="") for s in segments]
-    return _BASE_URL + "/" + "/".join(encoded) + "/"
+
+    def __init__(self, message: str, kind: str = "input"):
+        super().__init__(message)
+        self.kind = kind
 
 
-def _request(url: str) -> dict[str, Any]:
-    """ECOS API 호출.
+class IncompleteError(Exception):
+    """받은 행이 list_total_count 에 모자라다 (전량 대조 실패). ``missing`` 은 더 받을 ``"시작~끝"`` 목록."""
 
-    Args:
-        url: 전체 URL.
+    def __init__(self, message: str, missing: list[str]):
+        super().__init__(message)
+        self.missing = missing
 
-    Returns:
-        파싱된 JSON 응답.
+
+def _read_body(path: Path) -> bytes:
+    """입력 파일에서 응답 본문을 꺼낸다 — hyve 층 판독은 공용 ``hyve_input`` 이 한다.
+
+    세 형태(본문 그대로·``http_request`` 응답 JSON 전체·실패 자리 ``{"error": …}``)를 받고, 절단·HTTP 오류·
+    itda-hyve 실패·없는 파일을 :class:`InputFileError` 로 올린다(``kind`` = 출력 JSON 의 ``error``).
+    """
+    try:
+        return read_input(path).data
+    except HyveInputError as exc:
+        raise InputFileError(str(exc), kind=exc.kind) from exc
+
+
+def parse_response(path: str | Path, service: str) -> dict[str, Any]:
+    """저장된 응답 파일 하나를 읽어 ``{"total": N, "rows": [...], "empty": bool}`` 로 돌려준다.
 
     Raises:
-        ECOSAPIError: 네트워크 오류, 파싱 실패, API 오류.
+        InputFileError: 파일 없음·JSON 아님·절단·HTTP 오류·다른 서비스의 응답.
+        ECOSAPIError: 본문의 RESULT.CODE 가 오류다(INFO-200 데이터 없음은 제외).
     """
+    p = Path(path).expanduser()
+    body = _read_body(p)
     try:
-        with urllib.request.urlopen(url, timeout=_TIMEOUT) as resp:
-            raw = resp.read()
-    except urllib.error.HTTPError as exc:
-        # @MX:NOTE: HTTP 403은 게이트웨이 단계 권한 거부 — 활용신청 안내 부착.
-        if exc.code == 403:
-            raise ECOSAPIError(
-                f"권한 거부 (HTTP 403) — 활용신청이 필요할 수 있습니다."
-                f"{_ECOS_SETUP_GUIDE}",
-                error_code="HTTP_403",
-            ) from exc
-        raise ECOSAPIError(f"네트워크 오류: {exc}") from exc
-    except urllib.error.URLError as exc:
-        raise ECOSAPIError(f"네트워크 오류: {exc}") from exc
-
-    try:
-        data = json.loads(raw)
+        data = json.loads(body)
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-        raise ECOSAPIError(f"JSON 파싱 실패: {exc}") from exc
+        raise InputFileError(
+            f"JSON 이 아닙니다 — 본문이 잘렸거나 HTTP 오류 페이지일 수 있다({p.name}): {exc}"
+        ) from exc
+    if not isinstance(data, dict):
+        raise InputFileError(f"ECOS 응답 형태가 아닙니다: {p.name}")
 
-    # 에러 응답 확인 — 정본 한글 hint + 활용신청 URL 자동 부착
-    if "RESULT" in data:
-        code = data["RESULT"].get("CODE", "")
-        msg = data["RESULT"].get("MESSAGE", "알 수 없는 오류")
-
-        # INFO-200: 데이터 없음 (에러가 아닌 정상 응답)
+    result = data.get("RESULT")
+    if isinstance(result, dict):
+        code = str(result.get("CODE", ""))
+        msg = result.get("MESSAGE", "알 수 없는 오류")
         if code == "INFO-200":
-            return {"_empty": True, "_message": msg}
-
-        # 그 외 모든 INFO/ERROR 코드는 _classify_ecos_error로 처리
+            return {"total": 0, "rows": [], "empty": True, "message": msg}
         hint_msg, _category = _classify_ecos_error(code)
-        raise ECOSAPIError(
-            f"{hint_msg} | 원본 메시지: {msg}",
-            error_code=code,
+        raise ECOSAPIError(f"{hint_msg} | 원본 메시지: {msg} ({p.name})", error_code=code)
+
+    block = data.get(service)
+    if not isinstance(block, dict):
+        found = ", ".join(sorted(data)) or "(빈 객체)"
+        raise InputFileError(f"{service} 응답이 아닙니다({found}): {p.name}")
+    rows = block.get("row") or []
+    try:
+        total: int | None = int(block["list_total_count"])
+    except (KeyError, TypeError, ValueError):
+        total = None  # 기준선 없음 — collect_rows 가 경고로 남긴다
+    return {"total": total, "rows": rows, "empty": False}
+
+
+def _chunks(first: int, last: int) -> list[str]:
+    """``first``~``last`` 를 ``PAGE_ROWS`` 씩 끊어 ``"시작~끝"`` 목록으로."""
+    out = []
+    start = first
+    while start <= last:
+        end = min(start + PAGE_ROWS - 1, last)
+        out.append(f"{start}~{end}")
+        start = end + 1
+    return out
+
+
+def missing_ranges(received: int, total: int) -> list[str]:
+    """1행부터 ``received`` 행을 이어 받았을 때 남은 범위(``PAGE_ROWS`` 씩)."""
+    return _chunks(received + 1, total)
+
+
+def start_row(path: str | Path) -> int:
+    """저장 이름 끝의 ``-r<시작행>.json`` 을 읽는다. 없으면 :class:`InputFileError`."""
+    name = Path(path).name
+    m = _START_RE.search(name)
+    if not m or int(m.group(1)) < 1:
+        raise InputFileError(
+            f"파일 이름이 규칙(…-r<시작행>.json)과 다릅니다: {name} — 응답 본문에는 행 범위가 없어 이름으로 안다. "
+            "SKILL.md 의 저장 이름을 그대로 쓰세요(예: ecos/items-901Y009-r1.json · …-r1001.json)"
+        )
+    return int(m.group(1))
+
+
+def _row_key(row: dict[str, Any]) -> str:
+    return json.dumps(row, ensure_ascii=False, sort_keys=True)
+
+
+def collect_rows(paths: list[str], service: str) -> dict[str, Any]:
+    """여러 쪽 파일의 행을 모으고 ``list_total_count`` 와 전량 대조한다.
+
+    합치기 전에 네 가지를 본다 — 행 수 합만 맞으면 같은 쪽 두 번·다른 질의 혼입이 ``ok`` 로 지나간다(W4 리뷰 M2).
+
+    1. **질의가 같은가** — 모든 파일의 ``list_total_count`` 가 같아야 한다. 다르면 다른 질의(통계표·기간·항목)의
+       응답이 섞였다는 ``input`` 오류다. ECOS 통계는 공표 주기(일·월·분기) 단위로 갱신돼 쪽을 받는 몇 초~몇 분 사이에
+       건수가 바뀌는 일이 드물고, 바뀌었더라도 쪽 경계가 어긋나 어차피 처음부터 다시 받아야 한다 — 그래서 경고로
+       두지 않고 오류로 둔다(나라장터 g2b 는 받는 사이 공고가 계속 늘어 경고 + 최댓값이다).
+    2. **행 범위가 겹치지 않는가** — 파일 이름의 ``-r<시작행>`` 과 받은 행 수로 범위를 세운다. 같은 시작행이 두 번
+       (다른 폴더 사본)이거나 범위가 겹치면 ``input`` 오류다.
+    3. **행이 겹치지 않는가** — 행 전체가 같은 행이 둘 이상이면 ``input`` 오류다(ECOS 행은 TIME·ITEM_CODE 로 유일).
+    4. **1행부터 빈틈없이 이어지는가** — 빈 범위·꼬리를 정확히 계산해 :class:`IncompleteError` 로 알린다.
+
+    ``list_total_count`` 가 없는 응답은 받은 행 수를 분모로 쓰되 ``warnings`` 에 기준선이 없다고 남긴다.
+
+    Returns:
+        ``{"rows": [...], "total_count": N, "sources": [{path, start_row, total_count, rows}], "warnings": [...]}``
+    """
+    parsed_files = []
+    for p in paths:
+        parsed = parse_response(p, service)
+        parsed_files.append((str(Path(p).expanduser()), start_row(p), parsed))
+
+    warnings: list[str] = []
+    sources = [{"path": path, "start_row": start, "total_count": pr["total"], "rows": len(pr["rows"])}
+               for path, start, pr in parsed_files]
+
+    # INFO-200(데이터 없음)은 행이 없는 성공이다 — 다른 쪽과 섞이지 않았을 때만.
+    if all(pr["empty"] for _, _, pr in parsed_files):
+        return {"rows": [], "total_count": 0, "sources": sources, "warnings": warnings}
+
+    # 1. 질의 동일성 — 모든 파일의 list_total_count 가 같아야 한다.
+    totals = {pr["total"] for _, _, pr in parsed_files if not pr["empty"]}
+    empties = [Path(path).name for path, _, pr in parsed_files if pr["empty"]]
+    if empties:
+        raise InputFileError(
+            f"데이터 없음(INFO-200) 응답과 행이 있는 응답이 섞였습니다({', '.join(empties)}) — "
+            "다른 질의의 파일이 들어왔는지 확인하세요"
+        )
+    known = {t for t in totals if t is not None}
+    if len(known) > 1:
+        detail = ", ".join(f"{Path(s['path']).name}={s['total_count']}" for s in sources)
+        raise InputFileError(
+            f"파일마다 list_total_count 가 다릅니다({detail}) — 다른 질의(통계표·주기·기간·항목)의 응답이 섞였다. "
+            "한 명령에는 같은 URL 의 쪽들만 넘기세요"
+        )
+    if None in totals:
+        no_total = [Path(s["path"]).name for s in sources if s["total_count"] is None]
+        warnings.append(
+            f"list_total_count 가 없는 응답이 있습니다({', '.join(no_total)}) — 전량 기준선이 없어 받은 행 수로만 셉니다"
         )
 
-    return data
+    # 2. 행 범위 — 시작행 순으로 겹침·빈틈을 본다.
+    spans = sorted(((start, path, pr) for path, start, pr in parsed_files), key=lambda t: t[0])
+    starts = [start for start, _, _ in spans]
+    dup_starts = sorted({s for s in starts if starts.count(s) > 1})
+    if dup_starts:
+        names = [Path(path).name for start, path, _ in spans if start in dup_starts]
+        raise InputFileError(
+            f"같은 행 범위(시작행 {dup_starts})가 두 번 들어왔습니다({', '.join(names)}) — 다른 폴더에 다시 받은 사본이면 하나만 넘기세요"
+        )
+    gaps: list[tuple[int, int]] = []
+    cursor = 1
+    for start, path, pr in spans:
+        if start < cursor:
+            raise InputFileError(
+                f"행 범위가 겹칩니다 — {Path(path).name} 은 {start}행부터인데 앞 파일이 {cursor - 1}행까지 받았다. "
+                "같은 URL 의 <시작행>/<끝행> 을 1000행씩 겹치지 않게 받으세요"
+            )
+        if start > cursor:
+            gaps.append((cursor, start - 1))
+        cursor = start + len(pr["rows"])
+
+    # 3. 행 중복.
+    rows: list[dict[str, Any]] = []
+    for _, _, pr in spans:
+        rows.extend(pr["rows"])
+    keys = [_row_key(r) for r in rows]
+    dup_rows = len(keys) - len(set(keys))
+    if dup_rows:
+        raise InputFileError(
+            f"같은 행이 {dup_rows}개 겹칩니다 — 같은 범위를 두 번 받았거나 받는 사이 자료가 바뀌었다. 1행부터 다시 받으세요"
+        )
+
+    total = known.pop() if known else len(rows)
+    if cursor - 1 > total:
+        raise InputFileError(
+            f"list_total_count={total} 인데 {cursor - 1}행까지 받았습니다 — 다른 질의의 파일이 섞였는지 확인하세요"
+        )
+    if cursor - 1 < total:
+        gaps.append((cursor, total))
+
+    # 4. 빈틈 — 정확한 범위를 알린다.
+    if gaps:
+        missing = [r for a, b in gaps for r in _chunks(a, b)]
+        more = len(missing)
+        ask = (f" 남은 호출이 {more}회로 {CONFIRM_CALLS}회를 넘는다 — 받기 전에 사용자에게 호출 수를 알리고 "
+               "기간·항목코드를 좁힐지 확인받으세요." if more > CONFIRM_CALLS else "")
+        raise IncompleteError(
+            f"list_total_count={total} 인데 받은 행={len(rows)} — 다음 행 범위를 더 받아 "
+            f"지금 파일과 함께 넘기세요: {', '.join(missing)}.{ask}",
+            missing,
+        )
+    return {"rows": rows, "total_count": total, "sources": sources, "warnings": warnings}
 
 
-# @MX:ANCHOR: [AUTO] ECOS 100대 주요 경제지표 조회 함수.
-# @MX:REASON: fan_in >= 3 (collect_econ의 key/search 서브커맨드); 핵심 경제지표 진입점.
-def get_key_statistics(
-    api_key: str,
-    start: int = 1,
-    end: int = 200,
-) -> list[dict[str, Any]]:
-    """100대 주요 경제지표 조회.
-
-    한국은행이 선정한 핵심 경제지표를 한번에 조회. 제안서에서 경제 환경 개요에 유용.
-
-    Args:
-        api_key: ECOS 인증키.
-        start: 시작 건수 (기본 1).
-        end: 종료 건수 (기본 200).
-
-    Returns:
-        주요 지표 목록. 각 항목:
-        {CLASS_NAME, KEYSTAT_NAME, DATA_VALUE, CYCLE, UNIT_NAME}
-    """
-    url = _build_url("KeyStatisticList", api_key, "json", "kr", start, end)
-    data = _request(url)
-
-    if data.get("_empty"):
-        return []
-
-    return data.get("KeyStatisticList", {}).get("row", [])
-
-
-def search_statistics(
-    api_key: str,
-    stat_code: str,
-    period: str,
-    start_date: str,
-    end_date: str,
-    item_code1: str = "",
-    item_code2: str = "",
-    item_code3: str = "",
-    item_code4: str = "",
-    start: int = 1,
-    end: int = 1000,
-) -> list[dict[str, Any]]:
-    """통계 데이터 조회 (StatisticSearch).
-
-    Args:
-        api_key: ECOS 인증키.
-        stat_code: 통계표코드 (예: "901Y009").
-        period: 주기 ("A", "Q", "M", "D").
-        start_date: 시작일 (주기에 맞는 형식).
-        end_date: 종료일.
-        item_code1~4: 항목코드 (선택).
-        start: 시작 건수.
-        end: 종료 건수 (최대 10000).
-
-    Returns:
-        통계 데이터 목록. 각 항목:
-        {STAT_CODE, STAT_NAME, ITEM_CODE1, ITEM_NAME1, UNIT_NAME, TIME, DATA_VALUE}
-    """
-    # PATH 세그먼트 구성
-    segments = [
-        "StatisticSearch", api_key, "json", "kr",
-        str(start), str(end),
-        stat_code, period, start_date, end_date,
-    ]
-
-    # 항목코드 추가 (빈 문자열이면 생략하되, 중간 코드가 있으면 이전 것도 포함)
-    codes = [item_code1, item_code2, item_code3, item_code4]
-    # 마지막 비어있지 않은 코드까지만 포함
-    last_idx = -1
-    for i, code in enumerate(codes):
-        if code:
-            last_idx = i
-    if last_idx >= 0:
-        for i in range(last_idx + 1):
-            segments.append(codes[i] or "")
-
-    url = _build_url(*segments)
-    data = _request(url)
-
-    if data.get("_empty"):
-        return []
-
-    return data.get("StatisticSearch", {}).get("row", [])
-
-
-def get_table_list(
-    api_key: str,
-    start: int = 1,
-    end: int = 1000,
-) -> list[dict[str, Any]]:
-    """통계표 목록 조회.
-
-    Args:
-        api_key: ECOS 인증키.
-        start: 시작 건수.
-        end: 종료 건수.
-
-    Returns:
-        통계표 목록. 각 항목:
-        {STAT_CODE, STAT_NAME, CYCLE, ORG_NAME}
-    """
-    url = _build_url("StatisticTableList", api_key, "json", "kr", start, end)
-    data = _request(url)
-
-    if data.get("_empty"):
-        return []
-
-    return data.get("StatisticTableList", {}).get("row", [])
-
-
-def get_item_list(
-    api_key: str,
-    stat_code: str,
-    start: int = 1,
-    end: int = 500,
-) -> list[dict[str, Any]]:
-    """통계표 세부항목 목록 조회.
-
-    Args:
-        api_key: ECOS 인증키.
-        stat_code: 통계표코드.
-        start: 시작 건수.
-        end: 종료 건수.
-
-    Returns:
-        항목 목록. 각 항목:
-        {STAT_CODE, STAT_NAME, GRP_CODE, GRP_NAME, ITEM_CODE, ITEM_NAME, CYCLE}
-    """
-    url = _build_url("StatisticItemList", api_key, "json", "kr", start, end, stat_code)
-    data = _request(url)
-
-    if data.get("_empty"):
-        return []
-
-    return data.get("StatisticItemList", {}).get("row", [])
-
-
-def search_word(
-    api_key: str,
-    word: str,
-    start: int = 1,
-    end: int = 20,
-) -> list[dict[str, Any]]:
-    """통계용어사전 검색.
-
-    경제/통계 용어의 공식 정의를 조회. 제안서에서 용어 설명 인용에 유용.
-
-    Args:
-        api_key: ECOS 인증키.
-        word: 검색할 용어 (예: "소비자동향지수", "GDP디플레이터").
-        start: 시작 건수.
-        end: 종료 건수.
-
-    Returns:
-        용어 목록. 각 항목: {WORD, CONTENT}
-    """
-    url = _build_url("StatisticWord", api_key, "json", "kr", start, end, word)
-    data = _request(url)
-
-    if data.get("_empty"):
-        return []
-
-    return data.get("StatisticWord", {}).get("row", [])
+def infer_period(rows: list[dict[str, Any]]) -> str:
+    """TIME 형식으로 주기를 추정한다 (A:2024 · Q:2024Q1 · M:202401 · D:20240101)."""
+    t = str(rows[0].get("TIME", "")) if rows else ""
+    if "Q" in t:
+        return "quarter"
+    if "S" in t:
+        return "semi"
+    return {4: "year", 6: "month", 8: "day"}.get(len(t), "")
 
 
 def parse_value(val_str: str) -> float | None:
-    """DATA_VALUE 문자열을 숫자로 변환.
-
-    Args:
-        val_str: DATA_VALUE 필드 값.
-
-    Returns:
-        숫자 값, 또는 None.
-    """
+    """DATA_VALUE 문자열을 숫자로 변환. 숫자가 아니면 None."""
     if not val_str or val_str.strip() in ("-", "", "…", "x", "X", "*"):
         return None
     try:
@@ -373,18 +352,15 @@ def parse_value(val_str: str) -> float | None:
 
 
 def summarize_data(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """통계 데이터를 제안서용 요약 형태로 정리.
-
-    Args:
-        rows: search_statistics()의 반환값.
+    """StatisticSearch 행을 제안서용 요약 형태로 정리.
 
     Returns:
-        정리된 데이터: [{time, stat_name, item_name, value, unit}, ...]
+        [{time, stat_code, stat_name, item_name, item_name2, value, unit}, ...]
     """
     results: list[dict[str, Any]] = []
 
     for row in rows:
-        value = parse_value(row.get("DATA_VALUE", ""))
+        value = parse_value(row.get("DATA_VALUE", "") or "")
         if value is None:
             continue
 

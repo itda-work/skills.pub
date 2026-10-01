@@ -11,11 +11,11 @@ allowed-tools: Read, Write, Bash, mcp__workspace__bash
 argument-hint: "[요구사항 또는 메모 첨부]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "0.14.0"
+  version: "0.14.1"
   category: "productivity"
   status: "experimental"
   created_at: "2026-05-21"
-  updated_at: "2026-09-28"
+  updated_at: "2026-09-30"
   aliases: "계획세우기, 실행계획, 구현계획"
   tags: "Cowork, work-plan, plan work, action-plan"
 ---

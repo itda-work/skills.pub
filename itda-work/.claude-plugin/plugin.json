@@ -1,7 +1,7 @@
 {
   "name": "itda-work",
   "description": "매일 쓰는 업무 도구와 업무 구조화 — 메일·일정·아침 브리핑·환율·날씨, 그리고 내 업무를 4분면으로 재설계해 계획·제안서·파일럿·미니스킬로 굳히는 코칭 여정.",
-  "version": "13.0.1",
+  "version": "14.0.0",
   "author": {
     "name": "스킬.잇다",
     "url": "https://github.com/itda-work"

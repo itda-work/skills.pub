@@ -1,7 +1,7 @@
 """blog-seo 환경변수 resolver — 두 그룹(검색광고 / Open API) 통합.
 
 shared/env_loader.resolve_api_key() 를 위임 호출하여 다음 우선순위로 키를 해석한다:
-    CLI 인자 > 환경변수 > .env 파일 (find_env_files 다중 경로 탐색)
+    CLI 인자 > 환경변수 (env 파일은 읽지 않는다 — itda-work/skills#45)
 
 기존 코드와의 호환을 위해 env_loader의 MissingAPIKeyError를 잡아
 naver_searchad.MissingApiKeyError 로 재발생시킨다 (대소문자 P/k 차이).
@@ -20,10 +20,7 @@ _SEARCHAD_GUIDE = (
     "  1. https://searchad.naver.com 회원가입 (사업자 인증 필요)\n"
     "  2. 좌측 메뉴 → 도구 → API 관리\n"
     "  3. ACCESS KEY · SECRET KEY · CUSTOMER ID 발급/확인\n\n"
-    "설정 방법: 작업 폴더 루트(예: outputs/)에 .env 파일을 만들고 3개 키 모두 추가하세요.\n"
-    "    NAVER_SEARCHAD_ACCESS_KEY=...\n"
-    "    NAVER_SEARCHAD_SECRET_KEY=...\n"
-    "    NAVER_SEARCHAD_CUSTOMER_ID=...\n"
+    "3개 키(NAVER_SEARCHAD_ACCESS_KEY·NAVER_SEARCHAD_SECRET_KEY·NAVER_SEARCHAD_CUSTOMER_ID)가 모두 필요합니다.\n"
 )
 
 # ---------------------------------------------------------------------------
@@ -36,9 +33,7 @@ _OPEN_API_GUIDE = (
     "  1. https://developers.naver.com 로그인\n"
     "  2. Application → 애플리케이션 등록\n"
     "  3. 사용 API에 '검색' 또는 '데이터랩' 체크 → Client ID/Secret 발급\n\n"
-    "설정 방법: 작업 폴더 루트(예: outputs/)에 .env 파일을 만들고 2개 키를 추가하세요.\n"
-    "    NAVER_CLIENT_ID=...\n"
-    "    NAVER_CLIENT_SECRET=...\n"
+    "2개 키(NAVER_CLIENT_ID·NAVER_CLIENT_SECRET)가 모두 필요합니다.\n"
 )
 
 

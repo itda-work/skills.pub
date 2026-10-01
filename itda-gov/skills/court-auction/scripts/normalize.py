@@ -238,7 +238,17 @@ def normalize_notice_detail_response(raw_payload, *, include_raw=True):
         "bidTypeName": describe_bid_type_code(null_if_blank(meta.get("bidDvsCd")) or "") or None,
     }
     items = [normalize_notice_detail_row(r, include_raw) for r in rows]
-    result = {"notice": notice_meta, "count": len(items), "items": items}
+    case_count = None
+    if result_data and isinstance(result_data.get("dspslPbanc"), dict):
+        case_count = parse_amount(result_data["dspslPbanc"].get("csCnt"))
+    result = {
+        "notice": notice_meta,
+        "caseCount": case_count,
+        "count": len(items),
+        "items": items,
+        "correctionNotices": _list_at(result_data, "crrctPbancLst"),
+        "cancellationNotices": _list_at(result_data, "rtrcnPbancLst"),
+    }
     if include_raw:
         result["raw"] = (
             {"inputData": dict(meta), "pbancInfo": dict(nested_pbanc)}
@@ -252,18 +262,13 @@ def normalize_notice_detail_response(raw_payload, *, include_raw=True):
 
 
 def normalize_court_codes_response(raw_payload):
+    """``/pgj/pgj002/selectCortOfcLst.on`` 응답(``data.cortOfcLst`` — ``code``·``name``)."""
     data = _data_of(raw_payload)
-    rows = _list_at(data, "result")
+    rows = _list_at(data, "cortOfcLst")
     items = []
     for raw in rows:
         r = _ensure_row(raw)
-        items.append(
-            {
-                "code": null_if_blank(r.get("cortOfcCd")),
-                "name": null_if_blank(r.get("cortOfcNm")),
-                "branchName": null_if_blank(r.get("cortSptNm")),
-            }
-        )
+        items.append({"code": null_if_blank(r.get("code")), "name": null_if_blank(r.get("name"))})
     return {"count": len(items), "items": items}
 
 
@@ -278,11 +283,12 @@ def normalize_case_detail_response(raw_payload, *, include_raw=True):
     if not data or not data.get("dma_csBasInf"):
         out = {
             "found": False,
-            "status": status,
+            "siteStatus": status,
             "message": message,
             "caseInfo": None,
             "items": [],
             "schedule": [],
+            "saleItems": [],
             "claimDeadline": None,
             "relatedCases": [],
             "appeals": [],
@@ -334,14 +340,35 @@ def normalize_case_detail_response(raw_payload, *, include_raw=True):
     schedule = []
     for raw in _list_at(data, "dlt_rletCsGdsDtsDxdyInf"):
         r = _ensure_row(raw)
+        # 2026-10-01 실측 응답은 dxdyYmd·dxdyHm·dxdyPlcNm·auctnDxdyKndCd·auctnDxdyRsltCd 를 준다(옛 키는 폴백).
         schedule.append(
             {
                 "itemSeq": null_if_blank(r.get("dspslGdsSeq")),
                 "eventSeq": null_if_blank(r.get("dxdySeq")),
-                "saleDate": format_ymd(r.get("dspslDxdyYmd")),
+                "eventKindCode": null_if_blank(r.get("auctnDxdyKndCd")),
+                "saleDate": format_ymd(r.get("dxdyYmd") or r.get("dspslDxdyYmd")),
+                "saleTime": format_hm(r.get("dxdyHm")),
+                "place": null_if_blank(r.get("dxdyPlcNm")),
                 "minimumSalePrice": parse_amount(r.get("lwsDspslPrc")),
                 "appraisedPrice": parse_amount(r.get("aeeEvlAmt")),
-                "resultCode": null_if_blank(r.get("rsltCd")),
+                "resultCode": null_if_blank(r.get("auctnDxdyRsltCd")) or null_if_blank(r.get("rsltCd")),
+            }
+        )
+
+    sale_items = []
+    for raw in _list_at(data, "dlt_dspslGdsDspslObjctLst"):
+        r = _ensure_row(raw)
+        sale_items.append(
+            {
+                "itemSeq": null_if_blank(r.get("dspslGdsSeq")),
+                "saleDate": format_ymd(r.get("dspslDxdyYmd")),
+                "saleTimes": collect_sale_times(r),
+                "bidTypeCode": null_if_blank(r.get("bidDvsCd")),
+                "bidStartDate": format_ymd(r.get("bidBgngYmd")),
+                "bidEndDate": format_ymd(r.get("bidEndYmd")),
+                "appraisedPrice": parse_amount(r.get("aeeEvlAmt")),
+                "minimumSalePrice": parse_amount(r.get("fstPbancLwsDspslPrc")),
+                "remarks": strip_html(r.get("dspslGdsRmk")),
             }
         )
 
@@ -387,18 +414,28 @@ def normalize_case_detail_response(raw_payload, *, include_raw=True):
         r = _ensure_row(raw)
         stakeholders.append(
             {
-                "kind": null_if_blank(r.get("auctnIntrpsDvsNm1")) or null_if_blank(r.get("auctnIntrpsDvsNm2")),
-                "name": null_if_blank(r.get("intrpsNm1")) or null_if_blank(r.get("intrpsNm2")),
+                # 2026-10-01 실측 응답은 번호 없는 키(auctnIntrpsDvsNm·intrpsNm, 이름은 사이트가 가려서 준다)
+                "kind": (
+                    null_if_blank(r.get("auctnIntrpsDvsNm"))
+                    or null_if_blank(r.get("auctnIntrpsDvsNm1"))
+                    or null_if_blank(r.get("auctnIntrpsDvsNm2"))
+                ),
+                "name": (
+                    null_if_blank(r.get("intrpsNm"))
+                    or null_if_blank(r.get("intrpsNm1"))
+                    or null_if_blank(r.get("intrpsNm2"))
+                ),
             }
         )
 
     result = {
         "found": True,
-        "status": status,
+        "siteStatus": status,
         "message": message,
         "caseInfo": case_info,
         "items": items,
         "schedule": schedule,
+        "saleItems": sale_items,
         "claimDeadline": claim_deadline,
         "relatedCases": related_cases,
         "appeals": appeals,

@@ -1,5 +1,99 @@
 # Changelog — itda-dart
 
+## [0.21.1] — 2026-10-01 (itda-work/skills#46)
+
+### Changed
+
+- `references/netbridge.md` 사본을 정본과 동기화 — `secret_missing` 은 그 소스 하나에 대한 멈춤이다: 다른 경로로 키를 넣지 않고(같은 API 를 다른 통로·다른 키로 부르지 않는다), 여러 소스를 묶는 스킬은 그 소스만 빼고 계속할 수 있다. 앞 판 뒤에 사본이 바뀌어 배포본 내용이 달라졌으므로 patch 를 올린다(skills v14.0.0 준비).
+
+## [0.21.0] — 2026-09-30 (itda-work/skills#45)
+
+> 요구: **itda-hyve 0.10.4 이상**. 스크립트는 이제 네트워크를 하지 않는다.
+
+> ⚠️ **배포 차단** — itda-hyve 0.10.4(itda-work/itda-hyve#31 — `final_url`·저장 경로에 키가 평문으로 남던 결함 수정) 공개 **뒤에** 배포한다.
+> 이 경계는 도구 목록으로 가를 수 없어 스킬이 판별하지 못한다. `compatibility` 는 itda-hyve 0.10.4 이상 하나다 — 공개된 적 없는
+> 개발판(0.9.x) 표기를 걷어냈다(공개판은 0.8.1·0.9.0·0.10.1 이후뿐, `references/netbridge.md` 도 같은 기준으로 동기화).
+
+### Changed
+
+- **BREAKING — 요청은 itda-hyve, 스크립트는 가공만** (itda-work/skills#45, 규칙 `cowork-network-via-hyve`). 9개 명령 모두 같은 순환을 돈다:
+  명령 실행 → `status: "error"`, `error: "incomplete"` + `next_calls`(itda-hyve `http_request` 인자 그대로) → itda-hyve 로 받기 → 같은 명령에
+  `--input <연결 폴더>` 를 붙여 다시 실행. 앞 단 결과로 다음 요청이 정해지는 profile·finance·business·compare 는 스크립트가 단계를 정한다.
+  - `--input`(연결 폴더 또는 응답 파일들)·`--next-plan FILE`(batch `plan_file`, 40개씩 `FILEa`·`FILEb`… 로 나눔) 추가.
+  - **저장 이름이 식별 계약**이다(`dart/fin-<코드>-<연도>-<보고서코드>.json` 등, SKILL.md 표). 이름을 바꾸면 알아보지 못한다.
+  - status `020`(요청 한도)은 HTTP 200 이라 itda-hyve 가 재시도하지 않는다 — 같은 질의를 `-r2`·`-r3` 이름으로 다시 받으라고 `next_calls` 를 준다.
+  - corpCode ZIP 캐시를 `itda_path` 캐시 폴더에서 **연결 폴더**(`dart/corpcode-<날짜>.zip`)로 옮겼다. 7일 안에 받은 ZIP·기업개황은 다시 받지 않는다.
+- **BREAKING — 직접 호출 경로 제거**: `urllib` 호출(`_request_json`·`_request_binary`), `--api-key`, `os.environ` 키 해석(`env_loader`),
+  `KEY=<값> python3 …` 주입 규칙, "기업 개황만 itda-hyve" 안내를 지웠다. 키는 itda-hyve GUI 시크릿 탭의 `DART_API_KEY` 하나다.
+- **BREAKING — compare 는 다중회사 주요계정(`fnlttMultiAcnt`) 한 번**(100개사까지, 넘으면 100개씩)으로 받는다. 기업 수만큼 부르던
+  `fnlttSinglAcnt` 를 대신한다(2026-09-30 실측: 삼성전자·LG전자 2024 사업보고서 각 30행이 단일회사 응답과 같다). 데이터가 없는 회사는 빈 칸 + `warnings`.
+- **BREAKING — disclosure 는 기간 전량**을 쪽당 100건으로 받아 대조한다(쪽 번호·총건수·중복·빈틈). `--page`·`--page-count` 를 없애고
+  `--max-pages`(기본 10)·`--single-page` 를 넣었다. 출력에 `truncated`·`pages`·`total_page`(·`warnings`) 가 붙는다. 상한을 넘을 것 같으면
+  첫 쪽 뒤 incomplete 에 `need_pages`·`will_truncate` 가 온다.
+  - **JSON·표 stdout 은 최근 `--limit`(기본 20, 0=전부)건만** 싣는다 — `count` 는 받은 전량이고 `shown` 이 실은 건수다. 전량은 `--out FILE`
+    로 파일에 쓴다(stdout 에 `out` 경로). 잘렸는데 `--out` 이 없으면 `note` 가 붙는다. CSV 는 늘 전량. (0.20.0 은 기본 10건이었다.)
+  - **`--type` 은 `A`~`J` 만** 받는다(argparse choices — 0.20.0 은 아무 문자열이나 받아 그대로 보냈다).
+- **BREAKING — info 는 `--corp-code` 필수**, 입력 이름은 `company-<코드>-<날짜>.json`(0.18.0 의 `company-<코드>.json` 은 알아보지 않는다).
+  info JSON 의 `status` 는 이제 `"ok"` 다(종전엔 응답의 `"000"` 이 덮어썼다).
+- **BREAKING — 오류 응답은 정본 이름에 고착되지 않는다.** 다시 받을 호출을 준다:
+  - 다시 받으면 풀리는 오류(status `020`·`800`·`900`·오류 안내 HTML·HTTP 5xx/429·본문 절단·빈 본문·깨진 ZIP·DART 응답 형식이 아님·
+    itda-hyve `timeout`·`network_error`·`internal_error`·`rate_limited` 자리)는 `incomplete` + 다음 회차(`-r2`·`-r3`) 호출. 3회차도 같으면 멈춘다.
+  - 원인을 고쳐야 하는 오류(키 `010`·`011`·`012`·`901`·HTTP 403·그 밖의 HTTP 4xx·itda-hyve 설정 오류 자리)는 그 오류(`api`·`http`·`hyve`)에
+    `next_calls`(다음 회차 호출)를 싣는다. 오류 출력에 `next_calls_count`·`next_calls`(`--next-plan` 이면 `plan_files`)가 새로 붙을 수 있다.
+  - 날짜가 든 이름(corpcode·company)의 오류 응답은 오늘 날짜 이름으로 다시 받게 한다 — 키를 고친 사용자가 7일 동안 막히지 않는다.
+  - profile 의 부분 오류 가운데 고친 뒤 받을 수 있는 것은 `retry_calls` 로 준다.
+- **BREAKING — 저장 이름과 본문을 대조한다.** 다른 질의의 응답이 그 이름으로 저장돼 있으면 `ok` 로 가공하지 않고 `error: "input"` +
+  그 이름의 다음 회차 호출을 준다: 공시 목록 쪽의 `page_no`·`page_count`·행 `corp_code`·`rcept_dt`(기간 안)·(A 면) 정기공시 보고서명,
+  기업개황 `corp_code`, 주요계정·전체 재무제표 행 `corp_code`·`bsns_year`·`reprt_code`, 직원현황 행 `corp_code`, 다중회사 행이 요청 회사 목록 안
+  (·`bsns_year`·`reprt_code`), 공시서류 ZIP 안 파일 이름의 접수번호, raw 행의 `corp_code`·`bsns_year`·`reprt_code`(요청에 있을 때).
+- **BREAKING — 공시 목록 쪽마다 `total_count` 가 다를 때** — 받을 때 이미 끝난 기간(끝 날짜 < 파일을 받은 날·오늘)이면 다른 질의가 섞인
+  것이라 `error: "input"`(전 쪽을 다음 회차로 받을 `next_calls`)이다. 받은 날을 포함하는 기간만 경고 + 최댓값을 분모로 쓴다.
+  한 회차가 한 시점이다 — 가장 높은 회차보다 낮은 회차의 쪽은 쓰지 않고 그 회차로 다시 받게 한다.
+- **BREAKING — 공시 목록을 3회차까지 받아도 건수가 맞지 않으면 `error: "unstable"`**(exit 1, `next_calls` 없음)로 멈춘다. 종전엔
+  `incomplete` + 빈 `next_calls` 라 같은 명령을 되풀이할 수 있었다. 기간이 끝났으면 "새 폴더에서 1쪽부터", 열려 있으면 "끝 날짜를 어제로" 를 안내한다.
+- `--next-plan` 출력에 `plan_file_args`(계획 파일의 `--input` 폴더 기준 상대 경로 — batch `plan_file` 에 그대로 넘긴다)가 붙는다. 계획 파일이
+  `--input` 폴더 밖이면 `warning`. `plan_files` 는 스크립트가 본 경로(Cowork 면 샌드박스 경로)라 batch 에 넘길 수 없다.
+- 모든 JSON 출력에 가공에 쓴 파일 이름 `sources` 가 붙는다. profile 은 부분 오류가 있으면 `warnings` 를 싣는다.
+- compare 에 비교할 기업이 하나도 남지 않으면 `--year` 유무와 관계없이 `error: args`(exit 2).
+- Windows 콘솔(cp949)에서 한국어 출력이 죽지 않게 stdout·stderr 를 UTF-8 로 다시 설정한다.
+
+### Fixed
+
+- **연도 없이 조회(finance·compare·business)가 7~12월에 실패하던 결함** — 최신 보고서를 최근 95일 정기공시에서 찾아, 3월에 낸 사업보고서가
+  창 밖으로 밀려 "최근 사업보고서 없음" 이 났다(2026-09-30 실측: 95일 창에 반기보고서 1건뿐). 창을 1년 + 95일로 넓혔다.
+- **`--prefer latest` 가 분기보고서를 못 보던 결함** — DART 는 분기보고서를 "분기보고서 (2026.03)" 로 쓰는데 "1분기보고서"·"3분기보고서" 만 찾았다.
+  결산월 표기(03 → q1, 09 → q3)로 가른다(12월 결산 기준 — 다른 결산월 분기보고서는 고르지 않는다).
+- **자동 폴백이 반기·분기를 골라도 사업보고서 코드(11011)로 조회하던 결함** — finance 는 보고서 코드를 갱신하지 않았고, compare 는 `half` 를
+  찾지 못해 11011 로 떨어졌다. 고른 보고서의 코드(반기 11012 등)로 조회한다.
+- **연도 없이 준 `--report` 가 버려지던 결함**(finance·compare) — `--report q3` 만 주면 연도는 최신 사업보고서로, 보고서는 사업보고서로 골라
+  명시한 유형이 사라졌다. 이제 그 유형 가운데 최신을 고른다(`--prefer` 보다 먼저).
+
+### Tests
+
+- 네트워크 모킹 테스트(패치 260여 곳)를 지우고 itda-hyve 실측 응답 픽스처(`tests/fixtures/`, 개인 제출인명 가림)로 바꿨다. 순수 가공 테스트는 유지.
+- 리뷰 반례를 회귀 테스트로 고정했다 — 다른 회사·다른 기간·다른 총건수의 쪽, 쪽 크기 10, 다른 회사의 재무·기업개황·직원현황·공시서류,
+  오류 응답 고착(800·010·hyve timeout·깨진 ZIP), 3회차 정지, 연도 없는 `--report`, stdout 건수, 계획 파일 상대 경로, cp949 콘솔,
+  증감률 값, 표의 전기 열. 게이트 뮤테이션 73종 중 71종 RED — 남은 2종은 등가(앞의 대조가 먼저 막는다).
+
+## [0.20.0] — 2026-09-30 (itda-work/skills#45)
+
+### Changed
+
+- **BREAKING — env 파일을 더 읽지 않는다** (itda-work/skills#45, 사용자 결정 2026-09-30). `.env`·`.env.txt` 를 포함해 어떤 env 파일도, `~/.claude/settings.json` 도 스크립트가 직접 열지 않는다. 키는 두 경로로만 받는다 — Claude Code: 셸 환경변수 또는 `claude config set env.DART_API_KEY "키"`(스크립트가 `os.environ` 에서 읽음) / Cowork: itda-hyve 시크릿 탭의 `DART_API_KEY`(itda-hyve `http_request` 의 `{{secret:DART_API_KEY}}` — 지금은 기업 개황 `info` 만). SKILL.md·GUIDE.md·references 의 키 설정 안내·키 주입 규칙·오류표를 두 경로로 고쳤다.
+
+## [0.19.4] — 2026-09-30 (itda-work/skills#45, #47)
+
+### Changed
+
+- **자격증명 파일 별칭에서 `환경변수.txt` 제거** (itda-work/skills#45, BREAKING) — 읽는 파일명은 `.env`·`.env.txt` 두 가지다. `환경변수.txt` 로 키를 두었다면 파일 이름을 `.env.txt`(또는 `.env`)로 바꾼다 — 내용은 그대로 두면 된다. SKILL.md·GUIDE.md 의 파일명 별칭 안내·키 주입 규칙(파일명 2종·셸 glob 오탐 설명)·출처 표시 예시를 맞췄다.
+
+### Fixed
+
+- **SKILL_DIR 확정 블록이 새 Cowork 배치에서 빈 값을 내던 것** — Cowork 가 플러그인을 `/root/.claude/plugins/synced/` 에 두고
+  `CLAUDE_PLUGIN_ROOT` 를 주지 않자 옛 블록의 1·2순위가 둘 다 비었다. 새 블록(규칙 `skill-dir-resolution` 정본)은 스킬을 불러올 때 받은
+  base directory 를 먼저 넣게 하고 그 값을 검증해 쓴다. 넣지 못했을 때만 설정 홈(`CLAUDE_CONFIG_DIR`)의 동기화본·Code 캐시와
+  Cowork 배치를 찾으며, 후보마다 `SKILL.md` 를 확인하고 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다. PowerShell 블록도 같은 계약으로 바꿨다.
+
 ## [0.19.3] — 2026-09-29 (itda-work/skills#44)
 
 ### Changed

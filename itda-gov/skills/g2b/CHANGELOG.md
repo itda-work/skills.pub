@@ -1,5 +1,49 @@
 # Changelog — itda-g2b
 
+## [0.12.1] — 2026-10-01 (itda-work/skills#46)
+
+### Changed
+
+- `references/netbridge.md` 사본을 정본과 동기화 — `secret_missing` 은 그 소스 하나에 대한 멈춤이다: 다른 경로로 키를 넣지 않고(같은 API 를 다른 통로·다른 키로 부르지 않는다), 여러 소스를 묶는 스킬은 그 소스만 빼고 계속할 수 있다. 앞 판 뒤에 사본이 바뀌어 배포본 내용이 달라졌으므로 patch 를 올린다(skills v14.0.0 준비).
+
+## [0.12.0] — 2026-09-30 (itda-work/skills#45)
+
+> ⚠️ **배포 차단** — itda-hyve 0.10.4(itda-work/itda-hyve#31 — `final_url`·저장 경로에 키가 평문으로 남던 결함 수정) 공개 **뒤에** 배포한다.
+> 이 경계는 도구 목록으로 가를 수 없어 스킬이 판별하지 못한다. `compatibility` 는 itda-hyve 0.10.4 이상 하나다 — 공개된 적 없는
+> 개발판(0.9.x) 표기를 걷어냈다(공개판은 0.8.1·0.9.0·0.10.1 이후뿐, `references/netbridge.md` 도 같은 기준으로 동기화).
+
+### Changed
+
+- **BREAKING — 요청은 itda-hyve, 스크립트는 계획·`--input` 가공만** (itda-work/skills#45, 규칙 `cowork-network-via-hyve`). `collect_g2b.py` 가 `plan`(기간을 달력 달 단위 창으로 나눈 `http_request` 인자·batch `plan_file`)과 `collect --input <파일…>`(itda-hyve 가 `save_as` 로 저장한 응답 가공) 두 명령이 됐다. 키는 itda-hyve GUI 시크릿 탭의 `KO_DATA_API_KEY`(Decoding 키)를 `params` 의 `{{secret:KO_DATA_API_KEY}}` 로만 가리킨다. `--api-key`·`os.environ` 키 경로·키 주입 규칙·네트워크 코드(`urllib.request`)와 단일 쪽 인자 `--rows`·`--page` 를 지웠다(단일 쪽 훑어보기는 `collect --single-page`).
+- **창별 전량 대조** — 창마다 ⌈totalCount ÷ numOfRows⌉ 쪽을 대조해 모자라면 `error: "incomplete"` 와 더 받을 호출 `next_calls`(`--next-plan` 이면 batch 계획 파일도)를 준다. `--max-pages`(기본 20) 상한을 넘는 창은 종전처럼 `truncated: true` + 경고다.
+- **입력 판정** — 본문 절단·HTTP 오류·itda-hyve 실패 자리와 함께, 실측으로 확인한 오류 본문 두 형태(`nkoneps.com.response.ResponseError` 의 `resultCode 07` 등, 게이트웨이 `OpenAPI_ServiceResponse` 의 `returnReasonCode 20/22/30/31`)를 `error: "api"` 로 낸다. 옛 코드는 둘 다 "예상치 못한 응답 구조" 로 뭉갰다.
+- SKILL.md 를 "요청은 itda-hyve, 가공은 스크립트" 한 흐름으로 다시 썼다 — 창 × 쪽 호출 계획, `batch` + `plan_file` 묶어 받기, 쪽 이어받기, 호출 예산, 실패 코드 표. `references/netbridge.md` 사본을 동봉했다. GUIDE.md 는 시크릿 탭 등록만 안내한다. Windows 콘솔 UTF-8 출력 재설정을 넣었다.
+- **batch 계획을 40호출씩 나눈다**(W4 리뷰 M1, itda-work/skills#46). itda-hyve `batch` 는 40호출을 넘으면 하나도 실행하지 않는다 — `plan --write`·`collect --next-plan` 이 40개를 넘으면 `plan-1a.json`·`plan-1b.json` … 으로 나눠 쓰고, SKILL.md 는 파일마다 batch 한 번을 부르게 한다.
+- **BREAKING — 계획 출력 필드**: `plan --write` 는 `plan_file` 대신 **`plan_files`**(목록)·`call_count`·`calls_preview`(앞 3개)를 싣고 `calls` 를 빼며(호출은 파일에 있다), `--write` 가 없으면 `calls` 전부와 `call_count` 를 싣는다. `collect` 의 `incomplete` 는 `next_call_count`·`will_truncate`·`windows` 를 싣고, `--next-plan` 이 있으면 `plan_file` 대신 **`plan_files`**·`next_calls_preview`(앞 3개)만, 없으면 `next_calls` 전부를 싣는다(세 달 × `--max-pages 50` 에서 stdout 49KB → 약 3KB).
+- **잘림을 받기 전에 알린다**(m3) — 창별 `need_pages`·`will_truncate` 를 첫 `incomplete` 부터 싣고(ok 출력의 `windows` 에도), SKILL.md 는 `will_truncate` 면 받기 전에 사용자에게 묻게 한다.
+- **이름의 쪽과 본문 `pageNo` 를 대조한다** — 다르면 다른 호출의 응답을 그 이름으로 저장한 것이라 `error: "input"`.
+- 단건 호출 `timeout_sec` 을 60 → **50** 으로(Cowork 호출 상한 60초보다 짧게 — m6). 키워드 필터가 `bidNtceNm: null` 에서 `AttributeError` 로 죽던 것을 고쳤다(m9).
+- 문서: 계획 파일은 그 회차 `save_dir` 안에 쓴다(새 하위 폴더로 다시 받을 때 `plan_file` 이 `not_found` 가 되던 것 — m7), PowerShell `SKILL_DIR` 정의(m8), `scanned_count < total_count` 가 `ok` 로 나오는 세 번째 경우(받는 사이 공고 변화)와 오프셋 쪽 매김의 한계(m2), 공고 0건 창은 `00` + `totalCount 0`·31일 창은 `07` 없이 통과(2026-09-30 실측)를 적었다. `references/g2b.md` 의 오류 출력 예시를 실제 필드로 고쳤다(m10).
+
+## [0.11.0] — 2026-09-30 (itda-work/skills#45)
+
+### Changed
+
+- **BREAKING — env 파일을 더 읽지 않는다** (itda-work/skills#45, 사용자 결정 2026-09-30). `.env`·`.env.txt` 를 포함해 어떤 env 파일도, `~/.claude/settings.json` 도 스크립트가 직접 열지 않는다. `KO_DATA_API_KEY` 는 Claude Code 에서 셸 환경변수 또는 `claude config set env.KO_DATA_API_KEY "키"` 로만 받는다(스크립트가 `os.environ` 에서 읽음). 스크립트가 API 를 직접 부르므로 itda-hyve 시크릿 경로는 없다. SKILL.md·GUIDE.md·references 의 키 설정 안내·키 주입 규칙·오류표를 고쳤다.
+
+## [0.10.5] — 2026-09-30 (itda-work/skills#45, #47)
+
+### Changed
+
+- **자격증명 파일 별칭에서 `환경변수.txt` 제거** (itda-work/skills#45, BREAKING) — 읽는 파일명은 `.env`·`.env.txt` 두 가지다. `환경변수.txt` 로 키를 두었다면 파일 이름을 `.env.txt`(또는 `.env`)로 바꾼다 — 내용은 그대로 두면 된다. SKILL.md·GUIDE.md 의 파일명 별칭 안내·키 주입 규칙(파일명 2종·셸 glob 오탐 설명)·출처 표시 예시를 맞췄다.
+
+### Fixed
+
+- **SKILL_DIR 확정 블록이 새 Cowork 배치에서 빈 값을 내던 것** — Cowork 가 플러그인을 `/root/.claude/plugins/synced/` 에 두고
+  `CLAUDE_PLUGIN_ROOT` 를 주지 않자 옛 블록의 1·2순위가 둘 다 비었다. 새 블록(규칙 `skill-dir-resolution` 정본)은 스킬을 불러올 때 받은
+  base directory 를 먼저 넣게 하고 그 값을 검증해 쓴다. 넣지 못했을 때만 설정 홈(`CLAUDE_CONFIG_DIR`)의 동기화본·Code 캐시와
+  Cowork 배치를 찾으며, 후보마다 `SKILL.md` 를 확인하고 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다. PowerShell 블록도 같은 계약으로 바꿨다.
+
 ## [0.10.4] — 2026-09-28 (itda-work/skills#26)
 
 ### Changed

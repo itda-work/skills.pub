@@ -49,16 +49,45 @@ JSONL 파일이고, 최종 텍스트로는 포인터와 건수만 반환합니�
   스킬 디렉토리**를 탐색합니다. 두 task 는 경로·파일명이 다릅니다(엉뚱한 스킬의 동명 파일
   오선택 방지 — 플러그인/스킬 전체 경로로 좁힙니다):
 
+  디렉토리는 규칙 `skill-dir-resolution` 정본 블록으로 정한다. 리드가 스킬 경로를 넘겼거나 `Skill` 로 로드해 base directory 를
+  받았으면 **먼저** `SKILL_DIR="그 경로"` 로 넣는다 — 블록이 그 값을 검증하고, 없을 때만 설치 위치를 찾는다(후보가 여럿이면 멈춘다).
+  task 에 맞는 블록 **하나만** 실행한다:
+
   ```bash
-  # task=aspect-sentiment  (⚠️ 마운트 경로는 /plugin_<ID>/skills/… — 플러그인명(itda-data) 계층은 경로에 없다)
-  find /sessions/*/mnt/.remote-plugins -path '*/skills/aspect-sentiment/*' \
-    \( -name output-schema.json -o -name taxonomy.ko.yaml -o -name validate_output.py \) 2>/dev/null
-  # task=cs-intent
-  find /sessions/*/mnt/.remote-plugins -path '*/skills/cs-intent/*' \
-    \( -name output-schema.json -o -name intent-taxonomy.ko.yaml -o -name validate_output.py \) 2>/dev/null
+  # task=aspect-sentiment
+  # SKILL_DIR 확정(skill-dir-resolution) — 스킬을 불러올 때 받은 base directory 를 먼저 SKILL_DIR="그 경로" 로 넣는다(항상)
+  # 블록은 그 값을 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾는다 — SKILL.md 가 있는 후보가 하나일 때만 받고 아니면 멈춘다
+  SKILL_DIR=$(sh -c '
+  S=$1 P=$2 H=${5:-$HOME/.claude}
+  ok() { d=${1%/}; [ "${d##*/}" = "$S" ] && [ -f "$d/SKILL.md" ] && (cd "$d" && pwd -P); }
+  [ -n "$3" ] && { ok "$3" && exit; d=${3%/}; [ "${d##*/}" = "$S" ] && echo "SKILL_DIR 무시: $3 에 SKILL.md 가 없다" >&2; }
+  [ -n "$4" ] && { ok "$4/skills/$S" && exit; echo "CLAUDE_PLUGIN_ROOT 무시: $4/skills/$S 에 SKILL.md 가 없다" >&2; }
+  c=$(for d in "$H"/plugins/synced/*/"$P"/skills/"$S" "$H"/plugins/synced/*/"$P"~*/skills/"$S" "$H"/plugins/cache/*/"$P"/*/skills/"$S" \
+      /root/.claude/plugins/synced/*/"$P"/skills/"$S" /root/.claude/plugins/synced/*/"$P"~*/skills/"$S" \
+      /sessions/*/mnt/.remote-plugins/*/skills/"$S" /sessions/*/mnt/.claude/skills/"$S"; do ok "$d"; done | sort -u)
+  [ "$(printf "%s\n" "$c" | grep -c .)" -gt 1 ] && { printf "SKILL_DIR 후보가 여럿이다 — 어느 설치본이 쓰이는지 모른다:\n%s\n" "$c" >&2; exit 1; }
+  printf "%s\n" "$c"' _ aspect-sentiment itda-data "${SKILL_DIR:-}" "${CLAUDE_PLUGIN_ROOT:-}" "${CLAUDE_CONFIG_DIR:-}")
+  : "${SKILL_DIR:?정하지 못했다 — 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 SKILL_DIR 에 넣고 이 블록을 다시 실행하라}"
   ```
 
-  선택한 스킬 디렉토리에 **필요한 3종(output-schema·taxonomy·validate_output)이 모두 있는지
+  ```bash
+  # task=cs-intent
+  # SKILL_DIR 확정(skill-dir-resolution) — 스킬을 불러올 때 받은 base directory 를 먼저 SKILL_DIR="그 경로" 로 넣는다(항상)
+  # 블록은 그 값을 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾는다 — SKILL.md 가 있는 후보가 하나일 때만 받고 아니면 멈춘다
+  SKILL_DIR=$(sh -c '
+  S=$1 P=$2 H=${5:-$HOME/.claude}
+  ok() { d=${1%/}; [ "${d##*/}" = "$S" ] && [ -f "$d/SKILL.md" ] && (cd "$d" && pwd -P); }
+  [ -n "$3" ] && { ok "$3" && exit; d=${3%/}; [ "${d##*/}" = "$S" ] && echo "SKILL_DIR 무시: $3 에 SKILL.md 가 없다" >&2; }
+  [ -n "$4" ] && { ok "$4/skills/$S" && exit; echo "CLAUDE_PLUGIN_ROOT 무시: $4/skills/$S 에 SKILL.md 가 없다" >&2; }
+  c=$(for d in "$H"/plugins/synced/*/"$P"/skills/"$S" "$H"/plugins/synced/*/"$P"~*/skills/"$S" "$H"/plugins/cache/*/"$P"/*/skills/"$S" \
+      /root/.claude/plugins/synced/*/"$P"/skills/"$S" /root/.claude/plugins/synced/*/"$P"~*/skills/"$S" \
+      /sessions/*/mnt/.remote-plugins/*/skills/"$S" /sessions/*/mnt/.claude/skills/"$S"; do ok "$d"; done | sort -u)
+  [ "$(printf "%s\n" "$c" | grep -c .)" -gt 1 ] && { printf "SKILL_DIR 후보가 여럿이다 — 어느 설치본이 쓰이는지 모른다:\n%s\n" "$c" >&2; exit 1; }
+  printf "%s\n" "$c"' _ cs-intent itda-data "${SKILL_DIR:-}" "${CLAUDE_PLUGIN_ROOT:-}" "${CLAUDE_CONFIG_DIR:-}")
+  : "${SKILL_DIR:?정하지 못했다 — 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 SKILL_DIR 에 넣고 이 블록을 다시 실행하라}"
+  ```
+
+  `$SKILL_DIR` 아래에 **필요한 3종(output-schema·taxonomy·validate_output)이 모두 있는지
   확인한 뒤** 사용합니다 — 일부만 매칭되면 그 디렉토리를 쓰지 않고 비고에 표면화합니다.
 - 행동 경계는 도구 제한이 아니라 **이 문서의 계약**입니다.
 

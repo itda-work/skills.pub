@@ -2,6 +2,15 @@
 
 > 2026-06-16: `itda-egg/codex-image` → `itda-media/imagegen` 졸업 마이그레이션(SPEC-IMAGEGEN-002 P2). 이하 0.7.1까지는 codex-image 시절 이력.
 
+## 1.0.3 (2026-10-01) — itda-work/skills#46
+
+- `references/netbridge.md` 사본을 정본과 동기화 — `secret_missing` 은 그 소스 하나에 대한 멈춤이다: 다른 경로로 키를 넣지 않고(같은 API 를 다른 통로·다른 키로 부르지 않는다), 여러 소스를 묶는 스킬은 그 소스만 빼고 계속할 수 있다. 앞 판 뒤에 사본이 바뀌어 배포본 내용이 달라졌으므로 patch 를 올린다(skills v14.0.0 준비).
+
+## 1.0.2 (2026-09-30) — itda-work/skills#46
+
+- 공개된 적 없는 itda-hyve 판(0.9.1~0.10.0) 표기를 공개판 0.10.1 로 맞췄다(0.9.0 다음 공개판이 0.10.1 — 그 사이 판은 사용자가 설치할 수 없다, itda-work/skills#46). compatibility·SKILL.md 사전 점검 표(`server_version` 0.10.0 미만 → 0.10.1 미만)·GUIDE.md 를 0.10.1 로. 에이전트 탭이 있는 첫 공개판이 0.10.1 이라 공개판 사용자에게는 판정이 같다.
+- `references/netbridge.md` 사본을 정본과 동기화 — itda-hyve 기능 판 표기를 공개판 기준으로 바꿨다(0.9.1~0.10.0 은 공개되지 않은 개발판이라 그 사이 기능을 모두 0.10.1 로 적는다, itda-work/skills#46).
+
 ## 1.0.1 (2026-09-29) — itda-work/skills#44
 
 - itda-hyve 설치·업데이트 안내의 받는 곳을 `https://itda.work/hyve/` 하나로 바꿨다(GitHub 릴리스 페이지 링크 제거, itda-work/skills#44). SKILL.md 의 설치·업데이트 안내 3곳.

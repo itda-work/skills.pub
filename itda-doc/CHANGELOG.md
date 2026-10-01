@@ -3,6 +3,20 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/) 형식을 따르며,
 [Semantic Versioning](https://semver.org/lang/ko/)을 준수합니다.
 
+## [7.0.0] - 2026-10-01
+
+### BREAKING
+
+- **env 파일을 읽지 않는다** (itda-work/skills#45, 사용자 결정 2026-09-30). `blog-seo` 0.11.0 은 네이버 검색광고·오픈API 키를 Claude Code 의 셸 환경변수 또는 `claude config set env.<KEY> "키"` 로만 받는다. `.env`·`.env.txt` 와 `~/.claude/settings.json` 을 스크립트가 직접 열지 않는다. 스크립트가 API 를 직접 부르므로 itda-hyve 시크릿 경로는 아직 없다(검색광고 요청 서명 기능을 itda-hyve 에 요청할 예정).
+
+### Changed
+
+- `imagegen` 1.0.3 — 공개된 적 없는 itda-hyve 판 표기(0.9.1~0.10.0)를 공개판 0.10.1 로 맞췄고, `references/netbridge.md` 사본을 정본과 동기화했다(itda-work/skills#46).
+
+### Fixed
+
+- **SKILL_DIR 확정 블록**(itda-work/skills#47) — 새 Cowork 배치(`/root/.claude/plugins/synced/…`, `CLAUDE_PLUGIN_ROOT` 없음)에서 빈 값을 내던 옛 블록을 바꿨다. 스킬을 불러올 때 받은 base directory 를 먼저 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾으며, 후보가 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다(PowerShell 블록도 같은 계약). `blog-seo` · `human-tone` 2.1.3 · `hwpx` 1.4.3(USAGE 2종 포함) · `imagekit` 0.10.7 · `pdf-context-refinery` 1.4.1 · `pptx-shrink` 0.2.3.
+
 ## [6.1.1] - 2026-09-29
 
 ### Changed

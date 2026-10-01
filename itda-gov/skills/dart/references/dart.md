@@ -2,66 +2,28 @@
 
 경쟁사 분석에 필요한 기업 공시 데이터를 수집합니다.
 
-## API 키 설정
+## API 키
 
-```bash
-# 1. https://opendart.fss.or.kr 회원가입
-# 2. 인증키 발급 (즉시 발급, 40자리)
-# 3. 작업 폴더 루트(예: outputs/)에 .env 파일 생성 후 키 추가
-#    DART_API_KEY=발급받은_인증키
-# (로컬 CLI 전용: claude config set env.DART_API_KEY "키" 또는 셸 환경변수도 가능)
-```
+itda-hyve GUI 시크릿 탭에 `DART_API_KEY` 로 등록한다(https://opendart.fss.or.kr 회원가입 → 인증키 즉시 발급, 40자리).
+요청은 itda-hyve `http_request` 가 `{{secret:DART_API_KEY}}` 자리에 키를 넣어 보낸다 — 스크립트는 키를 보지 않는다.
 
 > **주의**: 인증키 복사 시 앞뒤 공백이나 줄바꿈이 포함되지 않도록 하세요.
 
 ## 서브커맨드
 
-| 커맨드 | 역할 | 핵심 데이터 |
+| 커맨드 | 역할 | 받는 응답 |
 |-------|------|-----------|
-| `search` | 회사명으로 고유번호 검색 | corp_code, 종목코드 |
-| `info` | 기업개황 | 대표자, 업종, 설립일, 주소 |
-| `finance` | 재무제표 주요계정 | 매출액, 영업이익, 당기순이익, 자산총계 |
-| `employees` | 직원현황 | 직원수, 평균 근속연수, 평균 급여 |
-| `profile` | 종합 (위 3개 한번에) | 기업개황 + 재무 + 직원 |
+| `search` | 회사명으로 고유번호 검색 | corpCode ZIP |
+| `info` | 기업개황 | company.json |
+| `finance` | 재무제표 주요계정(`--detail` 전체) | fnlttSinglAcnt(All).json (+연도 없으면 list.json) |
+| `employees` | 직원현황 | empSttus.json |
+| `profile` | 종합 (위 3개 한번에) | corpCode ZIP → company·fnlttSinglAcnt·empSttus |
+| `disclosure` | 공시 목록(기간 전량) | list.json 쪽마다 |
+| `business` | 사업보고서 원문 | document ZIP (+접수번호 없으면 list.json) |
+| `compare` | 다기업 재무 비교 | fnlttMultiAcnt.json (+이름이면 corpCode ZIP) |
+| `raw` | 전용 명령이 없는 엔드포인트 | `<엔드포인트>.json` |
 
-## 사용법
-
-```bash
-# 회사 검색 (부분 일치, 영문명/혼합검색 지원)
-python3 scripts/collect_company.py search --name "삼성전자"
-python3 scripts/collect_company.py search --name "삼성SDS"
-python3 scripts/collect_company.py search --name "samsung sds"
-
-# 기업개황
-python3 scripts/collect_company.py info --corp-code 00126380
-
-# 재무제표 주요계정 (2024년 사업보고서, 연결 기준)
-python3 scripts/collect_company.py finance --corp-code 00126380 --year 2024
-
-# 직원현황
-python3 scripts/collect_company.py employees --corp-code 00126380 --year 2024
-
-# 종합 프로필 (회사명으로 한번에 조회)
-python3 scripts/collect_company.py profile --name "삼성전자" --year 2024
-
-# 테이블 형식 출력
-python3 scripts/collect_company.py --format table search --name "삼성"
-```
-
-Windows:
-```powershell
-py -3 scripts/collect_company.py search --name "삼성전자"
-```
-
-## 옵션
-
-| 옵션 | 설명 | 기본값 |
-|------|------|--------|
-| `--format` | json / table | json |
-| `--api-key` | DART 인증키 직접 전달 | 환경변수 |
-| `--year` | 사업연도 (2015~) | - |
-| `--report` | annual/half/q1/q3 | annual |
-| `--fs-div` | CFS(연결)/OFS(개별) | CFS |
+실행 순환(명령 → `next_calls` → itda-hyve 로 받기 → `--input` 으로 다시)과 옵션 전체는 SKILL.md 가 정본이다.
 
 ## 출력 예시 (profile)
 
@@ -112,17 +74,18 @@ py -3 scripts/collect_company.py search --name "삼성전자"
 > 주요사항 결정 계열은 `corp_code`·`bgn_de`·`end_de`(YYYYMMDD)를 요구합니다.
 > 전체 80여 개 엔드포인트 명세는 상위 `references/` 6개 분류 가이드를 참고하세요.
 
-## corpCode.xml 캐싱
+## corpCode.xml — 연결 폴더가 캐시다
 
-`search`와 `profile` 명령은 DART 전체 기업 목록(corpCode.xml, ~20MB ZIP)을 다운로드합니다.
-첫 실행 시 `.itda-skills/dart-corp-codes.xml`에 캐시하여 이후 재사용합니다.
-캐시를 갱신하려면 해당 파일을 삭제하면 됩니다.
+`search`·`profile`·`compare --names` 는 DART 전체 기업 목록(corpCode.xml, ZIP 약 3.6MB → XML 약 30MB, 2026-09-30 실측)을 쓴다.
+itda-hyve 가 연결 폴더에 `dart/corpcode-<날짜>.zip` 으로 받고, 스크립트는 7일 안에 받은 것이 있으면 다시 받지 않는다.
+Cowork 샌드박스는 세션마다 새로 떠 샌드박스 안 캐시는 남지 않는다 — 사용자 PC 의 연결 폴더가 캐시 자리다.
 
 ## 에러 코드
 
 | 코드 | 의미 | 조치 |
 |------|------|------|
 | 000 | 정상 | - |
-| 010 | 등록되지 않은 키 | API 키 확인 |
+| 010 | 등록되지 않은 키 | 시크릿 탭의 `DART_API_KEY` 확인 — 고친 뒤 오류 출력의 `next_calls` 로 다시 받는다 |
 | 013 | 데이터 없음 | 연도/보고서 유형 변경 |
-| 020 | 요청 제한 초과 | 잠시 후 재시도 |
+| 020 | 요청 제한 초과 | 스크립트가 같은 질의를 다음 회차 이름(`-r2`·`-r3`)으로 다시 받게 한다 |
+| 800 · 900 | 시스템 점검 · 정의되지 않은 오류 | 020 과 같이 다음 회차로 다시 받는다(3회차도 같으면 멈춘다) |

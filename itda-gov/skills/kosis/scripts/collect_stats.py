@@ -1,50 +1,96 @@
 #!/usr/bin/env python3
-"""국가통계 수집 CLI — KOSIS 국가통계포털.
+"""국가통계 가공 CLI — KOSIS 국가통계포털 (파일 입력 전용).
 
-제안서/사업계획서에 필요한 통계 데이터를 수집하여 JSON/Table로 출력.
+네트워크는 itda-hyve 의 ``http_request`` 가 한다(itda-work/skills#45). 이 스크립트는
+  1. ``plan <명령> …`` 으로 부를 호출(``http_request`` 인자 그대로)을 내고
+  2. ``<명령> --input <파일…>`` 으로 그렇게 저장한 응답을 읽어 오류 판정·정리만 한다.
+직접 API 를 부르지 않고 키 값을 보지 않는다.
 
 사용법:
-    python3 scripts/collect_stats.py search --keyword "인구"
-    python3 scripts/collect_stats.py data --org-id 101 --tbl-id DT_1B04005N --period year --recent 3
-    python3 scripts/collect_stats.py data --org-id 101 --tbl-id DT_1B04005N --start 2020 --end 2024
+    python3 scripts/collect_stats.py plan search --keyword "인구"
+    python3 scripts/collect_stats.py search --input kosis/search-1a2b3c4d.json
+    python3 scripts/collect_stats.py plan data --org-id 101 --tbl-id DT_1B04005N --recent 3
+    python3 scripts/collect_stats.py data --org-id 101 --tbl-id DT_1B04005N --recent 3 \\
+        --input kosis/data-101-DT_1B04005N-<지문>-json1.json
 """
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
+from pathlib import Path
 from typing import Any
 
-import env_loader
 import kosis_api
 
-# KOSIS API 키 환경변수
-_KEY_VAR = "KOSIS_API_KEY"
 
-_SETUP_GUIDE = (
-    "KOSIS_API_KEY가 설정되지 않았습니다.\n\n"
-    "KOSIS 인증키 발급 방법:\n"
-    "  1. https://kosis.kr 회원가입\n"
-    "  2. https://kosis.kr/openapi/ 에서 서비스 신청 (자동 승인)\n\n"
-    "설정 방법: 작업 폴더 루트(예: outputs/)에 .env 파일을 만들고 키를 추가하세요.\n"
-    "  KOSIS_API_KEY=발급받은_인증키\n"
-)
+def _emit(payload: dict[str, Any]) -> None:
+    print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
 
 
-def _get_api_key(cli_arg: str | None = None) -> str:
-    """KOSIS API 키 해석."""
-    return env_loader.resolve_api_key(_KEY_VAR, cli_arg, _SETUP_GUIDE)
+def _one_input(args: argparse.Namespace, prefix: str) -> str:
+    """응답 파일 1개 — 이름이 그 명령의 저장 이름(``<prefix>-…``)이어야 한다(다른 명령의 응답을 막는다)."""
+    if len(args.input) != 1:
+        raise kosis_api.InputFileError(f"{args.command} 은 응답 파일 1개를 받습니다(받은 수 {len(args.input)})")
+    path = args.input[0]
+    name = Path(path).name
+    if not name.startswith(prefix + "-"):
+        raise kosis_api.InputFileError(
+            f"{args.command} 의 응답 파일이 아닙니다: {name} — plan {args.command} 가 준 save_as({prefix}-…)를 그대로 쓰세요"
+        )
+    if args.command == "region" and not name.endswith("-ITM.json"):
+        raise kosis_api.InputFileError(f"region 은 분류항목 메타(info-…-ITM.json)를 받습니다: {name}")
+    return path
 
 
-def cmd_search(args: argparse.Namespace) -> int:
-    """키워드로 통계표 검색."""
-    api_key = _get_api_key(args.api_key)
-    results = kosis_api.search_statistics(
-        api_key, args.keyword, result_count=args.count,
+def _data_query(args: argparse.Namespace) -> kosis_api.DataQuery:
+    return kosis_api.DataQuery(
+        org_id=args.org_id,
+        tbl_id=args.tbl_id,
+        itm_id=args.item or "ALL",
+        obj_l1=args.obj1 or "ALL",
+        obj_l2=args.obj2 or "",
+        obj_l3=args.obj3 or "",
+        obj_l4=args.obj4 or "",
+        prd_se=kosis_api.PERIOD_CODES.get(args.period, "Y"),
+        start_prd_de=args.start or "",
+        end_prd_de=args.end or "",
+        new_est_prd_cnt=args.recent,
     )
 
+
+# --- plan ---
+
+def cmd_plan(args: argparse.Namespace) -> int:
+    """부를 호출을 낸다 — ``calls[i].args`` 가 ``http_request`` 인자 그대로다."""
+    target = args.target
+    if target == "search":
+        calls = [kosis_api.plan_search(args.keyword, args.count)]
+    elif target == "data":
+        calls = [_data_query(args).first_call()]
+    elif target == "info":
+        calls = [kosis_api.plan_info(args.org_id, args.tbl_id, args.type, args.obj_id or "", args.item or "")]
+    elif target == "list":
+        calls = [kosis_api.plan_list(args.vw_cd, args.parent_id or "")]
+    elif target == "meta":
+        calls = [kosis_api.plan_meta(args.stat_id or "", args.org_id or "", args.tbl_id or "", args.meta_item)]
+    elif target == "indicator":
+        calls = [kosis_api.plan_indicator(args.jipyo_id, args.page, args.count)]
+    else:  # region — 분류항목 메타(getMeta ITM)만 받으면 된다
+        calls = [kosis_api.plan_info(args.org_id, args.tbl_id, "ITM")]
+    _emit({"status": "ok", "command": target, "calls": calls})
+    return 0
+
+
+# --- 가공 ---
+
+def cmd_search(args: argparse.Namespace) -> int:
+    """키워드 검색 응답."""
+    results = kosis_api._as_list(kosis_api.load_json(_one_input(args, "search")))
+
     if args.format == "table":
-        _print_search_table(results, args.keyword)
+        _print_search_table(results, args.keyword or "")
     else:
         output: list[dict[str, str]] = []
         for r in results:
@@ -56,82 +102,76 @@ def cmd_search(args: argparse.Namespace) -> int:
                 "stat_name": r.get("STAT_NM", ""),
                 "period_range": f"{r.get('STRT_PRD_DE', '')}~{r.get('END_PRD_DE', '')}",
             })
-        print(json.dumps(
-            {"status": "ok", "keyword": args.keyword, "count": len(output), "results": output},
-            ensure_ascii=False, separators=(",", ":"),
-        ))
+        _emit({"status": "ok", "keyword": args.keyword or "", "count": len(output), "results": output})
     return 0
 
 
 def cmd_data(args: argparse.Namespace) -> int:
-    """통계자료 조회."""
-    api_key = _get_api_key(args.api_key)
-    prd_se = kosis_api.PERIOD_CODES.get(args.period, "Y")
-
-    kwargs: dict[str, Any] = {
-        "api_key": api_key,
-        "org_id": args.org_id,
-        "tbl_id": args.tbl_id,
-        "itm_id": args.item or "ALL",
-        "obj_l1": args.obj1 or "ALL",
-        "obj_l2": args.obj2 or "",
-        "obj_l3": args.obj3 or "",
-        "obj_l4": args.obj4 or "",
-        "prd_se": prd_se,
-    }
-
-    if args.recent:
-        kwargs["new_est_prd_cnt"] = args.recent
-    else:
-        if args.start:
-            kwargs["start_prd_de"] = args.start
-        if args.end:
-            kwargs["end_prd_de"] = args.end
-
-    raw_data, diag = kosis_api.get_statistics_data_ex(**kwargs)
+    """통계자료 — 적응형 흐름. 모자라면 ``next_calls`` 와 함께 incomplete."""
+    raw_data, diag = kosis_api.resolve_data(_data_query(args), args.input)
     summarized = kosis_api.summarize_data(raw_data)
+    # 값이 숫자가 아닌 행(-, … 등)은 정리에서 빠진다 — 몇 행을 뺐는지 남긴다(무음 유실 금지).
+    skipped = len(raw_data) - len(summarized)
+    notes = list(diag.get("notes", []))
+    if skipped:
+        notes.append(f"값이 숫자가 아닌 행 {skipped}개를 뺐습니다(DT 가 -·… 등)")
 
     if args.format == "table":
-        _print_data_table(summarized, diag)
+        _print_data_table(summarized, {**diag, "notes": notes})
     else:
-        print(json.dumps(
-            {"status": "ok", "org_id": args.org_id, "tbl_id": args.tbl_id,
-             "count": len(summarized), "source": diag.get("transport", "json"),
-             "axis_slots": diag.get("axis_slots", []),
-             "notes": diag.get("notes", []), "data": summarized},
-            ensure_ascii=False, separators=(",", ":"),
-        ))
+        _emit({"status": "ok", "org_id": args.org_id, "tbl_id": args.tbl_id,
+               "count": len(summarized), "raw_count": len(raw_data), "skipped_non_numeric": skipped,
+               "source": diag.get("transport", "json"),
+               "axis_slots": diag.get("axis_slots", []),
+               "notes": notes, "data": summarized})
     return 0
 
 
 def cmd_info(args: argparse.Namespace) -> int:
-    """통계표 메타 조회 — objL·itmId 코드 발견 (getMeta)."""
-    api_key = _get_api_key(args.api_key)
-    rows = kosis_api.get_table_meta(
-        api_key, args.org_id, args.tbl_id,
-        meta_type=args.type, obj_id=args.obj_id or "", itm_id=args.item or "",
-    )
+    """통계표 메타 — objL·itmId 코드 발견 (getMeta 응답)."""
+    rows = kosis_api._as_list(kosis_api.load_json(_one_input(args, "info")))
 
     if args.format == "table":
         _print_info_table(rows, args.type)
     else:
-        print(json.dumps(
-            {"status": "ok", "org_id": args.org_id, "tbl_id": args.tbl_id,
-             "type": args.type, "count": len(rows), "meta": rows},
-            ensure_ascii=False, separators=(",", ":"),
-        ))
+        _emit({"status": "ok", "org_id": args.org_id or "", "tbl_id": args.tbl_id or "",
+               "type": args.type, "count": len(rows), "meta": rows})
     return 0
 
 
+_LIST_NAME = re.compile(r"^list-([A-Za-z0-9_.]+)-(.+)\.json$")
+
+
+def _list_query(args: argparse.Namespace, path: str) -> tuple[str, str]:
+    """저장 이름 ``list-<서비스뷰>-<시작 목록 ID|root>.json`` 에서 질의를 읽는다.
+
+    인자를 주지 않아도 이름이 정본이다(옛 판은 기본값 MT_ZTITLE 을 에코해 다른 서비스뷰 파일에 틀린 라벨을 달았다 — W2 리뷰 m6).
+    인자를 줬는데 이름과 다르면 다른 질의의 파일이다.
+    """
+    m = _LIST_NAME.match(Path(path).name)
+    if not m:
+        raise kosis_api.InputFileError(
+            f"list 의 저장 이름이 규칙(list-<서비스뷰>-<시작 목록 ID|root>.json)과 다릅니다: {Path(path).name}"
+        )
+    vw_cd, parent = m.group(1), m.group(2)
+    parent = "" if parent == "root" else parent
+    if args.vw_cd and args.vw_cd != vw_cd:
+        raise kosis_api.InputFileError(f"--vw-cd {args.vw_cd} 인데 파일은 {vw_cd} 의 응답입니다: {Path(path).name}")
+    if args.parent_id and kosis_api._safe(args.parent_id) != parent:
+        raise kosis_api.InputFileError(
+            f"--parent-id {args.parent_id} 인데 파일은 {parent or '최상위'} 의 응답입니다: {Path(path).name}"
+        )
+    return vw_cd, parent
+
+
 def cmd_list(args: argparse.Namespace) -> int:
-    """통계목록 트리 탐색 (statisticsList.do)."""
-    api_key = _get_api_key(args.api_key)
-    rows = kosis_api.list_statistics(
-        api_key, vw_cd=args.vw_cd, parent_list_id=args.parent_id or "",
-    )
+    """통계목록 트리 응답 (statisticsList.do)."""
+    path = _one_input(args, "list")
+    vw_cd, parent_id = _list_query(args, path)
+    rows = kosis_api._as_list(kosis_api.load_json(path))
 
     if args.format == "table":
-        _print_list_table(rows, args.vw_cd)
+        _print_list_table(rows, vw_cd)
     else:
         output = [{
             "list_id": r.get("LIST_ID", ""),
@@ -142,22 +182,13 @@ def cmd_list(args: argparse.Namespace) -> int:
             "stat_id": r.get("STAT_ID", ""),
             "is_table": bool(r.get("TBL_ID", "")),
         } for r in rows]
-        print(json.dumps(
-            {"status": "ok", "vw_cd": args.vw_cd, "parent_id": args.parent_id or "",
-             "count": len(output), "results": output},
-            ensure_ascii=False, separators=(",", ":"),
-        ))
+        _emit({"status": "ok", "vw_cd": vw_cd, "parent_id": parent_id, "count": len(output), "results": output})
     return 0
 
 
 def cmd_meta(args: argparse.Namespace) -> int:
-    """통계설명자료 조회 (작성목적·법적근거 등)."""
-    api_key = _get_api_key(args.api_key)
-    rows = kosis_api.get_stat_explanation(
-        api_key, stat_id=args.stat_id or "",
-        org_id=args.org_id or "", tbl_id=args.tbl_id or "",
-        meta_itm=args.meta_item,
-    )
+    """통계설명자료 응답 (작성목적·법적근거 등)."""
+    rows = kosis_api._as_list(kosis_api.load_json(_one_input(args, "meta")))
     # KOSIS 통계설명은 필드마다 별도 행({"writingPurps":...},{"basisLaw":...})으로
     # 온다 — 소비 편의를 위해 하나의 객체로 병합(값 있는 필드만).
     merged: dict[str, Any] = {}
@@ -165,37 +196,22 @@ def cmd_meta(args: argparse.Namespace) -> int:
         for k, v in row.items():
             if str(v).strip():
                 merged[k] = v
-    print(json.dumps(
-        {"status": "ok", "field_count": len(merged), "explanation": merged},
-        ensure_ascii=False, separators=(",", ":"),
-    ))
+    _emit({"status": "ok", "field_count": len(merged), "explanation": merged})
     return 0
 
 
 def cmd_indicator(args: argparse.Namespace) -> int:
-    """통계주요지표 설명자료 조회."""
-    api_key = _get_api_key(args.api_key)
-    rows = kosis_api.get_indicator(
-        api_key, args.jipyo_id, page_no=args.page, num_of_rows=args.count,
-    )
-    print(json.dumps(
-        {"status": "ok", "jipyo_id": args.jipyo_id, "count": len(rows), "indicator": rows},
-        ensure_ascii=False, separators=(",", ":"),
-    ))
+    """통계주요지표 설명자료 응답."""
+    rows = kosis_api._as_list(kosis_api.load_json(_one_input(args, "indicator")))
+    _emit({"status": "ok", "count": len(rows), "indicator": rows})
     return 0
 
 
 def cmd_region(args: argparse.Namespace) -> int:
-    """자연어 지역명 → 통계표별 objL 분류 코드 매핑."""
-    api_key = _get_api_key(args.api_key)
-    matches = kosis_api.find_region_code(
-        api_key, args.org_id, args.tbl_id, args.region,
-    )
-    print(json.dumps(
-        {"status": "ok", "org_id": args.org_id, "tbl_id": args.tbl_id,
-         "region": args.region, "count": len(matches), "matches": matches},
-        ensure_ascii=False, separators=(",", ":"),
-    ))
+    """자연어 지역명 → objL 분류 코드 (getMeta ITM 응답에서만 찾는다)."""
+    rows = kosis_api._as_list(kosis_api.load_json(_one_input(args, "info")))
+    matches = kosis_api.find_region_code(rows, args.region)
+    _emit({"status": "ok", "region": args.region, "count": len(matches), "matches": matches})
     return 0
 
 
@@ -298,138 +314,143 @@ def _print_list_table(rows: list[dict[str, Any]], vw_cd: str) -> None:
     print()
 
 
-def build_parser() -> argparse.ArgumentParser:
-    """CLI 인자 파서 생성.
-
-    공용 옵션(--api-key, --format)을 _add_common() 헬퍼로 메인 파서와 모든 서브파서에
-    동시 등록하여 서브커맨드 앞/뒤 양쪽 위치에서 모두 동작하도록 한다 (REQ-1).
-    """
-    # 메인 파서: 서브커맨드 앞 위치 공용 옵션 (REQ-1.2, 하위 호환)
-    parser = argparse.ArgumentParser(
-        description="국가통계 수집 — KOSIS 국가통계포털",
-    )
-    parser.add_argument(
-        "--api-key", default=None, dest="api_key", help="KOSIS API 키",
-    )
-    parser.add_argument(
-        "--format", choices=["json", "table"], default="json",
+def _add_format(p: argparse.ArgumentParser, main: bool = False) -> None:
+    """--format 은 메인·서브 어디에 와도 동작한다(서브는 SUPPRESS 로 메인 값을 보존)."""
+    p.add_argument(
+        "--format", choices=["json", "table"], default="json" if main else argparse.SUPPRESS,
         help="출력 형식 (기본: json)",
     )
 
+
+def _add_query_args(name: str, p: argparse.ArgumentParser, for_input: bool) -> None:
+    """명령별 질의 인자. plan 과 가공이 같은 인자를 쓴다(가공 쪽은 라벨·필터용으로 선택)."""
+    if name == "search":
+        p.add_argument("--keyword", "-k", required=not for_input, help="검색 키워드")
+        p.add_argument("--count", "-n", type=int, default=10, help="결과 수 (기본 10)")
+    elif name == "data":
+        p.add_argument("--org-id", required=True, help="기관 코드 (예: 101)")
+        p.add_argument("--tbl-id", required=True, help="통계표 ID (예: DT_1B04005N)")
+        p.add_argument("--item", default=None, help="항목 ID (기본: ALL)")
+        p.add_argument("--obj1", default=None, help="1번째 분류축 값 (기본: ALL)")
+        p.add_argument("--obj2", default=None, help="2번째 분류축 값")
+        p.add_argument("--obj3", default=None, help="3번째 분류축 값 (3중 분류표)")
+        p.add_argument("--obj4", default=None, help="4번째 분류축 값 (4중 분류표)")
+        p.add_argument(
+            "--period", "-p", choices=list(kosis_api.PERIOD_CODES.keys()),
+            default="year", help="수록주기 (기본: year)",
+        )
+        p.add_argument("--start", default=None, help="시작 시점 (예: 2020)")
+        p.add_argument("--end", default=None, help="종료 시점 (예: 2024)")
+        p.add_argument("--recent", type=int, default=None, help="최근 N개 시점")
+    elif name == "info":
+        p.add_argument("--org-id", required=not for_input, help="기관 코드 (예: 101)")
+        p.add_argument("--tbl-id", required=not for_input, help="통계표 ID")
+        p.add_argument(
+            "--type", choices=list(kosis_api.META_TYPES), default="ITM",
+            help="조회유형 (기본: ITM=분류항목 코드)",
+        )
+        p.add_argument("--obj-id", default=None, help="특정 분류 ID 필터 (선택)")
+        p.add_argument("--item", default=None, help="특정 자료코드 ID 필터 (선택)")
+    elif name == "list":
+        p.add_argument(
+            "--vw-cd", default=None if for_input else "MT_ZTITLE",
+            help="서비스뷰 (MT_ZTITLE=주제별, MT_RTITLE=국제, MT_ATITLE01=지역 등). 가공 때는 생략하면 저장 이름에서 읽는다",
+        )
+        p.add_argument("--parent-id", default=None, help="시작 목록 ID (생략 시 최상위)")
+    elif name == "meta":
+        p.add_argument("--stat-id", default=None, help="통계조사 ID (단독 사용 가능)")
+        p.add_argument("--org-id", default=None, help="기관 코드 (stat-id 없을 때)")
+        p.add_argument("--tbl-id", default=None, help="통계표 ID (stat-id 없을 때)")
+        p.add_argument("--meta-item", default="ALL", help="요청 항목 (기본: ALL)")
+    elif name == "indicator":
+        p.add_argument("--jipyo-id", required=not for_input, help="지표 ID")
+        p.add_argument("--page", type=int, default=1, help="페이지 번호")
+        p.add_argument("--count", "-n", type=int, default=10, help="페이지당 건수")
+    elif name == "region":
+        p.add_argument("--org-id", required=not for_input, help="기관 코드")
+        p.add_argument("--tbl-id", required=not for_input, help="통계표 ID")
+        if for_input:
+            p.add_argument("--region", required=True, help="지역명 (예: 인천 서구)")
+
+
+_HELPS = {
+    "search": "키워드로 통계표 검색 (statisticsSearch.do 응답)",
+    "data": "통계자료 (statisticsParameterData.do 응답 — 적응형 흐름)",
+    "info": "통계표 메타 — objL·itmId 코드 발견 (getMeta 응답)",
+    "list": "통계목록 트리 (statisticsList.do 응답)",
+    "meta": "통계설명자료 — 작성목적·법적근거 (statisticsExplData.do 응답)",
+    "indicator": "통계주요지표 설명 (pkNumberService.do 응답)",
+    "region": "자연어 지역명 → objL 분류 코드 (getMeta ITM 응답)",
+}
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """CLI 인자 파서 생성.
+
+    ``--format`` 은 메인 파서와 모든 서브파서에 함께 등록해 서브커맨드 앞/뒤 어디에 와도 동작한다.
+    """
+    parser = argparse.ArgumentParser(description="국가통계 응답 가공 — KOSIS 국가통계포털")
+    _add_format(parser, main=True)
     sub = parser.add_subparsers(dest="command", required=True)
 
-    # 서브파서 공용 옵션은 default=argparse.SUPPRESS로 두어 메인 파서 기본값을 보존한다.
-    def _add_common(p: argparse.ArgumentParser) -> None:
-        """서브파서에 공용 옵션 추가 (SUPPRESS default로 메인 파서 값 보존)."""
+    p_plan = sub.add_parser("plan", help="부를 호출(http_request 인자)을 낸다 — 네트워크 불요")
+    _add_format(p_plan)
+    plan_sub = p_plan.add_subparsers(dest="target", required=True)
+    for name, text in _HELPS.items():
+        pp = plan_sub.add_parser(name, help=text)
+        _add_query_args(name, pp, for_input=False)
+
+    for name, text in _HELPS.items():
+        p = sub.add_parser(name, help=text)
+        _add_format(p)
         p.add_argument(
-            "--api-key", default=argparse.SUPPRESS, dest="api_key",
-            help="KOSIS API 키",
+            "--input", nargs="+", required=True, metavar="FILE",
+            help="itda-hyve 가 save_as 로 저장한 응답 파일(들). data 는 지금까지 받은 파일 전부",
         )
-        p.add_argument(
-            "--format", choices=["json", "table"], default=argparse.SUPPRESS,
-            help="출력 형식 (기본: json)",
-        )
-
-    # search
-    p_search = sub.add_parser("search", help="키워드로 통계표 검색")
-    _add_common(p_search)
-    p_search.add_argument("--keyword", "-k", required=True, help="검색 키워드")
-    p_search.add_argument("--count", "-n", type=int, default=10, help="결과 수 (기본 10)")
-
-    # data
-    p_data = sub.add_parser("data", help="통계자료 조회")
-    _add_common(p_data)
-    p_data.add_argument("--org-id", required=True, help="기관 코드 (예: 101)")
-    p_data.add_argument("--tbl-id", required=True, help="통계표 ID (예: DT_1B04005N)")
-    p_data.add_argument("--item", default=None, help="항목 ID (기본: ALL)")
-    p_data.add_argument("--obj1", default=None, help="1차 분류값 (기본: ALL)")
-    p_data.add_argument("--obj2", default=None, help="2차 분류값")
-    p_data.add_argument("--obj3", default=None, help="3차 분류값 (3중 분류표)")
-    p_data.add_argument("--obj4", default=None, help="4차 분류값 (4중 분류표)")
-    p_data.add_argument(
-        "--period", "-p", choices=list(kosis_api.PERIOD_CODES.keys()),
-        default="year", help="수록주기 (기본: year)",
-    )
-    p_data.add_argument("--start", default=None, help="시작 시점 (예: 2020)")
-    p_data.add_argument("--end", default=None, help="종료 시점 (예: 2024)")
-    p_data.add_argument("--recent", type=int, default=None, help="최근 N개 시점")
-
-    # info — 통계표 메타(코드 발견). get_data 의 objL/itmId 를 모를 때 선행.
-    p_info = sub.add_parser("info", help="통계표 메타 조회 (objL·itmId 코드 발견)")
-    _add_common(p_info)
-    p_info.add_argument("--org-id", required=True, help="기관 코드 (예: 101)")
-    p_info.add_argument("--tbl-id", required=True, help="통계표 ID")
-    p_info.add_argument(
-        "--type", choices=list(kosis_api.META_TYPES), default="ITM",
-        help="조회유형 (기본: ITM=분류항목 코드)",
-    )
-    p_info.add_argument("--obj-id", default=None, help="특정 분류 ID 필터 (선택)")
-    p_info.add_argument("--item", default=None, help="특정 자료코드 ID 필터 (선택)")
-
-    # list — 통계목록 트리 탐색 (국제·지자체 진입로)
-    p_list = sub.add_parser("list", help="통계목록 트리 탐색")
-    _add_common(p_list)
-    p_list.add_argument(
-        "--vw-cd", default="MT_ZTITLE",
-        help="서비스뷰 (MT_ZTITLE=주제별, MT_RTITLE=국제, MT_ATITLE01=지역 등)",
-    )
-    p_list.add_argument("--parent-id", default=None, help="시작 목록 ID (생략 시 최상위)")
-
-    # meta — 통계설명자료 (작성목적·법적근거)
-    p_meta = sub.add_parser("meta", help="통계설명자료 조회 (작성목적·법적근거)")
-    _add_common(p_meta)
-    p_meta.add_argument("--stat-id", default=None, help="통계조사 ID (단독 사용 가능)")
-    p_meta.add_argument("--org-id", default=None, help="기관 코드 (stat-id 없을 때)")
-    p_meta.add_argument("--tbl-id", default=None, help="통계표 ID (stat-id 없을 때)")
-    p_meta.add_argument("--meta-item", default="ALL", help="요청 항목 (기본: ALL)")
-
-    # indicator — 통계주요지표 설명
-    p_ind = sub.add_parser("indicator", help="통계주요지표 설명 조회")
-    _add_common(p_ind)
-    p_ind.add_argument("--jipyo-id", required=True, help="지표 ID")
-    p_ind.add_argument("--page", type=int, default=1, help="페이지 번호")
-    p_ind.add_argument("--count", "-n", type=int, default=10, help="페이지당 건수")
-
-    # region — 자연어 지역명 → objL 코드 매핑
-    p_region = sub.add_parser("region", help="자연어 지역명 → objL 분류 코드")
-    _add_common(p_region)
-    p_region.add_argument("--org-id", required=True, help="기관 코드")
-    p_region.add_argument("--tbl-id", required=True, help="통계표 ID")
-    p_region.add_argument("--region", required=True, help="지역명 (예: 인천 서구)")
+        _add_query_args(name, p, for_input=True)
 
     return parser
 
 
+def _error(kind: str, detail: str, **extra: Any) -> int:
+    print(json.dumps({"status": "error", "error": kind, "detail": detail, **extra}, ensure_ascii=False))
+    return 1
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI 진입점."""
+    # Windows 콘솔(cp949)에서 한국어 출력이 죽지 않게 한다.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8")
+            except (OSError, ValueError):
+                pass
+
     parser = build_parser()
     args = parser.parse_args(argv)
 
+    commands = {
+        "plan": cmd_plan,
+        "search": cmd_search,
+        "data": cmd_data,
+        "info": cmd_info,
+        "list": cmd_list,
+        "meta": cmd_meta,
+        "indicator": cmd_indicator,
+        "region": cmd_region,
+    }
     try:
-        commands = {
-            "search": cmd_search,
-            "data": cmd_data,
-            "info": cmd_info,
-            "list": cmd_list,
-            "meta": cmd_meta,
-            "indicator": cmd_indicator,
-            "region": cmd_region,
-        }
         return commands[args.command](args)
-
-    except env_loader.MissingAPIKeyError as e:
-        print(json.dumps(
-            {"status": "error", "error": "config", "detail": str(e)},
-            ensure_ascii=False,
-        ))
-        return 1
+    except kosis_api.IncompleteError as e:
+        return _error("incomplete", str(e), stage=e.stage, next_calls=e.next_calls)
     except kosis_api.KOSISAPIError as e:
-        print(json.dumps(
-            {"status": "error", "error": "api", "detail": str(e),
-             "error_code": e.error_code},
-            ensure_ascii=False,
-        ))
-        return 1
+        return _error("api", str(e), error_code=e.error_code)
+    except kosis_api.InputFileError as e:
+        return _error(e.kind, str(e))
+    except ValueError as e:
+        print(json.dumps({"status": "error", "error": "argument", "detail": str(e)}, ensure_ascii=False))
+        return 2
 
 
 if __name__ == "__main__":

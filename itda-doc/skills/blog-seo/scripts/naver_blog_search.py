@@ -69,7 +69,7 @@ class NaverBlogSearchClient:
 
     @classmethod
     def from_env(cls) -> "NaverBlogSearchClient":
-        """환경변수로 클라이언트 생성 (CLI > environ > .env, SPEC-ENV-ERROR-001)."""
+        """환경변수로 클라이언트 생성 (CLI > environ, SPEC-ENV-ERROR-001 · env 파일 미사용 #45)."""
         from _env_setup import get_naver_client_id, get_naver_client_secret
         client_id = get_naver_client_id()
         client_secret = get_naver_client_secret()

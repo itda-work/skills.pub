@@ -6,7 +6,7 @@ description: >
   날씨 절이 기본(Sections: 환율 추가·none 제외), 정확 문구 "액션 버튼 포함"일 때만 버튼. 형식만 보려면 "샘플 브리핑 보여줘". 일정 질문·메일 확인엔 쓰지 않습니다.
   [책임 경계] 본 스킬은 아침 브리핑 페이지 전담 — itda-work:calendar 는 일정, itda-work:email 은 메일, itda-doc:html-report 는 보고서 HTML.
 license: Apache-2.0
-compatibility: "Claude Cowork·Claude Code. itda-hyve 0.9.6 이상(로컬 MCP 서버) 필요 — batch 한 번이 스크립트가 쓴 계획 파일(plan_file)을 읽어 계정·위치·모든 계정의 일정(참석자)·메일(본문 앞부분 포함)을 한꺼번에 받아 연결 폴더에 저장한다. 미리보기는 Cowork 파일 공유(present_files), 그것이 안 되면 itda-hyve 0.10.1 이상의 open_file 로 시스템 브라우저에서 연다(선택). Python 3.10+, 외부 의존 없음(stdlib only)."
+compatibility: "Claude Cowork·Claude Code. itda-hyve 0.10.4 이상(로컬 MCP 서버) 필요 — batch 한 번이 스크립트가 쓴 계획 파일(plan_file)을 읽어 계정·위치·모든 계정의 일정(참석자)·메일(본문 앞부분 포함)을 한꺼번에 받아 연결 폴더에 저장한다. 미리보기는 Cowork 파일 공유(present_files), 그것이 안 되면 itda-hyve 의 open_file 로 시스템 브라우저에서 연다(선택). Python 3.10+, 외부 의존 없음(stdlib only)."
 user-invocable: true
 allowed-tools: "mcp__remote-devices__itda-hyve__batch, mcp__remote-devices__itda-hyve__http_request, mcp__cowork__present_files, mcp__remote-devices__itda-hyve__open_file, mcp__itda-hyve__open_file, Read, Write, Bash, Glob, Grep, mcp__workspace__bash"
 argument-hint: "[샘플 브리핑] [보고서 형식으로|표로|인쇄용으로] [Sections: 환율|none] [액션 버튼 포함]"
@@ -15,9 +15,9 @@ metadata:
   category: "document"
   status: "beta"
   recommended: false
-  version: "0.12.2"
+  version: "0.12.4"
   created_at: "2026-09-03"
-  updated_at: "2026-09-29"
+  updated_at: "2026-10-01"
   tags: "morning, brief, daily, digest, calendar, email, html, single-file, dashboard, schedule, inbox, unreplied, cowork, itda-hyve"
 ---
 
@@ -32,8 +32,8 @@ metadata:
 모양만 다르고 싣는 내용은 같다.
 
 수집은 **itda-hyve 의 `batch` 한 번**이다 — itda-hyve 가 호출을 자기 안에서 동시에 돌리고, 계정별 호출은 `account: "*"` 로 모든 계정에
-펼치며, 받은 메일에는 본문 앞부분(`snippet`)을 붙여 응답을 입력 폴더에 저장한다(itda-hyve 0.9.5, itda-work/itda-hyve#21 — 0.6.0 의
-batch 세 번 사이 모델 대기 72초·33초가 없어진다). 본문 앞부분은 **사람 메일에만** 받는다(`snippet_for: "non_bulk"`, itda-hyve 0.9.6 —
+펼치며, 받은 메일에는 본문 앞부분(`snippet`)을 붙여 응답을 입력 폴더에 저장한다(itda-hyve 0.10.1, itda-work/itda-hyve#21 — 0.6.0 의
+batch 세 번 사이 모델 대기 72초·33초가 없어진다). 본문 앞부분은 **사람 메일에만** 받는다(`snippet_for: "non_bulk"`, itda-hyve 0.10.1 —
 대량 발송·noreply 메일은 서버가 건너뛰고 `snippet_skipped` 를 단다, itda-work/itda-hyve#22). 호출 목록은 스크립트가 **계획 파일**로 쓰고
 itda-hyve 가 그 파일을 직접 읽는다(`plan_file` — 당신은 목록을 다시 출력하지 않는다, itda-work/skills#39). 목록·매칭·정렬·렌더·검증은
 **결정론 스크립트 3종**이 하고, 당신(LLM)은 **③ 의 요약 문장만** 쓴다. HTML 을 직접 쓰지 않는다.
@@ -46,16 +46,16 @@ gather.py --input $IN ─▶ candidates.json ─▶ (당신: 요약 문장) ─�
 | 할 일 | 도구 (Cowork 에서 보이는 전체 이름 — Claude Code 는 `mcp__itda-hyve__<도구>`) |
 |---|---|
 | 계정·위치·일정·메일(본문 앞부분 포함) 받기 | itda-hyve 의 `batch` (`mcp__remote-devices__itda-hyve__batch`) — 안에서 `accounts_list`·`location`·`calendar_events`·`imap_search`(예외로 `imap_fetch`)가 돈다 |
-| 샌드박스에서 날씨 예보를 못 받았을 때(한 번만, 아래 1-4) | itda-hyve 의 `http_request` (`mcp__remote-devices__itda-hyve__http_request`) |
+| 날씨 예보·환율 받기(각 한 번, 아래 1-4 — 스크립트가 낸 `call` 그대로) | itda-hyve 의 `http_request` (`mcp__remote-devices__itda-hyve__http_request`) |
 
 **다른 경로를 쓰지 않는다.** 환경변수·`.env`·다른 스킬의 스크립트로 계정을 찾거나 메일·캘린더 서버에 직접 붙지 않는다.
 도구 목록에 이름에 `itda-hyve__batch` 가 든 도구가 없거나, 있어도 그 입력 스키마에 **`plan_file`** 이 없거나 `calls[].args` 설명에
-**`account` 에 `"*"`**(`{account}`·`{n}`) 이야기가 없으면 itda-hyve 가 없거나 **0.9.5 보다 옛 판**이다(batch·`imap_fetch` 의 `uids`·일정 참석자가
-0.9.3, `plan_file`·대량 메일 표지 `bulk` 가 0.9.4, `account: "*"`·`imap_search` 의 `include_snippet` 이 0.9.5, `snippet_for` 가 0.9.6 부터다) — 사용자에게
-itda-hyve 0.9.6 이상 설치(이미 있으면 업데이트, 받는 곳 https://itda.work/hyve/)와 Claude Desktop 연결을
+**`account` 에 `"*"`**(`{account}`·`{n}`) 이야기가 없으면 itda-hyve 가 없거나 **옛 판**이다(batch·`imap_fetch` 의 `uids`·일정 참석자·`plan_file`·대량 메일 표지 `bulk`·`account: "*"`·
+`imap_search` 의 `include_snippet`·`snippet_for` 는 모두 공개판 0.10.1 부터다 — 그 사이 0.9.x 는 공개되지 않은 개발판) — 사용자에게
+itda-hyve 0.10.4 이상 설치(이미 있으면 업데이트, 받는 곳 https://itda.work/hyve/)와 Claude Desktop 연결을
 안내하고 멈춘다. 계획 파일을 열어 `calls` 로 옮겨 적거나 도구를 하나씩 불러 대신하지 않는다(도구 목록 = 스키마로 가른다).
-0.9.5 와 0.9.6 은 batch 스키마로 가를 수 없다(`snippet_for` 는 `imap_search` 인자다) — 그래서 **batch 결과로 가른다**. 스크립트가 보는 근거는
-둘이다: 1차는 `accounts_list` 최상위 `server_version`(0.9.5 도 준다)이 0.9.6 보다 낮은 것, 2차는 받은편지함 호출의 `invalid_input`
+`snippet_for` 를 모르는 개발판은 batch 스키마로 가를 수 없다(`snippet_for` 는 `imap_search` 인자다) — 그래서 **batch 결과로 가른다**. 스크립트가 보는 근거는
+둘이다: 1차는 `accounts_list` 최상위 `server_version` 이 0.10.4 보다 낮은 것(0.10.1~0.10.3 은 기능은 있지만 날씨·환율 요청에 제품명이 실린 User-Agent 를 싣는다), 2차는 받은편지함 호출의 `invalid_input`
 (`unknown field "snippet_for"`) 거부. 당신은 판을 직접 따지지 않는다 — 아래 1-2 대로 에러 파일을 쓰고 1-1 로 돌아간다(인자를 빼고 다시
 부르지 않는다 — 대량 메일 미리보기를 다시 받게 되고 그 우회는 조용히 굳는다). 그러면 스크립트가 **`hyve_outdated` 로 멈춘다** — 아래 1-6.
 **옛 판으로는 브리핑을 그리지 않는다**(받은 메일이 빈 브리핑을 만들면 사용자는 업데이트 뒤 한 번 더 만들어야 한다, itda-work/skills#43).
@@ -63,12 +63,22 @@ itda-hyve 0.9.6 이상 설치(이미 있으면 업데이트, 받는 곳 https://
 
 ## 실행 전 — 스킬 디렉토리 확정
 
+**먼저** 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 `SKILL_DIR` 에 넣고 아래 블록을 실행한다 — 블록은 그 값을 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾는다(후보가 여럿이면 멈춘다).
+
 ```bash
-# Claude Code(플러그인 설치) = $CLAUDE_PLUGIN_ROOT / Cowork = 세션 마운트 탐색
-# Cowork 는 플러그인 설치면 .remote-plugins, 단일 .skill 업로드면 .claude/skills 아래에 둔다(2026-09-14 실측)
-SKILL_DIR="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/skills/morning-brief}"
-[ -n "$SKILL_DIR" ] || SKILL_DIR=$(find /sessions/*/mnt/.remote-plugins /sessions/*/mnt/.claude/skills -type d -path '*/skills/morning-brief' 2>/dev/null | head -1)
-# 둘 다 아니면(저장소 체크아웃 등) 이 SKILL.md 가 있는 디렉토리 절대경로를 그대로 사용
+# SKILL_DIR 확정(skill-dir-resolution) — 스킬을 불러올 때 받은 base directory 를 먼저 SKILL_DIR="그 경로" 로 넣는다(항상)
+# 블록은 그 값을 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾는다 — SKILL.md 가 있는 후보가 하나일 때만 받고 아니면 멈춘다
+SKILL_DIR=$(sh -c '
+S=$1 P=$2 H=${5:-$HOME/.claude}
+ok() { d=${1%/}; [ "${d##*/}" = "$S" ] && [ -f "$d/SKILL.md" ] && (cd "$d" && pwd -P); }
+[ -n "$3" ] && { ok "$3" && exit; d=${3%/}; [ "${d##*/}" = "$S" ] && echo "SKILL_DIR 무시: $3 에 SKILL.md 가 없다" >&2; }
+[ -n "$4" ] && { ok "$4/skills/$S" && exit; echo "CLAUDE_PLUGIN_ROOT 무시: $4/skills/$S 에 SKILL.md 가 없다" >&2; }
+c=$(for d in "$H"/plugins/synced/*/"$P"/skills/"$S" "$H"/plugins/synced/*/"$P"~*/skills/"$S" "$H"/plugins/cache/*/"$P"/*/skills/"$S" \
+    /root/.claude/plugins/synced/*/"$P"/skills/"$S" /root/.claude/plugins/synced/*/"$P"~*/skills/"$S" \
+    /sessions/*/mnt/.remote-plugins/*/skills/"$S" /sessions/*/mnt/.claude/skills/"$S"; do ok "$d"; done | sort -u)
+[ "$(printf "%s\n" "$c" | grep -c .)" -gt 1 ] && { printf "SKILL_DIR 후보가 여럿이다 — 어느 설치본이 쓰이는지 모른다:\n%s\n" "$c" >&2; exit 1; }
+printf "%s\n" "$c"' _ morning-brief itda-work "${SKILL_DIR:-}" "${CLAUDE_PLUGIN_ROOT:-}" "${CLAUDE_CONFIG_DIR:-}")
+: "${SKILL_DIR:?정하지 못했다 — 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 SKILL_DIR 에 넣고 이 블록을 다시 실행하라}"
 ```
 
 ### 작업 폴더 — itda-hyve 가 쓰고 스크립트가 읽는 같은 폴더
@@ -172,7 +182,7 @@ python3 "$SKILL_DIR/scripts/gather.py" --input "$IN" --save-dir "$HOST_IN" --pla
 ### 1-2. 계획대로 부른다 — 호출 목록을 다시 쓰지 않는다
 
 `batch` 의 각 항목(보통 하나)을 **그대로** itda-hyve 의 **`batch`** 인자로 준다 — `{"plan_file": "<그 경로>"}` 하나뿐이다.
-계획 파일을 열어 `calls` 를 옮겨 적지 않는다(그 출력이 곧 시간이다 — 0.9.3 Cowork 실측에서 바퀴 사이 84초). `save_dir`·`calls` 를
+계획 파일을 열어 `calls` 를 옮겨 적지 않는다(그 출력이 곧 시간이다 — 개발판 Cowork 실측에서 바퀴 사이 84초). `save_dir`·`calls` 를
 곁들이지도 않는다(파일에 있다 — 값이 다르면 itda-hyve 가 거부한다). 날짜 창(오늘 00:00 ~ 내일 00:00, Asia/Seoul)·보낸편지함 지목·
 `account: "*"` 와 파일 이름의 `{n}`(계정 순번 — itda-hyve 가 `inbox-1.json`·`inbox-2.json` … 으로 바꾼다)·본문 앞부분 글자 수·상한·저장 인자는
 스크립트가 정했다.
@@ -208,31 +218,37 @@ batch 세 번을 넘기면 멈추고 사용자에게 알린다.
 `Sections: 환율` 이면 환율만, `Sections: 날씨,환율` 이면 둘, `Sections: none` 이면 하나도 붙이지 않는다. 같은 팩의 형제 스킬로 한 줄 평문을 만든다.
 
 **날씨** — 위치는 1-1~1-3 에서 itda-hyve 가 받아 둔 파일이다(OS 위치 서비스 → IP 서비스 여러 곳의 합의, itda-work/skills#37).
-예보는 좌표가 그 위치에 달려 있어 같은 batch 에 넣지 못한다 — weather-here 가 **샌드박스에서 Open-Meteo 를 직접** 받는다(weather-here 의 기본 경로,
-키 없는 공개 API). 좌표를 인자로 주므로 스크립트가 어디서 돌든 그 좌표의 날씨다.
+예보는 좌표가 그 위치에 달려 있어 같은 batch 에 넣지 못한다 — weather-here 가 낸 호출 인자로 **itda-hyve `http_request` 한 번**
+받는다(weather-here 0.15.0 부터 스크립트는 Open-Meteo 를 직접 부르지 않는다, itda-work/skills#46).
 
 ```bash
-python3 "$SKILL_DIR/../weather-here/scripts/weather_here.py" --geo-input "$IN/location.json" > "$IN/section-날씨.txt"
+W="$SKILL_DIR/../weather-here/scripts/weather_here.py"
+python3 "$W" --geo-input "$IN/location.json" --weather-request --save-dir "$HOST_IN"
 ```
 
-- 그것이 "날씨 정보를 가져오는 데 실패" 로 끝나면(샌드박스가 외부에 못 나갈 때) 한 번만: 같은 인자에 `--weather-request` 를 붙여 나온 JSON 에
-  `"save_dir": "$HOST_IN"`·`"save_as": "weather-forecast.json"`·`"overwrite": true` 를 더해 itda-hyve 의 `http_request` 로 부르고,
-  `--geo-input "$IN/location.json" --weather-input "$IN/weather-forecast.json"` 으로 다시 돌린다.
-
-- 사용자가 지역을 말했으면(1-1 에 `--weather-place`) 위치·예보 파일이 없다. 지역명으로 부른다:
-  `python3 "$SKILL_DIR/../weather-here/scripts/weather_here.py" 부산 > "$IN/section-날씨.txt"`. 그것이 "날씨 정보를 가져오는 데 실패" 로
-  끝나면 한 번만: 같은 지역명에 `--weather-request` 를 붙여 나온 JSON 에 `"save_dir": "$HOST_IN"`·`"save_as": "weather-forecast.json"`·
-  `"overwrite": true` 를 더해 itda-hyve 의 `http_request` 로 부르고, `부산 --weather-input "$IN/weather-forecast.json"` 으로 다시 돌린다.
+- 출력의 `call` 을 **그대로** itda-hyve `http_request` 로 보낸다(URL·`params`·`save_dir`·`save_as` 를 고치지 않는다). 저장된 `saved_path` 로:
+  `python3 "$W" --geo-input "$IN/location.json" --weather-input "$IN/<saved_path>" > "$IN/section-날씨.txt"`.
+- 사용자가 지역을 말했으면(1-1 에 `--weather-place`) 위치 파일이 없다. 위치 인자 자리에 지역명을 쓴다:
+  `python3 "$W" 부산 --weather-request --save-dir "$HOST_IN"` → `http_request` → `python3 "$W" 부산 --weather-input "$IN/<saved_path>" > "$IN/section-날씨.txt"`.
+- `http_request` 가 실패하면(`network_error` 등 — itda-hyve 가 이미 재시도했다) 다시 부르지 않고 `section-날씨.txt` 를 비워 둔다.
+  `--weather-input` 이 exit 1(다른 위치·묵은 파일·잘린 본문 등)이어도 비워 둔다. 날씨 없이 브리핑을 계속한다.
 - 위치를 못 정하면(`location.json` 이 실패 기록 등) 스크립트가 exit 3 과 빈 출력으로 멈춘다 — 파일을 비워 둔다. 다른 도시로 대신하지 않는다.
 - 첫머리의 출처 표시(`(시·도 기준)`·`(대략·IP 기준)`)는 weather-here 가 붙인다 — 지우지 않는다.
 
-**환율** — 키가 필요 없는 공개 API 를 스크립트가 받는다(판단 근거는 `README.md`).
+**환율** — 형제 스킬 exchange-rate 가 낸 호출 인자로 **itda-hyve `http_request` 한 번** 받는다(exchange-rate 0.11.0 부터 스크립트는
+서울외국환중개를 직접 부르지 않는다, itda-work/skills#46). 날짜는 스크립트가 한국 시간으로 푼다(`today`).
 
 ```bash
-python3 "$SKILL_DIR/../exchange-rate/scripts/exchange_rate.py" --currency USD --date "$(date +%F)" > "$IN/section-환율.txt"
+E="$SKILL_DIR/../exchange-rate/scripts/exchange_rate.py"
+python3 "$E" plan --date today --currency USD --save-dir "$HOST_IN"
 ```
 
-실패하면 파일을 비워 둔다 — 다른 데서 끌어오거나 지어내지 않는다. `gather.py` 가 `section_missing` 경고로 남긴다.
+- 출력의 `call` 을 **그대로** itda-hyve `http_request` 로 보낸다. 저장된 `saved_path` 와 **`plan` 출력 `then` 의 날짜**(스크립트가 푼 오늘 —
+  `today` 를 다시 쓰면 자정을 넘긴 회차에서 다른 질의가 된다)로:
+  `python3 "$E" show --date <then 의 날짜> --currency USD --input "$IN/<saved_path>" > "$IN/section-환율.txt" || : > "$IN/section-환율.txt"`.
+  exchange-rate 는 실패를 **stdout JSON** 으로 낸다 — `|| :` 가 실패하면 파일을 비운다(`gather.py` 도 오류 JSON 이 실린 절은 결손으로 거른다).
+- `http_request` 가 실패하면 파일을 비워 둔다 — 다른 데서 끌어오거나 지어내지 않는다. `gather.py` 가 `section_missing` 경고로 남긴다.
+  아침 9시 전이면 고시 전이라 직전 영업일 값과 경고 줄이 나온다 — 지우지 않는다.
 
 ### 1-5. 후보를 만든다
 
@@ -244,7 +260,7 @@ python3 "$SKILL_DIR/scripts/gather.py" --input "$IN" --sections 날씨 --out "$W
 성공하면 한 줄을 낸다 — `open_file` 은 5절(브라우저로 열기)에서 쓰니 기억해 둔다:
 
 ```json
-{"status": "ok", "path": "…/candidates.json", "server_version": "0.10.1", "open_file": true}
+{"status": "ok", "path": "…/candidates.json", "server_version": "0.10.4", "open_file": true}
 ```
 
 스크립트가 정하는 것(당신이 고르지 않는다):
@@ -256,7 +272,7 @@ python3 "$SKILL_DIR/scripts/gather.py" --input "$IN" --sections 날씨 --out "$W
   주소는 소문자·`+태그` 제거로 맞춘다. 스레드당 최신 1통, 일정당 5통(넘으면 "N통 더").
 - **③ 일정과 무관한 미회신** — 내가 받는 사람(To)에 있는, 대량 발송·단체(받는 사람 5명 이상)가 아닌 **사람 메일** 중 미회신(그 스레드에 내 답장 없음)·
   "답장 뒤 새 메일"인데 그 스레드가 어느 일정과도 이어지지 않은 것. 계정마다 스레드당 최신 1통, 8통.
-- **대량 발송 판정** — 강한 표지는 아는 상대여도 대량 발송이다: 제목 첫머리 「(광고)」, itda-hyve 0.9.4 `imap_search` 의 `bulk: true`
+- **대량 발송 판정** — 강한 표지는 아는 상대여도 대량 발송이다: 제목 첫머리 「(광고)」, itda-hyve `imap_search` 의 `bulk: true`
   (List-Id·List-Unsubscribe·Precedence·Auto-Submitted), 보낸 사람 로컬파트 **어디에든** noreply·no_reply·noreturn·donotreply 류
   (`firebase-noreply@`·`easypay_noreturn@`), 표시 이름 「발신전용」·「회신불가」·no-reply. 약한 표지는 **아는 상대**(최근 30일 보낸편지함의
   받는 사람·참조 — 계정 무관)면 사람 메일로 둔다: 역할 주소(billing·receipt·order·account·security·alert·notice·notification·newsletter·
@@ -268,7 +284,7 @@ python3 "$SKILL_DIR/scripts/gather.py" --input "$IN" --sections 날씨 --out "$W
 - **계정 배지** — 메일 계정이 둘 이상이면 ②·③ 의 메일 줄마다 어느 계정으로 온 메일인지 이름을 작은 배지로 단다(앵커의 `account` 그대로).
   업무용·개인용이 섞이면 같은 보낸 사람이라도 답할 계정이 다르다. 계정이 하나면 달지 않는다(소음).
   **요약을 쓰지 않는다** — content.json 에 이 메일을 넣지 않는다. ② 에는 **참석자·주최자 주소로 이어질 때만** 붙고(제목 키워드로는
-  붙지 않는다) 판정 대신 "단체 발송" 으로 보인다. `bulk` 필드가 없는 응답(0.9.3)은 헤더 근거만 빠진다.
+  붙지 않는다) 판정 대신 "단체 발송" 으로 보인다. `bulk` 필드가 없는 응답(옛 판)은 헤더 근거만 빠진다.
 - 회신 판정은 받은 메일 `in_reply_to` ↔ 보낸 메일 `message_id` 로 스레드를 잇는다(References 는 받지 않는다). 보낸편지함을 못 읽으면
   전건 "모름"(`degraded`)이지 "전부 미회신" 이 아니다.
 - 역할 3상태: `ready` / `not_configured`(조용히 한 줄) / `error`(`warnings` 에 남고 페이지가 한 줄로 말한다). 역할은 계정 전부가
@@ -282,7 +298,7 @@ python3 "$SKILL_DIR/scripts/gather.py" --input "$IN" --sections 날씨 --out "$W
 `gather.py`(`--plan`·수집 어느 쪽이든)가 exit 4 와 한 줄을 내면 itda-hyve 가 요구 판보다 옛 판이다:
 
 ```json
-{"status": "hyve_outdated", "required": "0.9.6", "found": null, "evidence": ["inbox_rejected"],
+{"status": "hyve_outdated", "required": "0.10.4", "found": null, "evidence": ["inbox_rejected"],
  "rejected_accounts": ["naver"], "update_url": "https://itda.work/hyve/",
  "steps": ["… 설치본을 받아 지금 설치본을 바꾼다", "Claude Desktop 을 완전히 끝냈다가 다시 연다 …", "브리핑을 다시 요청한다"]}
 ```
@@ -290,7 +306,7 @@ python3 "$SKILL_DIR/scripts/gather.py" --input "$IN" --sections 날씨 --out "$W
 - **content.json 을 쓰지 않고 render·verify 를 부르지 않는다.** 빈 브리핑을 만들지 않는다. (render 도 옛 판 흔적이 있는 candidates 는
   `hyve_outdated`(exit 2)로 거부한다.)
 - 사용자에게 `steps` 셋을 그대로 번호 목록으로 안내한다 — 필요한 판(`required`), 알 수 있으면 지금 판(`found`), 받는 곳(`update_url`).
-  `found` 가 `null` 이면 "0.9.6 보다 옛 판" 이라고만 말한다(판을 지어내지 않는다).
+  `found` 가 `null` 이면 "0.10.4 보다 옛 판" 이라고만 말한다(판을 지어내지 않는다).
 - 무인 회차면 그 사실만 남기고 멈춘다.
 
 ## 2. Write — content.json (③ 의 요약 문장만)
@@ -438,7 +454,7 @@ Sections: 날씨          # 기본값이라 생략해도 된다. 빼려면 none
 - 버튼을 원하면 마지막 줄 위에 정확 문구 `액션 버튼 포함` 을 한 줄로 넣는다.
 - 예약 회차를 스스로 알아낼 신호는 없다. **무인 여부는 프롬프트에 적는 것이 유일한
   방법**이다. 무인 회차에서는 되묻지 않고, 계정이 없는 역할은 비운 채 렌더한다.
-- 예약 회차도 itda-hyve 0.9.6 이상이 켜져 있어야 한다(사용자 PC 의 로컬 서버). 도구가 없으면 무인 회차라도
+- 예약 회차도 itda-hyve 0.10.4 이상이 켜져 있어야 한다(사용자 PC 의 로컬 서버). 도구가 없으면 무인 회차라도
   멈추고 그 사실만 남긴다.
 - 예약 작업에도 **폴더를 연결**해 둔다 — itda-hyve 가 응답을 그 폴더에 쓴다. 연결 폴더가 없으면 멈추고 그 사실만 남긴다.
 

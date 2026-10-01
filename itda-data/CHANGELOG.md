@@ -1,5 +1,11 @@
 # Changelog — itda-data
 
+## [1.2.1] - 2026-10-01
+
+### Fixed
+
+- **SKILL_DIR 확정 블록**(itda-work/skills#47) — 새 Cowork 배치(`/root/.claude/plugins/synced/…`, `CLAUDE_PLUGIN_ROOT` 없음)에서 빈 값을 내던 옛 블록을 바꿨다. 스킬을 불러올 때 받은 base directory 를 먼저 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾으며, 후보가 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다(PowerShell 블록도 같은 계약). `aspect-sentiment` 0.1.6 · `biz-redact` 0.3.4 · `cs-intent` 0.1.5 · `data-ask` 0.2.4 · `data-audit` 0.4.1 · `data-compass` 0.1.3 · `data-prep` 0.2.4 · `data-verify` 0.4.1 · `iaa-builder` 0.1.4 · `pii-redact` 0.2.1 · `synthetic-data` 0.1.4 · `xlsx-recalc` 0.1.2, 에이전트 `cs-batch-extractor`·`data-profiler`.
+
 ## [1.2.0] - 2026-09-28
 
 ### Added

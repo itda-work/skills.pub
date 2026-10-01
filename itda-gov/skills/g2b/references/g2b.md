@@ -1,60 +1,31 @@
 # 나라장터 (G2B) API 참조
 
 나라장터 공공데이터개방표준서비스 API 상세 가이드.
-공공데이터포털(https://www.data.go.kr)의 `KO_DATA_API_KEY` 인증키를 사용합니다.
+요청은 itda-hyve 의 `http_request` 가 보내고, 키는 itda-hyve GUI 시크릿 탭의 `KO_DATA_API_KEY`(Decoding 키)를
+`{{secret:KO_DATA_API_KEY}}` 자리표시자로만 가리킨다. 호출 절차의 정본은 `SKILL.md`, 공용 규약은 `references/netbridge.md` 다.
 
-## 스크립트 위치
+## 스크립트
 
-`scripts/collect_g2b.py` — CLI 진입점
-`scripts/g2b_api.py` — API 클라이언트 래퍼
+스크립트는 네트워크를 하지 않는다.
 
-## 기본 사용법
+- `scripts/collect_g2b.py plan` — 기간을 달력 달 단위 창으로 나눈 호출 계획(창마다 1쪽)
+- `scripts/collect_g2b.py collect --input …` — 저장한 응답을 창별로 전량 대조·중복 제거·키워드 필터·출력
+- `scripts/g2b_api.py` — 창 나누기·호출 인자·응답 파서
 
-```bash
-# 최근 7일 입찰공고 조회 (JSON)
-python3 scripts/collect_g2b.py
-
-# 날짜 범위 지정
-python3 scripts/collect_g2b.py --from 2026-03-01 --to 2026-03-28
-
-# 키워드 필터링
-python3 scripts/collect_g2b.py --keyword "소프트웨어"
-
-# 테이블 형식 출력
-python3 scripts/collect_g2b.py --format table
-
-# 상세 필드 포함 (입찰자격, 담당자, 일정 등)
-python3 scripts/collect_g2b.py --format table --detail
-
-# 단일 페이지 조회 (--rows/--page 명시 시 자동 순회 끔)
-python3 scripts/collect_g2b.py --rows 50 --page 2
-
-# 키워드 자동 전체 순회 + 순회 상한 조정
-python3 scripts/collect_g2b.py --keyword "용역" --max-pages 5
-```
-
-Windows: `python3` → `py -3`
-
-## CLI 옵션
+## collect 옵션
 
 | 옵션 | 기본값 | 설명 |
 |------|--------|------|
-| `--from` | 7일 전 | 조회 시작일 (YYYY-MM-DD) |
-| `--to` | 오늘 | 조회 종료일 (YYYY-MM-DD) |
-| `--keyword` | — | 공고명 키워드 필터 (부분 일치, 대소문자 무시). 날짜 범위 전 페이지 자동 순회 후 필터 |
-| `--rows` | 10 | **단일 페이지 모드** — 페이지당 결과 수 (최대 999). 명시 시 자동 순회 끔 |
-| `--page` | 1 | **단일 페이지 모드** — 페이지 번호. 명시 시 자동 순회 끔 |
-| `--max-pages` | 20 | 자동 순회 상한 페이지 수 (페이지당 최대 999건). 상한 도달 시 미조회분 경고 |
+| `--input` | (필수) | 저장한 응답 파일(들). 이름 규칙 `bids-<시작 YYYYMMDD>-<끝 YYYYMMDD>-p<쪽>.json` — 창을 이름으로 가른다 |
+| `--keyword` | — | 공고명 키워드 필터 (부분 일치, 대소문자 무시). 창의 전 쪽을 받은 뒤 필터 |
+| `--max-pages` | 20 | 창마다 받을 쪽 상한 (쪽당 최대 999건). 필요한 쪽이 넘으면 `truncated` |
+| `--single-page` | false | 전량 대조 없이 넘긴 쪽만 훑어본다 |
+| `--next-plan` | — | 전량 미달이면 더 받을 호출을 batch `plan_file` 형식으로 쓴다(40호출씩 `…a.json`·`…b.json` 으로 나눔) |
 | `--format` | json | 출력 형식 (`json` \| `table`) |
 | `--detail` | false | 상세 필드 포함 (table 형식에서 유효) |
-| `--api-key` | — | 인증키 직접 지정 |
 
-> **자동 전체 순회 (기본)**: `--rows`/`--page` 미지정 시 키워드 검색은 날짜 범위
-> 전 페이지를 순회한다. 나라장터는 하루 수천 건이 등록되므로 첫 페이지만 보면
-> 키워드가 뒤쪽 공고에 있을 때 거짓 0건(false 0)이 발생한다 — 순회로 이를 방지한다.
->
-> **단일 페이지 모드**: `--rows` 또는 `--page`를 명시하면 자동 순회를 끄고 해당
-> 페이지만 조회한다.
+> 나라장터는 하루 1,800~1,900건이 등록된다(2026-09-28·29 실측 1,836·1,901건). 첫 쪽만 보면 키워드가 뒤쪽 공고에
+> 있을 때 거짓 0건이 난다 — collect 가 창마다 `totalCount` 와 받은 쪽을 대조해 모자라면 실패한다.
 
 ## 출력 포맷
 
@@ -63,48 +34,46 @@ Windows: `python3` → `py -3`
 ```json
 {
   "status": "ok",
-  "count": 5,
-  "total_count": 3342,
-  "scanned_count": 3342,
+  "count": 24,
+  "total_count": 3737,
+  "scanned_count": 3737,
   "truncated": false,
   "page": "all",
-  "results": [
-    {
-      "bidNtceNo": "20260318001",
-      "bidNtceNm": "소프트웨어 개발 용역",
-      "ntceInsttNm": "조달청",
-      "presmptPrce": "100000000",
-      "bidClseDt": "2026/03/25 18:00"
-    }
-  ]
+  "windows": [{"from": "20260928", "to": "20260928", "total_count": 1836, "pages": [1, 2], "collected": 1836, "need_pages": 2, "will_truncate": false}],
+  "results": [{"bidNtceNo": "R26BK01746734", "bidNtceNm": "…", "ntceInsttNm": "…"}],
+  "sources": [{"path": "…/bids-20260928-20260928-p1.json", "page": 1, "total_count": 1836, "item_count": 999}]
 }
 ```
 
-출력 필드 의미:
-
 | 필드 | 의미 |
 |------|------|
-| `total_count` | API가 보고한 **필터 전** 날짜 범위 전체 결과 수 |
-| `scanned_count` | 실제 순회·스캔한(중복 제거 후) 항목 수 |
+| `total_count` | API가 보고한 **필터 전** 기간 전체 결과 수(창 합) |
+| `scanned_count` | 받은 쪽에서 중복을 없앤 항목 수. `total_count` 보다 작으면 `truncated`·`--single-page`·받는 사이 공고 변화(경고) 중 하나 |
 | `count` | **키워드 필터 후** 결과 수 (`results` 길이와 일치) |
 | `truncated` | `--max-pages` 상한으로 미조회분이 남으면 `true` |
-| `warnings` | `truncated`일 때만 추가되는 미조회분 안내 배열 |
-| `page` | 단일 페이지 모드면 번호, 자동 순회면 `"all"` |
+| `warnings` | 미조회분·쪽 경계 중복·쪽마다 다른 totalCount 안내 (있을 때만) |
+| `page` | `--single-page` 면 그 쪽 번호, 아니면 `"all"` |
 
 ### 에러 출력
 
 ```json
-{
-  "status": "error",
-  "error": "api",
-  "detail": "API 응답 에러: resultCode=10 (ServiceKey 없음)"
-}
+{"status": "error", "error": "incomplete", "detail": "창마다 전량을 받지 못했습니다: …",
+ "next_call_count": 57, "will_truncate": true,
+ "windows": [{"from": "20260701", "to": "20260731", "total_count": 40000, "pages": [1], "collected": 999, "need_pages": 41, "will_truncate": true}, …],
+ "plan_files": ["/Users/me/Projects/작업폴더/g2b/plan-next-1a.json", "/Users/me/Projects/작업폴더/g2b/plan-next-1b.json"],
+ "next_calls_preview": [ … 앞 3개 … ]}
 ```
 
-에러 타입:
-- `config` — API 키 미설정
-- `api` — API 호출 오류 (네트워크, resultCode 오류)
-- `argument` — 날짜 형식·범위 오류
+`plan_files` 는 `--next-plan` 에 준 경로를 펼친 **절대 경로**다(40호출씩 나뉜다). `--next-plan` 이 없으면 `plan_files`·`next_calls_preview` 대신
+`next_calls`(전부)가 온다.
+
+| `error` | 뜻 |
+|---|---|
+| `incomplete` | 창의 쪽이 모자라다. `next_calls`(또는 `plan_files`)가 더 받을 호출(batch `calls` 형식), `will_truncate` 면 받기 전에 사용자에게 묻는다 |
+| `api` | 본문의 오류 코드(`error_code` — `07`·`gateway-30` 등) |
+| `truncated` · `http` · `hyve` | 입력이 잘린 본문 · HTTP 오류 응답 · itda-hyve 호출 실패 자리 |
+| `input` | 파일 없음·이름 규칙 위반·JSON 아님·같은 쪽 두 번·이름의 쪽(`p<n>`)과 본문 `pageNo` 불일치 |
+| `argument` | 날짜 형식·범위 오류 (종료 코드 2) |
 
 ### 테이블 출력 (`--format table`)
 
@@ -125,7 +94,7 @@ Windows: `python3` → `py -3`
 | 코드 | 의미 |
 |------|------|
 | 0 | 성공 |
-| 1 | 런타임 오류 (API 키 미설정, API 오류) |
+| 1 | 가공 실패 (입력·API 오류·전량 미달) |
 | 2 | 인자 오류 |
 
 ## API 상세
@@ -140,33 +109,40 @@ GET https://apis.data.go.kr/1230000/ao/PubDataOpnStdService/getDataSetOpnStdBidP
 
 | 파라미터 | 필수 | 설명 | 예시 |
 |---------|------|------|------|
-| `serviceKey` | ✓ | 공공데이터포털 인증키 | (URL 인코딩) |
+| `serviceKey` | ✓ | 공공데이터포털 인증키 — `params` 에 `{{secret:KO_DATA_API_KEY}}` | |
 | `type` | ✓ | 응답 형식 | `json` |
 | `pageNo` | — | 페이지 번호 | `1` |
-| `numOfRows` | — | 페이지당 결과 수 | `10` (최대 999) |
-| `bidNtceBgnDt` | ✓ | 입찰공고 시작일시 | `202603010000` |
-| `bidNtceEndDt` | ✓ | 입찰공고 종료일시 | `202603282359` |
+| `numOfRows` | — | 페이지당 결과 수 | `999` (최대) |
+| `bidNtceBgnDt` | ✓ | 입찰공고 시작일시 | `202609010000` |
+| `bidNtceEndDt` | ✓ | 입찰공고 종료일시 | `202609302359` |
 
-> 날짜 범위는 최대 1개월 (31일) 이내.
+> 날짜 범위는 1개월 이내. 넘기면 `resultCode 07`(입력범위값 초과)이 온다(2026-09-30 실측: 3개월 → 07).
 
 ### 응답 구조
 
 ```json
 {
   "response": {
-    "header": {
-      "resultCode": "00",
-      "resultMsg": "NORMAL SERVICE"
-    },
-    "body": {
-      "items": [...],
-      "totalCount": 42,
-      "pageNo": 1,
-      "numOfRows": 10
-    }
+    "header": {"resultCode": "00", "resultMsg": "정상"},
+    "body": {"items": [...], "numOfRows": 999, "pageNo": 1, "totalCount": 1901}
   }
 }
 ```
+
+오류는 두 형태로 온다(2026-09-30 실측).
+
+```json
+{"nkoneps.com.response.ResponseError": {"header": {"resultCode": "07", "resultMsg": "입력범위값 초과 에러"}}}
+```
+
+```json
+{"OpenAPI_ServiceResponse": {"cmmMsgHeader": {"errMsg": "SERVICE_KEY_IS_NULL", "returnAuthMsg": "서비스 접근거부", "returnReasonCode": "20"}}}
+```
+
+두 번째는 공공데이터포털 게이트웨이 거부이고 HTTP 401 로 오지만, `save_as` 는 본문을 그대로 저장한다 — collect 가 본문으로 판정한다.
+
+공고가 없는 창은 오류가 아니라 `resultCode 00` + `totalCount 0` + 빈 `items` 로 온다(2026-10-10~11 창 실측, 2026-09-30) — 명세의
+`03 데이터없음` 은 이 경로에서 관측되지 않았다. 31일 창(`202608010000`~`202608312359`)도 `07` 없이 받아진다(같은 날 실측, `totalCount` 32,895).
 
 ### 주요 응답 필드
 
@@ -179,18 +155,18 @@ GET https://apis.data.go.kr/1230000/ao/PubDataOpnStdService/getDataSetOpnStdBidP
 | `dmndInsttNm` | 수요기관명 |
 | `presmptPrce` | 추정가격 (원) |
 | `asignBdgtAmt` | 배정예산액 (원) |
-| `bidClseDt` | 입찰마감일시 |
-| `opengDt` | 개찰일시 |
+| `bidClseDate` · `bidClseTm` | 입찰마감일·시각 |
+| `opengDate` · `opengTm` | 개찰일·시각 |
 | `cntrctCnclsMthdNm` | 계약방법 |
 | `bidwinrDcsnMthdNm` | 낙찰방법 |
 | `elctrnBidYn` | 전자입찰여부 (Y/N) |
-| `bidNtceDtlUrl` | 공고상세 URL |
+| `bidNtceUrl` | 공고상세 URL |
 | `intrntnlBidYn` | 국제입찰여부 (Y/N) |
 | `rgnLmtYn` | 지역제한여부 (Y/N) |
 | `indstrytyLmtYn` | 업종제한여부 (Y/N) |
 | `bidprcPsblIndstrytyNm` | 입찰가능업종 |
 
-### 에러 코드 (resultCode)
+### 에러 코드 (resultCode · returnReasonCode)
 
 | 코드 | 의미 |
 |------|------|
@@ -201,57 +177,26 @@ GET https://apis.data.go.kr/1230000/ao/PubDataOpnStdService/getDataSetOpnStdBidP
 | `04` | HTTP 에러 |
 | `05` | 서비스 연결실패 |
 | `06` | 날짜 Default/Format 에러 |
+| `07` | 입력범위값 초과 (실측 — 기간 1개월 초과) |
 | `10` | 잘못된 요청 파라미터 |
 | `11` | 필수 요청 파라미터 없음 |
-| `20` | 서비스 접근거부 |
+| `20` | 서비스 접근거부 (게이트웨이 — 활용신청 승인 전, 또는 키가 비었음) |
 | `22` | 서비스 요청 제한 초과 |
-| `30` | 등록되지 않은 서비스키 |
+| `30` | 등록되지 않은 서비스키 (Encoding 키를 등록한 경우 — Decoding 키로 다시 등록) |
 | `31` | 기한 만료된 서비스키 |
 | `32` | 등록되지 않은 IP |
 
 ## 인증키 (serviceKey)
 
-공공데이터포털에서 발급받은 인증키는 URL 인코딩 상태로 제공될 수 있습니다.
-`collect_g2b.py`는 자동으로 `normalize_service_key()`를 적용하여 이중 인코딩을 방지합니다.
-
-**인증키 발급 방법:**
 1. https://www.data.go.kr 접속 및 회원가입
-2. '조달청_나라장터 공공데이터개방표준서비스' 검색
-3. 활용신청 (자동승인)
-4. 마이페이지 > 인증키 확인 (일반 인증키 Decoding 사용)
+2. '조달청_나라장터 공공데이터개방표준서비스' 검색 → 활용신청 (자동승인)
+3. 마이페이지 > 인증키 확인 → **일반 인증키(Decoding)** 복사
+4. itda-hyve GUI 시크릿 탭에 `KO_DATA_API_KEY` 로 등록
 
-**설정 방법:**
-```bash
-# 권장 (모든 환경): 작업 폴더 루트(예: outputs/)의 .env 파일
-KO_DATA_API_KEY=발급받은_키
-
-# CLI 직접 지정 (일회성)
-python3 scripts/collect_g2b.py --api-key "발급받은_키"
-
-# (로컬 CLI 전용: claude config set env.KO_DATA_API_KEY "키" 또는 셸 환경변수도 가능)
-```
-
-## 사용 시나리오
-
-### 입찰 제안서 작성
-
-```bash
-# 1. 관련 입찰공고 확인
-python3 scripts/collect_g2b.py --keyword "소프트웨어 개발" --from 2026-03-01 --to 2026-03-28
-
-# 2. 공고기관/경쟁사 재무 조회 (DART)
-python3 scripts/collect_company.py profile --name "조달청" --year 2024
-
-# 3. 거시경제 환경 파악 (ECOS)
-python3 scripts/collect_econ.py key
-
-# 4. 관련 정부 지원사업 확인 (funding 스킬 — 모집중 전수 수집 후 검토)
-python3 scripts/survey_crawl.py list kstartup -o kstartup_all.jsonl
-```
+`params` 는 값을 한 번 URL 인코딩하므로 Decoding 키를 등록해야 한다. Encoding 키(`%2B`·`%2F`·`%3D` 가 든 것)는 이중 인코딩되어 `30` 이 난다.
 
 ## 제약사항
 
-- 날짜 범위: 최대 1개월 (31일) 이내
-- 페이지당 최대 결과: 999건
-- 요청 타임아웃: 15초
+- 날짜 범위: 1개월 이내 (plan 이 달력 달 단위로 나눈다)
+- 페이지당 최대 결과: 999건 (한 쪽 응답 약 2MB)
 - API 응답은 나라장터 공고 시간 기준 (KST)

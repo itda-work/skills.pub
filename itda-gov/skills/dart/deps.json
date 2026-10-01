@@ -28,7 +28,7 @@
    "provisioning": "direct",
    "owner": "self",
    "import_names": [],
-   "feature": "Windows 에서 날짜 계산(ZoneInfo('Asia/Seoul') — dart_api.py:980)"
+   "feature": "Windows 에서 날짜 계산(ZoneInfo('Asia/Seoul') — dart_api.py today_kst)"
   }
  ],
  "non_pip": []

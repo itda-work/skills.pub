@@ -1,18 +1,20 @@
-"""weather_here.py - 날씨 조회 스킬 CLI 진입점 (v0.4.0 Open-Meteo 무키 재설계).
+"""weather_here.py - 날씨 조회 스킬 CLI 진입점. 네트워크 없음(itda-work/skills#45·#46).
+
+요청은 itda-hyve 가 보내고, 이 스크립트는 호출 인자를 만들고 저장된 응답을 판독한다.
 
 위치 결정 순서(#33·#37 — 앞이 이긴다):
   1. 지역명(위치 인자) → region_resolver → (lat, lon)
   2. --lat/--lon → 그대로
-  3. --geo-input 파일 — itda-hyve `location` 응답(0.9.3, OS 위치·IP 합의) 또는
-     옛 판의 `http_request` 로 받은 ipapi.co·ipwho.is 응답 → (lat, lon) + 출처·장소
-  4. 스크립트 직접 IP 조회(ipapi.co → ipwho.is) — Cowork 작업 공간에서는 하지 않는다
-     (스크립트가 클라우드에서 돌아 IP 가 사용자 PC 가 아니다. 틀린 위치로 날씨를 내지 않고
-     exit 3 으로 멈춘다).
+  3. --geo-input 파일 — itda-hyve `location` 응답(OS 위치·IP 합의)만 → (lat, lon) + 출처·장소.
+     IP 서비스 응답(ipapi.co·ipwho.is)·1시간 넘은 위치 파일은 받지 않는다(W9 리뷰 m1·m2).
+     `--location-request` 가 `location` 호출 인자(저장 이름)를 낸다.
+  위치를 못 정하면 exit 3 — 틀린 위치로 날씨를 내지 않는다. 스크립트는 어떤 서비스도 부르지 않는다.
 
-날씨 값: 기본은 Open-Meteo 직접 호출. --weather-input 이면 itda-hyve 가 받아 둔 응답
-파일을 읽는다(네트워크 없음). --weather-request 는 그 호출 인자를 JSON 으로 낸다.
+날씨 값(Open-Meteo): --weather-request 가 itda-hyve `http_request` 인자(`call`)를 내고,
+저장한 응답을 --weather-input 으로 읽는다(이름의 좌표·응답 좌표 0.1°·관측 시각·예보 날짜 대조).
+둘 다 없으면 exit 2(다음 할 일 안내).
 
-종료 코드: 0 정상 · 1 지역명 미수록/날씨 조회 실패 · 2 인자 오류 · 3 위치 미확정.
+종료 코드: 0 정상 · 1 지역명 미수록/날씨 응답 판독 실패 · 2 인자 오류 · 3 위치 미확정.
 
 외부 인증키 없음 — 무키 Open-Meteo.
 되묻기 0회, 비대화형, 한국어 출력 (REQ-006/007/008).
@@ -21,7 +23,11 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
+import math
+import re
+import shlex
 import sys
 from pathlib import Path
 from typing import Any
@@ -30,6 +36,7 @@ import geo_locator
 import openmeteo_client
 import region_resolver
 import wmo_codes
+from hyve_input import HyveFailure, HyveInputError, read_input
 
 # --- 한국 bbox 상수 (REQ-020) ---
 # 한반도·제주·독도 포함 근사 범위
@@ -44,15 +51,79 @@ EXIT_OK = 0
 EXIT_FAIL = 1
 EXIT_LOCATION_UNRESOLVED = 3
 
-# --weather-input 응답 좌표와 요청 좌표의 허용 차(도). Open-Meteo 는 격자에 맞춰
-# 좌표를 조금 옮겨 돌려준다 — 그보다 크게 어긋나면 다른 위치의 응답 파일이다.
-_WEATHER_COORD_TOLERANCE = 0.5
+# --weather-input 응답 좌표와 요청 좌표의 허용 차(도). Open-Meteo 는 격자에 맞춰 좌표를 조금 옮겨 돌려준다 —
+# 2026-10-01 리뷰 실측 11점(국내 도서·해외 포함) 최대 0.053°, 그 두 배. 옛 0.5° 는 대전 파일이 세종·청주 등
+# 7곳 이름으로 통과했다(W9 리뷰 M2). 저장 이름의 좌표(넷째 자리)도 따로 대조한다.
+_WEATHER_COORD_TOLERANCE = 0.1
+_OM_NAME = re.compile(r"^openmeteo-(-?\d+\.\d{4})_(-?\d+\.\d{4})-(\d{12})\.json$")
 
-_IP_SOURCES_HINT = (
-    "itda-hyve 의 location 도구(0.9.3 이상)로 위치를 받아 --geo-input <저장한 파일> 로 넘기세요.\n"
-    "location 이 없는 옛 itda-hyve 면 http_request 로 https://ipapi.co/json/ (실패하면 https://ipwho.is/) 를 받아\n"
-    "--geo-input <저장한 파일> 또는 --lat <위도> --lon <경도> 로 넘기세요."
+_LOCATION_HINT = (
+    "itda-hyve 의 location 도구로 위치를 받아 --geo-input <저장한 파일> 로 넘기세요(--location-request 가 호출 인자를 낸다).\n"
+    "location 이 실패했으면 지역명을 알려주세요(예: 서울). itda-hyve 가 없으면 날씨를 받을 수 없습니다 — "
+    "itda-hyve 0.10.4 이상 설치·Claude Desktop 연결이 먼저입니다."
 )
+
+# --weather-input 응답의 current.time 이 이보다 오래되면 묵은 파일로 보고 거부한다.
+_WEATHER_MAX_AGE = datetime.timedelta(hours=3)
+# 반대로 이만큼 넘게 미래면(다른 시간대로 해석된 파일 등) 역시 거부한다.
+_WEATHER_MAX_AHEAD = datetime.timedelta(hours=1)
+_TIMEOUT_SEC = 50  # Cowork 전송 상한 60초보다 짧게
+_KST = datetime.timezone(datetime.timedelta(hours=9))
+
+
+def _now_utc() -> datetime.datetime:
+    """지금(UTC). 테스트가 바꿔 끼우는 이음새."""
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
+def is_host_abs_path(value: str) -> bool:
+    """itda-hyve 가 쓸 **호스트** 절대 경로인가.
+
+    Cowork 는 리눅스 VM 에서 스크립트를 돌리고 itda-hyve 는 사용자 PC 에서 돈다 — 호스트가 Windows 면
+    `C:\\…`·`C:/…`·`\\\\서버\\…` 이고, 리눅스의 `Path.is_absolute()` 는 이것을 상대 경로로 본다(W10 M1).
+    스크립트는 이 값을 경로로 쓰지 않고 호출 인자에 문자열로 싣기만 한다.
+    """
+    return value.startswith("/") or bool(re.match(r"^[A-Za-z]:[\\/]", value)) or value.startswith("\\\\")
+
+
+def weather_call(lat: float, lon: float, save_dir: str | None) -> dict:
+    """itda-hyve `http_request` 에 그대로 넣을 인자. User-Agent 는 싣지 않는다(hyve 기본 UA)."""
+    stamp = _now_utc().astimezone(_KST).strftime("%Y%m%d%H%M")
+    call: dict[str, Any] = {
+        "url": openmeteo_client.BASE_URL,
+        "params": openmeteo_client.build_params(lat, lon),
+        "timeout_sec": _TIMEOUT_SEC,
+    }
+    if save_dir:
+        call["save_dir"] = save_dir
+    call["save_as"] = f"weather-here/openmeteo-{lat:.4f}_{lon:.4f}-{stamp}.json"
+    return call
+
+
+def location_call(save_dir: str | None) -> dict:
+    """itda-hyve `location` 에 그대로 넣을 인자 — 저장 이름을 스크립트가 정한다(W9 리뷰 m2)."""
+    stamp = _now_utc().astimezone(_KST).strftime("%Y%m%d%H%M")
+    call: dict[str, Any] = {}
+    if save_dir:
+        call["save_dir"] = save_dir
+    call["save_as"] = f"weather-here/location-{stamp}.json"
+    return call
+
+
+def _basename(path: str) -> str:
+    """`/`·`\\` 어느 구분자든 마지막 토막(Cowork 에 호스트 경로를 넘긴 경우도)."""
+    return re.split(r"[\\/]", path)[-1]
+
+
+def _close(a: float, b: float, wrap: bool = False) -> bool:
+    """두 좌표 성분이 허용 차 안인가. NaN·무한은 늘 거짓, 경도는 날짜변경선에서 접는다."""
+    if not (math.isfinite(a) and math.isfinite(b)):
+        return False
+    d = abs(a - b)
+    if wrap:
+        d = min(d, 360.0 - d)
+    return d <= _WEATHER_COORD_TOLERANCE
+
 
 # 위치 출처별 표시(#37). IP 한 곳·합의 실패는 시·도부터 틀릴 수 있다(KT 회선이 성남으로 잡힌 실측).
 _APPROX_IP = "(대략·IP 기준)"
@@ -64,8 +135,6 @@ def _place_label(fix: geo_locator.GeoFix | None, lat: float, lon: float) -> tupl
     coords = f"현재 위치 ({lat:.2f}°N, {lon:.2f}°E)"
     if fix is None:  # --lat/--lon — 출처를 모른다
         return coords, ""
-    if fix.source in ("ipapi", "ipwho", "ip_single"):  # IP 서비스 한 곳
-        return coords, _APPROX_IP
     name = fix.place or coords
     if fix.source == "os" and fix.accuracy != "low":
         return name, ""
@@ -74,36 +143,29 @@ def _place_label(fix: geo_locator.GeoFix | None, lat: float, lon: float) -> tupl
     return name, _APPROX_IP
 
 
-def _in_cowork_sandbox(script_path: Path | None = None) -> bool:
-    """이 스크립트가 Cowork 작업 공간(클라우드 샌드박스)에서 도는지.
-
-    Cowork 는 플러그인·업로드 스킬을 모두 `/sessions/<id>/mnt/…` 아래에 둔다
-    (capability map §3 — 플러그인 `.remote-plugins`, 단일 `.skill` `.claude/skills`).
-    Claude Code 표준 환경변수는 Cowork 에 주입되지 않고 `HOME` 도 회차마다 달라
-    (`/sessions/<id>`·`/root` 실측) 환경변수로는 가를 수 없다 — 스크립트 파일 위치가 정본.
-    """
-    path = (script_path or Path(__file__)).resolve()
-    parts = path.parts
-    return len(parts) > 2 and parts[1] == "sessions"
-
-
 def _read_weather_file(path: str, lat: float, lon: float) -> tuple[dict | None, str]:
     """itda-hyve 가 저장한 Open-Meteo 응답 파일을 읽어 날씨 dict 로.
 
-    응답의 latitude/longitude 가 요청 좌표와 어긋나면(다른 위치의 파일) 거부한다.
+    저장 이름(`openmeteo-<위도>_<경도>-<시각>.json` — --weather-request 가 정한다)의 좌표가 요청 좌표와 넷째 자리까지
+    같아야 하고, 응답의 latitude/longitude 도 요청 좌표와 0.1° 안이어야 한다(다른 위치의 파일 거부).
     """
-    name = Path(path).name
+    name = _basename(path)
+    m = _OM_NAME.match(name)
+    if not m:
+        return None, (f"{name}: 저장 이름이 계약과 다름 — --weather-request 가 준 save_as 그대로 저장한 파일을 넘기세요")
+    if (m.group(1), m.group(2)) != (f"{lat:.4f}", f"{lon:.4f}"):
+        return None, (f"{name}: 이름의 좌표({m.group(1)}, {m.group(2)})가 요청 위치({lat:.4f}, {lon:.4f})와 다름 — "
+                      "다른 위치의 파일")
     try:
-        data = json.loads(Path(path).read_text(encoding="utf-8-sig"))
-    except OSError as exc:
-        return None, f"{name}: 파일을 읽을 수 없음({exc.strerror or exc})"
-    except json.JSONDecodeError:
-        return None, f"{name}: JSON 이 아님"
-    data, why = geo_locator.unwrap_response(data)
-    if why:
-        return None, f"{name}: {why}"
-    if isinstance(data, dict) and isinstance(data.get("error"), dict):
-        return None, f"{name}: itda-hyve 호출 실패({data['error'].get('code') or 'error'})"
+        body = read_input(path)
+    except HyveFailure as exc:
+        return None, f"{name}: itda-hyve 호출 실패({exc.code})" + (f" — {exc.hyve_message}" if exc.hyve_message else "")
+    except HyveInputError as exc:
+        return None, f"{name}: {exc}"
+    try:
+        data = json.loads(body.text())
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None, f"{name}: JSON 이 아님(차단·오류 페이지일 수 있음)"
     if isinstance(data, dict) and data.get("error") is True:
         return None, f"{name}: Open-Meteo 오류({data.get('reason') or '사유 없음'})"
     if not isinstance(data, dict):
@@ -113,16 +175,46 @@ def _read_weather_file(path: str, lat: float, lon: float) -> tuple[dict | None, 
         r_lon = float(data["longitude"])
     except (KeyError, TypeError, ValueError):
         return None, f"{name}: 응답에 좌표가 없어 어느 위치의 날씨인지 확인할 수 없음"
-    if (abs(r_lat - lat) > _WEATHER_COORD_TOLERANCE
-            or abs(r_lon - lon) > _WEATHER_COORD_TOLERANCE):
+    if not (_close(r_lat, lat) and _close(r_lon, lon, wrap=True)):
         return None, (
             f"{name}: 응답 좌표({r_lat:.2f}, {r_lon:.2f})가 요청 위치({lat:.2f}, {lon:.2f})와 다름 — "
             "다른 위치의 파일"
         )
+    why = _stale_reason(data)
+    if why:
+        return None, f"{name}: {why}"
     weather = openmeteo_client.parse(data)
     if weather is None:
         return None, f"{name}: current 필드가 없음"
     return weather, ""
+
+
+def _stale_reason(data: dict) -> str:
+    """응답의 관측 시각(`current.time` + `utc_offset_seconds`)이 지금과 너무 멀면 사유를 돌려준다."""
+    current = data.get("current")
+    if not isinstance(current, dict):
+        return ""  # parse 가 "current 필드가 없음" 으로 거부한다
+    try:
+        local = datetime.datetime.fromisoformat(str(current["time"]))
+        offset = datetime.timedelta(seconds=int(data["utc_offset_seconds"]))
+    except (KeyError, TypeError, ValueError):
+        return "응답에 관측 시각(current.time·utc_offset_seconds)이 없어 언제 날씨인지 확인할 수 없음"
+    tz = datetime.timezone(offset)
+    observed = local.replace(tzinfo=tz)
+    now = _now_utc()
+    if now - observed > _WEATHER_MAX_AGE:
+        return f"관측 시각 {current['time']} 이 {int(_WEATHER_MAX_AGE.total_seconds() // 3600)}시간 넘게 지난 묵은 파일"
+    if observed - now > _WEATHER_MAX_AHEAD:
+        return f"관측 시각 {current['time']} 이 지금보다 미래 — 다른 시각의 파일"
+    # "오늘" 요약(강수확률·최고·최저)은 daily 첫 날이다 — 자정을 넘긴 파일이면 어제의 오늘이다(W9 리뷰 m6)
+    daily = data.get("daily")
+    if isinstance(daily, dict) and daily.get("time") is not None:
+        times = daily.get("time")
+        today = now.astimezone(tz).date().isoformat()
+        if not (isinstance(times, list) and times and str(times[0]) == today):
+            first = times[0] if isinstance(times, list) and times else times
+            return f"예보 날짜 {first} 가 오늘({today})이 아님 — 자정 전에 받은 파일"
+    return ""
 
 
 def _is_korea_bbox(lat: float, lon: float) -> bool:
@@ -251,55 +343,32 @@ def _resolve_location(args: argparse.Namespace) -> _Resolved:
 
     if args.geo_input:
         # --- itda-hyve 가 받아 저장한 IP 위치 응답 ---
-        fix, reasons = geo_locator.locate_fix_from_files(args.geo_input)
+        fix, reasons = geo_locator.locate_fix_from_files(args.geo_input, now=_now_utc())
         if fix is None:
             detail = "\n".join(f"  - {r}" for r in reasons)
             return _stop_unresolved(
                 "받아 둔 위치 응답에서 위치를 확정하지 못해 멈춥니다(틀린 위치로 날씨를 내지 않습니다).\n"
                 f"{detail}\n"
-                "옛 itda-hyve 의 ipapi.co 가 실패했으면 https://ipwho.is/ 를 받아 --geo-input 을 하나 더 붙이거나, "
-                "지역명을 알려주세요."
+                "지역명을 알려주세요(예: 서울)."
             ), 0.0, 0.0, "", False, None
         return EXIT_OK, fix.lat, fix.lon, "", True, fix
 
-    if _in_cowork_sandbox():
-        # --- Cowork: 스크립트의 IP 는 클라우드 IP 다 (#33 — 샌프란시스코 실측) ---
-        return _stop_unresolved(
-            "Cowork 작업 공간에서는 스크립트가 클라우드에서 돌아 IP 위치가 사용자 위치가 아닙니다.\n"
-            "현재 위치를 확정하지 못해 멈춥니다(틀린 위치로 날씨를 내지 않습니다).\n"
-            + _IP_SOURCES_HINT
-            + "\nitda-hyve 가 없으면 지역명을 알려주세요(예: 서울)."
-        ), 0.0, 0.0, "", False, None
-
-    # --- 로컬: 스크립트 직접 IP 자동탐지 (REQ-001/007) ---
-    # 되묻기 금지 — 실패 시 비대화형 안내만 출력하고 종료 (REQ-007/008)
-    coords = geo_locator.locate_by_ip()
-    if coords is None:
-        return _stop_unresolved(
-            "현재 위치를 자동으로 파악할 수 없습니다.\n"
-            "지역명을 알려주시면 해당 지역 날씨를 조회합니다.\n"
-            "예: python3 weather_here.py 서울"
-        ), 0.0, 0.0, "", False, None
-    return EXIT_OK, coords[0], coords[1], "", True, geo_locator.GeoFix(coords[0], coords[1], "ip_single")
+    # --- 위치 입력 없음 — 스크립트는 IP 를 조회하지 않는다(#46) ---
+    return _stop_unresolved(
+        "현재 위치를 받지 않아 멈춥니다(틀린 위치로 날씨를 내지 않습니다).\n" + _LOCATION_HINT
+    ), 0.0, 0.0, "", False, None
 
 
-def main(argv: list[str] | None = None) -> int:
-    """CLI 진입점.
+def _location_args(args: argparse.Namespace) -> str:
+    """--weather-input 단계에 다시 줄 위치 인자(같은 위치여야 이름·응답 좌표 대조가 맞는다). 셸에 그대로 쓸 수 있게 인용한다."""
+    if args.location:
+        return f"{shlex.quote(args.location)} "
+    if args.lat is not None:
+        return f"--lat {args.lat} --lon {args.lon} "
+    return "".join(f"--geo-input {shlex.quote(g)} " for g in args.geo_input or [])
 
-    Args:
-        argv: 인자 목록 (기본: sys.argv[1:]).
 
-    Returns:
-        종료 코드 (0 정상 · 1 지역 미수록/날씨 조회 실패 · 2 인자 오류 · 3 위치 미확정).
-    """
-    # Windows 콘솔(cp949)에서 한국어 출력이 죽지 않게(windows-console-utf8-output).
-    for stream in (sys.stdout, sys.stderr):
-        if hasattr(stream, "reconfigure"):
-            try:
-                stream.reconfigure(encoding="utf-8")
-            except (ValueError, OSError):
-                pass
-
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="현재 위치 또는 지정 지역의 날씨를 한국어로 조회합니다.",
         add_help=True,
@@ -308,7 +377,7 @@ def main(argv: list[str] | None = None) -> int:
         "location",
         nargs="?",
         default=None,
-        help="조회할 지역명 (생략 시 현재 위치 — 아래 위치 입력 또는 IP 자동탐지)",
+        help="조회할 지역명 (생략 시 --lat/--lon 또는 --geo-input 의 현재 위치)",
     )
     parser.add_argument("--lat", type=float, default=None, help="위도 (itda-hyve 로 받은 위치)")
     parser.add_argument("--lon", type=float, default=None, help="경도 (--lat 과 함께)")
@@ -317,34 +386,83 @@ def main(argv: list[str] | None = None) -> int:
         action="append",
         default=None,
         metavar="FILE",
-        help="itda-hyve 가 저장한 ipapi.co·ipwho.is 응답 파일(여러 번 주면 앞에서부터 첫 유효값)",
+        help="itda-hyve location 응답 파일(여러 번 주면 앞에서부터 첫 유효값)",
     )
     parser.add_argument(
         "--weather-input",
         default=None,
         metavar="FILE",
-        help="itda-hyve 가 저장한 Open-Meteo 응답 파일(직접 호출 대신)",
+        help="itda-hyve 가 저장한 Open-Meteo 응답 파일",
     )
     parser.add_argument(
         "--weather-request",
         action="store_true",
-        help="Open-Meteo 를 itda-hyve http_request 로 부를 인자(JSON)를 출력하고 끝낸다",
+        help="Open-Meteo 를 itda-hyve http_request 로 부를 인자(JSON call)를 출력하고 끝낸다",
+    )
+    parser.add_argument(
+        "--location-request",
+        action="store_true",
+        help="itda-hyve location 도구에 그대로 넣을 인자(JSON call — 저장 이름)를 출력하고 끝낸다",
+    )
+    parser.add_argument(
+        "--save-dir",
+        default=None,
+        metavar="DIR",
+        help="--weather-request·--location-request 의 save_dir — itda-hyve 가 쓸 호스트 절대 경로(Cowork 연결 폴더, Windows 호스트면 C:\\…)",
     )
     parser.add_argument(
         "--detail",
         action="store_true",
         help="상세 출력(기온·습도·강수량·풍속+강수확률). 기본은 gist만",
     )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI 진입점. 종료 코드: 0 정상 · 1 지역 미수록/날씨 응답 판독 실패 · 2 인자 오류 · 3 위치 미확정."""
+    # Windows 콘솔(cp949)에서 한국어 출력이 죽지 않게(windows-console-utf8-output).
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8")
+            except (ValueError, OSError):
+                pass
+
+    parser = build_parser()
     args = parser.parse_args(argv)
+
+    if args.location_request:
+        if args.save_dir is not None and not is_host_abs_path(args.save_dir):
+            parser.error("--save-dir 는 itda-hyve 가 쓸 호스트 절대 경로입니다(/Users/… 또는 C:\\…).")
+        if args.location or args.lat is not None or args.geo_input or args.weather_request or args.weather_input:
+            parser.error("--location-request 는 위치·날씨 인자 없이 씁니다(--save-dir 만).")
+        call = location_call(args.save_dir)
+        save = f" --save-dir {shlex.quote(args.save_dir)}" if args.save_dir else ""
+        print(json.dumps({"status": "ok", "call": call,
+                          "then": f"--geo-input <저장한 파일> --weather-request{save}"}, ensure_ascii=False))
+        return EXIT_OK
 
     if (args.lat is None) != (args.lon is None):
         parser.error("--lat 과 --lon 은 함께 줘야 합니다.")
     if args.lat is not None and args.geo_input:
         parser.error("--lat/--lon 과 --geo-input 은 함께 쓸 수 없습니다.")
+    if args.weather_request and args.weather_input:
+        parser.error("--weather-request 와 --weather-input 은 함께 쓸 수 없습니다.")
+    if args.save_dir is not None:
+        if not args.weather_request:
+            parser.error("--save-dir 는 --weather-request 와 함께 씁니다.")
+        if not is_host_abs_path(args.save_dir):
+            parser.error("--save-dir 는 itda-hyve 가 쓸 호스트 절대 경로입니다(/Users/… 또는 C:\\…).")
 
     code, lat, lon, location_name, by_coords, fix = _resolve_location(args)
     if code != EXIT_OK:
         return code
+    if not (args.weather_request or args.weather_input):
+        # 위치는 정했지만 날씨를 받을 길이 없다 — 스크립트는 Open-Meteo 를 직접 부르지 않는다(#46)
+        parser.error(
+            "날씨는 itda-hyve 가 받습니다 — 같은 위치 인자에 --weather-request 를 붙여 호출 인자(call)를 받고, "
+            "저장한 응답을 --weather-input <파일> 로 넘기세요."
+        )
 
     label = ""
     if by_coords:
@@ -360,32 +478,24 @@ def main(argv: list[str] | None = None) -> int:
             label = _OVERSEA_LABEL
 
     if args.weather_request:
-        print(json.dumps(openmeteo_client.request_spec(lat, lon), ensure_ascii=False))
+        call = weather_call(lat, lon, args.save_dir)
+        loc_args = _location_args(args)
+        print(json.dumps({
+            "status": "ok",
+            "call": call,
+            "then": f"{loc_args}--weather-input <저장한 파일>".strip(),
+        }, ensure_ascii=False))
         return EXIT_OK
 
-    weather: dict | None
-    if args.weather_input:
-        weather, reason = _read_weather_file(args.weather_input, lat, lon)
-        if weather is None:
-            print(
-                "받아 둔 날씨 응답을 쓸 수 없습니다.\n"
-                f"  - {reason}\n"
-                "같은 위치 인자로 --weather-request 를 다시 뽑아 itda-hyve 로 받아 주세요.",
-                file=sys.stderr,
-            )
-            return EXIT_FAIL
-    else:
-        weather = openmeteo_client.fetch(lat, lon)
-        if weather is None:
-            # 일반 네트워크/응답 실패 (REQ-013)
-            print(
-                "날씨 정보를 가져오는 데 실패했습니다. 잠시 후 다시 시도해 주세요.\n"
-                "(네트워크 오류 또는 서버 응답 비정상)\n"
-                "작업 공간의 네트워크가 막혀 있으면 같은 위치 인자에 --weather-request 를 붙여 "
-                "itda-hyve 호출 인자를 받은 뒤, 저장한 응답을 --weather-input 으로 넘기세요.",
-                file=sys.stderr,
-            )
-            return EXIT_FAIL
+    weather, reason = _read_weather_file(args.weather_input, lat, lon)
+    if weather is None:
+        print(
+            "받아 둔 날씨 응답을 쓸 수 없습니다.\n"
+            f"  - {reason}\n"
+            "같은 위치 인자로 --weather-request 를 다시 뽑아 itda-hyve 로 받아 주세요.",
+            file=sys.stderr,
+        )
+        return EXIT_FAIL
 
     if label:
         weather = {**weather, "label": label}

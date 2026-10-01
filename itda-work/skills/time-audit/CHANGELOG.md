@@ -1,5 +1,25 @@
 # Changelog — time-audit
 
+## [0.3.3] — 2026-10-01 (itda-work/skills#46)
+
+### Changed
+
+- `references/netbridge.md` 사본을 정본과 동기화 — `secret_missing` 은 그 소스 하나에 대한 멈춤이다: 다른 경로로 키를 넣지 않고(같은 API 를 다른 통로·다른 키로 부르지 않는다), 여러 소스를 묶는 스킬은 그 소스만 빼고 계속할 수 있다. 앞 판 뒤에 사본이 바뀌어 배포본 내용이 달라졌으므로 patch 를 올린다(skills v14.0.0 준비).
+
+## [0.3.2] — 2026-09-30 (itda-work/skills#46, #47)
+
+### Changed
+
+- 공개된 적 없는 itda-hyve 판(0.9.1~0.10.0) 표기를 공개판 0.10.1 로 맞췄다(0.9.0 다음 공개판이 0.10.1 — 그 사이 판은 사용자가 설치할 수 없다, itda-work/skills#46). compatibility·SKILL.md 설치 안내·옛 판 판별 문장·GUIDE.md 를 `0.10.1 이상` 으로, `collect_events.py` 의 `itda_hyve_outdated` 문구도 0.10.1 로(판정 조건은 그대로 — `calendar` 필드 부재).
+- `references/netbridge.md` 사본을 정본과 동기화 — itda-hyve 기능 판 표기를 공개판 기준으로 바꿨다(0.9.1~0.10.0 은 공개되지 않은 개발판이라 그 사이 기능을 모두 0.10.1 로 적는다, itda-work/skills#46).
+
+### Fixed
+
+- **SKILL_DIR 확정 블록이 새 Cowork 배치에서 빈 값을 내던 것** — Cowork 가 플러그인을 `/root/.claude/plugins/synced/` 에 두고
+  `CLAUDE_PLUGIN_ROOT` 를 주지 않자 옛 블록의 1·2순위가 둘 다 비었다. 새 블록(규칙 `skill-dir-resolution` 정본)은 스킬을 불러올 때 받은
+  base directory 를 먼저 넣게 하고 그 값을 검증해 쓴다. 넣지 못했을 때만 설정 홈(`CLAUDE_CONFIG_DIR`)의 동기화본·Code 캐시와
+  Cowork 배치를 찾으며, 후보마다 `SKILL.md` 를 확인하고 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다. PowerShell 블록도 같은 계약으로 바꿨다.
+
 ## [0.3.1] — 2026-09-29 (itda-work/skills#44)
 
 ### Changed

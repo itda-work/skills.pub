@@ -7,17 +7,17 @@ description: >
   질문이거나 사용자가 이 스킬을 지명하면 사용합니다. 제휴복지·특별할인·콘도 예약은 회원
   로그인 영역이라 URL 안내까지만 합니다.
 license: Apache-2.0
-compatibility: "Python 3.10+"
-allowed-tools: Bash, Read, mcp__workspace__bash
+compatibility: "Python 3.10+, Claude Code & Cowork. 검색은 표준 라이브러리만. 스냅샷 재수집만 beautifulsoup4 와 itda-hyve 0.10.4 이상(로컬 MCP 서버 — batch plan_file)이 필요하다."
+allowed-tools: "Bash, Read, mcp__workspace__bash, mcp__remote-devices__itda-hyve__batch"
 user-invocable: true
 argument-hint: "[질문] [--refresh]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
   status: "active"
-  version: "0.3.2"
+  version: "0.4.0"
   created_at: "2026-07-27"
-  updated_at: "2026-09-27"
+  updated_at: "2026-10-01"
   tags: "MMAA, welfare, benefits, condo, snapshot, QnA"
 ---
 
@@ -30,21 +30,39 @@ metadata:
 
 ## Prerequisites
 
+**먼저** 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 `SKILL_DIR` 에 넣고 아래 블록을 실행한다 — 블록은 그 값을 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾는다(후보가 여럿이면 멈춘다).
+
 ```bash
-# Claude Code(플러그인 설치) = $CLAUDE_PLUGIN_ROOT / Cowork = 세션 마운트 탐색
-SKILL_DIR="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/skills/mmaa-welfare}"
-[ -n "$SKILL_DIR" ] || SKILL_DIR=$(find /sessions/*/mnt/.remote-plugins -type d -path '*/skills/mmaa-welfare' 2>/dev/null | head -1)
-# 둘 다 아니면(저장소 체크아웃 등) 이 SKILL.md 가 있는 디렉토리 절대경로를 그대로 사용
+# SKILL_DIR 확정(skill-dir-resolution) — 스킬을 불러올 때 받은 base directory 를 먼저 SKILL_DIR="그 경로" 로 넣는다(항상)
+# 블록은 그 값을 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾는다 — SKILL.md 가 있는 후보가 하나일 때만 받고 아니면 멈춘다
+SKILL_DIR=$(sh -c '
+S=$1 P=$2 H=${5:-$HOME/.claude}
+ok() { d=${1%/}; [ "${d##*/}" = "$S" ] && [ -f "$d/SKILL.md" ] && (cd "$d" && pwd -P); }
+[ -n "$3" ] && { ok "$3" && exit; d=${3%/}; [ "${d##*/}" = "$S" ] && echo "SKILL_DIR 무시: $3 에 SKILL.md 가 없다" >&2; }
+[ -n "$4" ] && { ok "$4/skills/$S" && exit; echo "CLAUDE_PLUGIN_ROOT 무시: $4/skills/$S 에 SKILL.md 가 없다" >&2; }
+c=$(for d in "$H"/plugins/synced/*/"$P"/skills/"$S" "$H"/plugins/synced/*/"$P"~*/skills/"$S" "$H"/plugins/cache/*/"$P"/*/skills/"$S" \
+    /root/.claude/plugins/synced/*/"$P"/skills/"$S" /root/.claude/plugins/synced/*/"$P"~*/skills/"$S" \
+    /sessions/*/mnt/.remote-plugins/*/skills/"$S" /sessions/*/mnt/.claude/skills/"$S"; do ok "$d"; done | sort -u)
+[ "$(printf "%s\n" "$c" | grep -c .)" -gt 1 ] && { printf "SKILL_DIR 후보가 여럿이다 — 어느 설치본이 쓰이는지 모른다:\n%s\n" "$c" >&2; exit 1; }
+printf "%s\n" "$c"' _ mmaa-welfare itda-org-mmaa "${SKILL_DIR:-}" "${CLAUDE_PLUGIN_ROOT:-}" "${CLAUDE_CONFIG_DIR:-}")
+: "${SKILL_DIR:?정하지 못했다 — 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 SKILL_DIR 에 넣고 이 블록을 다시 실행하라}"
 ```
 
 Windows(PowerShell):
 
 ```powershell
-$env:SKILL_DIR = "$env:CLAUDE_PLUGIN_ROOT\skills\mmaa-welfare"  # 미설정이면 SKILL.md 위치 절대경로 사용
+# SKILL_DIR 확정(skill-dir-resolution) — bash 블록과 같은 계약. 스킬을 불러올 때 받은 base directory 를 먼저 $env:SKILL_DIR 에 넣는다(항상)
+$S = 'mmaa-welfare'; $P = 'itda-org-mmaa'; $H = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
+$ok = { param($d) if ($d -and (Split-Path $d.TrimEnd('\', '/') -Leaf) -eq $S -and (Test-Path -LiteralPath (Join-Path $d 'SKILL.md'))) { (Resolve-Path -LiteralPath $d).Path.TrimEnd('\', '/') } }
+$c = @(& $ok $env:SKILL_DIR) + @(if ($env:CLAUDE_PLUGIN_ROOT) { & $ok (Join-Path (Join-Path $env:CLAUDE_PLUGIN_ROOT 'skills') $S) })
+if (-not $c) { $c = @(@(Get-Item -Path (Join-Path $H "plugins/synced/*/*/skills/$S") -ErrorAction SilentlyContinue | Where-Object { $_.Parent.Parent.Name -eq $P -or $_.Parent.Parent.Name -like "$P~*" }) + @(Get-Item -Path (Join-Path $H "plugins/cache/*/$P/*/skills/$S") -ErrorAction SilentlyContinue) | Where-Object { $_.PSIsContainer } | ForEach-Object { & $ok $_.FullName } | Sort-Object -Unique) }
+if ($c.Count -gt 1) { Write-Warning "SKILL_DIR 후보가 여럿이다 — 어느 설치본이 쓰이는지 모른다: $($c -join ', ')"; $c = @() }
+if (-not $c) { throw 'SKILL_DIR 을 정하지 못했다 — 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 $env:SKILL_DIR 에 넣고 이 블록을 다시 실행하라' }
+$env:SKILL_DIR = $c[0]
 ```
 
 검색만 할 때는 표준 라이브러리만 사용하므로 설치가 필요 없습니다.
-재수집(`--refresh`) 시에만 의존성을 설치합니다:
+재수집(`--refresh`) 시에만 의존성(beautifulsoup4 — HTML 판독)을 설치합니다:
 
 ```bash
 # macOS/Linux (재수집 시에만) — 정문
@@ -112,19 +130,62 @@ python3 "$SKILL_DIR/scripts/search.py" "출산축하금" --top 2 --full
 
 ## 사용법 — 스냅샷 재수집 (개발·로컬용)
 
-패키징된 `data/` 는 읽기 전용이다. 로컬 사본을 새로 만들려면:
+패키징된 `data/` 는 읽기 전용이다. 새 스냅샷은 **요청은 itda-hyve, 판독은 스크립트**로 만든다 — `collect.py` 는 네트워크를
+하지 않고, 바퀴마다 다음에 받을 페이지를 계획 파일로 쓰며 itda-hyve 가 저장한 HTML 을 읽는다. 공용 규약(저장 폴더·실패
+코드·보안 계약)은 동봉한 [references/netbridge.md](references/netbridge.md) 가 정본이다.
 
-```bash
-# macOS/Linux — 재수집 (약 1~2분, 저속 순차)
-python3 "$SKILL_DIR/scripts/collect.py" --output-dir ./mmaa-welfare-data
-python3 "$SKILL_DIR/scripts/search.py" "질문" --data-dir ./mmaa-welfare-data
-
-# Windows
-py -3 "$env:SKILL_DIR\scripts\collect.py" --output-dir .\mmaa-welfare-data
+```
+plan → batch(plan_file) → collect → batch(plan_file …) → collect → … → collect(status ok → 스냅샷)
 ```
 
-- 수집은 요청 간 0.7초 지연의 저속 순차만 지원한다(병렬·고빈도 수집 금지).
-- 로그인 필요 페이지는 URL·제목만 기록하고 본문을 수집하지 않는다.
+- **호출 수를 먼저 알린다** — 진입 1 + 메뉴 약 38 + 목록 9 = **약 48호출**(2026-10-01 기준). `plan` 출력의 `estimate` 를 그대로 전하고
+  확인받은 뒤 시작한다.
+- 회차 폴더: 작업 폴더 아래 `mmaa-runs/<YYYYMMDD-HHMM>/`. `--run-dir` 은 스크립트가 보는 경로(Cowork `$HOME/mnt/<연결 폴더>/mmaa-runs/<시각>`),
+  `--save-dir` 은 같은 폴더의 **호스트 절대 경로**(Windows 호스트면 `C:\…`). 같은 머신이면 두 값이 같다. 이 폴더는 이 스크립트 전용이다.
+
+```bash
+# macOS/Linux
+R="$HOME/mnt/작업/mmaa-runs/20261001-0930"; S="/Users/me/작업/mmaa-runs/20261001-0930"
+python3 "$SKILL_DIR/scripts/collect.py" plan --run-dir "$R" --save-dir "$S"
+# → 출력의 batch_args 를 **차례로** batch 에 보낸다(앞 batch 가 끝난 뒤 다음 — 한 번에 8개, 저속 수집)
+python3 "$SKILL_DIR/scripts/collect.py" collect --run-dir "$R"
+# → status 가 incomplete 면 새 batch_args 로 다시 batch → collect. ok 가 되면 스냅샷이 $R/snapshot/ 에 있다
+python3 "$SKILL_DIR/scripts/search.py" "질문" --data-dir "$R/snapshot"
+
+# Windows
+py -3 "$env:SKILL_DIR\scripts\collect.py" plan --run-dir "$env:R" --save-dir "$env:S"
+py -3 "$env:SKILL_DIR\scripts\collect.py" collect --run-dir "$env:R"
+```
+
+첫 계획 파일의 호출은 이런 모양이다(참고용 — 옮겨 적지 않고 `batch_args` 만 보낸다):
+
+```json
+{"calls": [{"id": "p-welfaremain-829fc997", "tool": "http_request",
+            "args": {"url": "https://www.mmaa.or.kr/web/contents/welfaremain.do", "timeout_sec": 45,
+                     "save_as": "mmaa/p-welfaremain-829fc997.html"}}],
+ "overwrite": true, "timeout_sec": 50}
+```
+
+- 요청에 `User-Agent`·쿠키 헤더를 더하지 않는다(쿠키 없이 성립 — 2026-10-01 실측). `batch` 에 `plan_file` 이 없는 옛 판이면 업데이트를 안내한다
+  (호출이 수십 개라 하나씩 부르지 않는다).
+- **응답 요약의 `final_url`·헤더(`Set-Cookie`)를 대화에 옮겨 적지 않는다** — 한 메뉴는 세션 id 를 주소에 붙인 곳으로 넘어간다.
+- batch 결과에 실패한 호출(`ok: false`)이 있으면 그 `save_as` 자리에 `{"error": {"code": "<code>", "message": "<message>"}}` 를 써 둔다 —
+  경로는 이 스크립트가 보는 회차 폴더 기준 `$R/<save_as>` 다(`$S` 는 itda-hyve 호스트 경로라 샌드박스에서 쓰지 않는다).
+  `collect` 가 그 페이지를 다시 계획한다(계획 파일에 `overwrite: true` 가 있어 같은 이름으로 다시 받는다).
+- **`collect` 는 그 바퀴의 batch 가 전부 끝난 뒤에 부른다.** 일찍 불러도 아직 안 온 파일은 실패로 세지 않고 같은 계획을 다시 낸다
+  (`waiting`). 새 파일 없이 5번 연달아 부르면 `not_fetched`(exit 1)로 멈추지만 회차 상태는 그대로라, batch 결과를 확인하고 파일이
+  오면 `collect` 로 이어 간다.
+- `collect` 의 판정: 누리집 페이지가 아닌 본문(WAF 차단 "Page Not Found (wf)"·잘린 본문)과 실패 자리는 다시 계획하고,
+  **한 페이지가 세 번 나쁘게 오면 `partial`(exit 2) — 스냅샷을 쓰지 않는다**(부분본을 전량으로 저장하지 않는다). 바퀴는 30번까지 —
+  앞 계획이 전부 판정된 `collect` 만 한 바퀴로 센다(batch 사이사이에 불러 일부만 온 호출은 세지 않는다).
+  `partial` 은 그 회차의 끝이다 — 사유를 사용자에게 알리고, 다시 받으려면 **새 회차 폴더**로 `plan` 부터 한다.
+  진입 페이지에서 복지포털 메뉴를 못 찾으면 `site`(구조 변경 — 추측으로 고치지 않고 알린다).
+  스냅샷을 쓰기 직전에 받은 파일이 사라졌으면(회차 폴더를 옮기거나 지웠다) 그 페이지만 다시 계획한다(`lost`).
+- 로그인 필요 페이지는 URL·제목만 기록하고 본문을 수집하지 않는다. 제휴복지 카테고리 8개·특별할인소식 목록은 1쪽부터 따라가지만
+  2026-10-01 실측으로는 전부 로그인 셸이라 상세가 없다(`meta.json` 의 `listing_auth_count`). 목록이 열렸는데 1쪽에서 상세를
+  하나도 못 읽으면 `warnings` 에 싣는다(구조 변경과 빈 게시판을 가를 수 없다 — 그대로 전한다). 읽은 상세 수는 `meta.listing_ids`.
+- 스킬 `data/` 를 갱신하려면(저장소 체크아웃) `collect --output-dir <스킬>/data` 를 준다. `--limit N` 은 스모크용이다 —
+  결과 `status` 가 `smoke` 이고 전량이 아니므로 `data/` 갱신에 쓰지 않는다.
 
 ## 데이터 구조
 
@@ -159,5 +220,5 @@ data/
 ## 데이터 경로 정책
 
 - 스냅샷 정본: 스킬 동봉 `data/` (배포 시 포함)
-- 재수집 산출: 기본은 동봉 `data/` 갱신, 쓰기 불가 환경은 `--output-dir` 지정
+- 재수집 산출: 기본은 회차 폴더의 `snapshot/`. 동봉 `data/` 갱신은 저장소 체크아웃에서 `--output-dir` 로만
 - `.itda-skills/` 내부에는 최종 결과를 저장하지 않습니다

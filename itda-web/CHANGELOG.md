@@ -1,5 +1,24 @@
 # Changelog — itda-web-collect
 
+## [3.0.0] - 2026-10-01
+
+> 요구: **itda-hyve 0.10.4 이상**(web-search). itda-hyve 0.10.4 를 먼저 설치·업데이트한 뒤 이 판을 설치한다 — 0.10.3 이하는 응답 `final_url` 등에 시크릿이 되비치고 기본 User-Agent 에 제품명이 실린다.
+
+### BREAKING
+
+- **`web-search` 0.3.0 — 요청은 itda-hyve** (itda-work/skills#45·#46). `plan` → 엔진마다 itda-hyve `http_request` → `collect --input` 흐름이다. 키는 itda-hyve 시크릿 탭의 `TAVILY_API_KEY`·`SERPER_API_KEY`·`EXA_API_KEY`·`NAVER_CLIENT_ID`·`NAVER_CLIENT_SECRET` 이고, 네이버 이름은 `NAVER_CLIENT_*` 하나로 통일했다(옛 `NAVER_SEARCH_CLIENT_*` 는 쓰지 않는다). `--check-env` 를 지웠고 `--engine auto` 는 자동 과금이 없는 tavily·naver·serper 만 고른다. env 파일은 읽지 않는다(#45).
+- **Perplexity 엔진 제거** — Sonar Chat Completions 지원이 2026-09-27 에 끝났다(사용자 결정).
+
+### Removed
+
+- `web-scout` — 여러 사이트의 robots·sitemap 을 훑는 정찰 방식이 사이트별 robots 판정·호출 최소화 원칙과 맞지 않는다(사용자 결정 2026-10-01). 웹 정보는 `itda-web:web-search`(검색)와 `itda-web:aside-browser-mcp`(Aside 브라우저로 직접 열기)로 찾는다.
+- `blog-reader` — 네이버 블로그 robots.txt 가 글 목록·댓글·전체 검색의 자동 접근을 막고 AI 학습·RAG 목적 봇 접근 금지를 밝히고 있다(사용자 결정 2026-10-01). 네이버 블로그 글은 `itda-web:aside-browser-mcp` 로 직접 열고, 블로그 검색은 `web-search` 의 네이버 공식 검색(`--engine naver`)으로 한다.
+- **`web-reader` 배포 보류** — 저장소에는 itda-hyve 경유판 8.0.0(robots 먼저 확인·리다이렉트 한 홉씩 목적지 검사)이 있지만, itda-hyve 의 사설·내부망 목적지 기본 거부가 들어온 뒤 v14.1 에 싣는다(사용자 결정 2026-10-01). 이 판 배포본에는 web-reader 가 없다. 그동안 정적 페이지는 내장 WebFetch, 로그인·JS 페이지는 `aside-browser-mcp` 로 읽는다. 팩 description 에서 정적 페이지 추출 구절을 뺐다.
+
+### Fixed
+
+- **SKILL_DIR 확정 블록**(itda-work/skills#47) — 새 Cowork 배치(`/root/.claude/plugins/synced/…`, `CLAUDE_PLUGIN_ROOT` 없음)에서 빈 값을 내던 옛 블록을 바꿨다. 스킬을 불러올 때 받은 base directory 를 먼저 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾으며, 후보가 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다(PowerShell 블록도 같은 계약). `web-search`.
+
 ## [2.0.0] - 2026-09-28
 
 ### BREAKING

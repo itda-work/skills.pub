@@ -9,10 +9,11 @@
 
 | 층 | 위치 | 담는 내용 |
 |---|---|---|
-| 요약 | 각 스킬 `GUIDE.md` | 핵심 발급 단계 번호 목록(자족 가능 최소한) + ` ```dotenv ` 블록 + 키별 영향 |
+| 요약 | 각 스킬 `GUIDE.md` | 핵심 발급 단계 번호 목록(자족 가능 최소한) + 키를 넣는 곳(Claude Code: settings.json `env` 의 ` ```json ` 블록 / itda-hyve 경로가 있는 스킬: 시크릿 탭) + 키별 영향 |
 | 정본 | `skills/docs/credentials/<service>.md` | 가입 조건 · 상세 절차 · 키↔환경변수 매핑(메일·캘린더 앱 비밀번호는 itda-hyve 등록 절차) · 한도/주의 · 사용 스킬 역링크 · Last Verified |
 
-메일·캘린더 계정(앱 비밀번호)은 환경변수·`.env` 가 아니라 itda-hyve 설정 창의 "계정" 화면에 등록한다 —
+API 키는 프로세스 환경변수(Claude Code 설정 `env`) 또는 itda-hyve 시크릿으로만 들어간다 — 스킬은 `.env` 같은 파일을 읽지 않는다(itda-work/skills#45).
+메일·캘린더 계정(앱 비밀번호)은 환경변수가 아니라 itda-hyve 설정 창의 "계정" 화면에 등록한다 —
 그 정본의 §3 은 "키 ↔ 환경변수 매핑" 대신 "itda-hyve 에 등록하기" 다(itda-work/skills#23).
 
 스킬 전용 정보는 정본에 넣지 않는다 — 예: 공공데이터포털의 **데이터셋별 활용신청 링크**는
@@ -22,9 +23,9 @@
 
 | 서비스 | 파일 | 키(환경변수) | 사용 스킬 | Last Verified |
 |---|---|---|---|---|
-| 네이버 오픈API | [naver-openapi.md](naver-openapi.md) | `NAVER_CLIENT_ID` `NAVER_CLIENT_SECRET` | blog-seo · eatery-trend | 2026-06-10* |
+| 네이버 오픈API | [naver-openapi.md](naver-openapi.md) | `NAVER_CLIENT_ID` `NAVER_CLIENT_SECRET` | blog-seo · eatery-trend · web-search | 2026-06-10* |
 | 네이버 검색광고 API | [naver-searchad.md](naver-searchad.md) | `NAVER_SEARCHAD_ACCESS_KEY` `NAVER_SEARCHAD_SECRET_KEY` `NAVER_SEARCHAD_CUSTOMER_ID` | blog-seo · eatery-trend | 2026-06-10* |
-| 공공데이터포털 | [data-go-kr.md](data-go-kr.md) | `KO_DATA_API_KEY` | realestate · g2b · funding · realty-jeonse-gap · realty-supply · realty-deals · realty-price-stats · market-scan | 2026-06-10* |
+| 공공데이터포털 | [data-go-kr.md](data-go-kr.md) | `KO_DATA_API_KEY` | realestate · g2b · realty-jeonse-gap · realty-supply · realty-deals · realty-price-stats · market-scan | 2026-06-10* |
 | 네이버 앱 비밀번호 | [naver-app-password.md](naver-app-password.md) | 환경변수 없음 — itda-hyve 계정 화면에 등록 | email · calendar · morning-brief · time-audit | 2026-06-10* |
 | iCloud 앱 전용 비밀번호 | [icloud-app-password.md](icloud-app-password.md) | 환경변수 없음 — itda-hyve 계정 화면에 등록 | email · calendar · morning-brief · time-audit | 2026-06-10* |
 | KOSIS 국가통계포털 | [kosis.md](kosis.md) | `KOSIS_API_KEY` | kosis · realty-supply · market-scan | 2026-06-10* |
@@ -36,7 +37,7 @@
 
 ### 3차 후보 (SPEC-CREDENTIALS-GUIDE-001 REQ-006, 보류 가능)
 
-R-ONE(`realty-price-stats` 단일 사용) · 검색 API 군(Tavily·Serper·Perplexity·Exa·Gemini — `web-search` 단일 사용).
+R-ONE(`realty-price-stats` 단일 사용) · 검색 API 군(Tavily·Serper·Exa — `web-search` 단일 사용, Perplexity 는 web-search 0.3.0 에서 제거).
 단일 사용 서비스는 drift 면적이 좁아 해당 스킬 GUIDE 단독 안내로 충분할 수 있다.
 
 ## 운영 규칙

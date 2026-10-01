@@ -10,19 +10,25 @@ title: "blog-seo 활용 가이드"
 
 키워드 분석에는 네이버 API 키 두 종류(5개 값)가 필요합니다. 각각 한 번만 발급하면 이후에는 자동으로 사용됩니다.
 
-발급받은 키는 **`.env` 파일에 넣습니다 (권장)** — 작업 폴더(Cowork 연결 폴더 / Claude Code 프로젝트 루트)(연결한 폴더가 여러 개면 아무 폴더나) 루트에 `.env` 파일을 만들고 아래 5줄을 넣어 두면 스킬이 자동으로 찾아 읽습니다. 점(`.`)으로 시작하는 파일을 만들기 어렵다면 **`환경변수.txt`** 라는 이름으로 만들어도 똑같이 읽힙니다(메모장이 `.txt` 를 붙여 `.env.txt` 가 되어도 됩니다).
+발급받은 키는 아래처럼 등록합니다. **`.env` 같은 파일에 적어 두는 방식은 더 이상 쓰지 않습니다** — 스킬이 그 파일을 읽지 않습니다.
 
-```dotenv
-NAVER_SEARCHAD_ACCESS_KEY=검색광고_API키
-NAVER_SEARCHAD_SECRET_KEY=검색광고_시크릿키
-NAVER_SEARCHAD_CUSTOMER_ID=광고주_고객ID
-NAVER_CLIENT_ID=네이버앱_클라이언트ID
-NAVER_CLIENT_SECRET=네이버앱_클라이언트시크릿
+- **Claude Code** — Claude Code 설정 파일(`~/.claude/settings.json`)의 `env` 에 넣으면 Claude Code 가 스킬에 전달합니다. 설정을 바꾼 뒤에는 Claude Code 를 다시 시작하세요. 셸 환경변수로 넣어도 됩니다.
+
+```json
+{
+  "env": {
+    "NAVER_SEARCHAD_ACCESS_KEY": "검색광고_API키",
+    "NAVER_SEARCHAD_SECRET_KEY": "검색광고_시크릿키",
+    "NAVER_SEARCHAD_CUSTOMER_ID": "광고주_고객ID",
+    "NAVER_CLIENT_ID": "네이버앱_클라이언트ID",
+    "NAVER_CLIENT_SECRET": "네이버앱_클라이언트시크릿"
+  }
+}
 ```
 
-Claude Desktop의 "Claude 지침"(설정 → 일반)에 같은 내용을 적는 방식도 동작하지만, 대화 컨텍스트에 값이 노출되므로 `.env` 파일을 권장합니다.
+- **Cowork** — 이 스킬은 아직 Cowork 에서 키를 넣을 방법이 없습니다. 키가 필요한 조회는 Claude Code 에서 하세요.
 
-> 개발자라면 셸 환경변수로 넣어도 됩니다.
+키 값을 대화창에 붙여 넣지 마세요. Claude Desktop 의 "Claude 지침"에 적는 방식도 동작하지만 대화 컨텍스트에 값이 노출되므로 권장하지 않습니다.
 
 서비스 이름을 누르면 발급 페이지가 열립니다. 상세 절차는 아래 1·2번을 참고하세요.
 

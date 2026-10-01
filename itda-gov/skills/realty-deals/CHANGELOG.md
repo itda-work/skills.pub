@@ -1,5 +1,57 @@
 # Changelog — itda-realty/realty-deals
 
+## [0.13.1] — 2026-10-01 (itda-work/skills#46)
+
+### Changed
+
+- `references/netbridge.md` 사본을 정본과 동기화 — `secret_missing` 은 그 소스 하나에 대한 멈춤이다: 다른 경로로 키를 넣지 않고(같은 API 를 다른 통로·다른 키로 부르지 않는다), 여러 소스를 묶는 스킬은 그 소스만 빼고 계속할 수 있다. 앞 판 뒤에 사본이 바뀌어 배포본 내용이 달라졌으므로 patch 를 올린다(skills v14.0.0 준비).
+
+## [0.13.0] — 2026-09-30 (itda-work/skills#45, #46 리뷰 반영)
+
+> 이 판은 미공개였던 0.12.3 을 다시 매긴 것이다 — W1 리뷰 반영으로 출력·종료 계약이 바뀌어(BREAKING) patch 로 둘 수 없었다.
+
+> ⚠️ **배포 차단** — itda-hyve 0.10.4(itda-work/itda-hyve#31 — `final_url`·저장 경로에 키가 평문으로 남던 결함 수정) 공개 **뒤에** 배포한다.
+> 이 경계는 도구 목록으로 가를 수 없어 스킬이 판별하지 못한다. `compatibility` 는 itda-hyve 0.10.4 이상 하나다 — 공개된 적 없는
+> 개발판(0.9.x) 표기를 걷어냈다(공개판은 0.8.1·0.9.0·0.10.1 이후뿐, `references/netbridge.md` 도 같은 기준으로 동기화).
+
+### Changed (BREAKING)
+
+- **호출 계획을 스크립트가 쓴다 — `plan` 하위 명령과 `collect --next-plan`** (리뷰 M3). 모델이 달·쪽마다 `http_request` JSON 을 손으로 짓던 흐름을
+  itda-hyve batch `plan_file` 로 바꿨다. 40호출 단위로 나누고(`plan-1a.json`·`plan-1b.json`), 회차 폴더(`realty/<코드>-<시작월>-<종료월>[-<tag>]`)
+  안에만 쓴다. 저장 이름 `<유형>-<코드>-<YYYYMM>-p<쪽>.xml` 이 식별 계약이다. `allowed-tools` 에 `batch` 를 더했고 `compatibility` 는 itda-hyve 0.10.4 이상.
+- **전량이 아니면 결과 없이 exit 1** — 형제 스킬(realty-jeonse-gap·realty-price-stats)과 같은 계약(리뷰 m2). 전에는 `status: "incomplete"` 와 부분
+  결과를 exit 0 으로 냈다. 미달 출력에 `missing_pages`·`next_call_count`·`plan_files`(또는 `next_calls`)·`refetch`·`need_overwrite` 를 싣는다.
+- **`--start-month`·`--end-month` 필수** — 기간 중 파일이 없는 달·기간 밖 달의 파일을 잡는다. `YYYYMM` 형식·순서 검사.
+- **오류 JSON 에 `code`** — `error: api` 는 `resultCode`·`returnReasonCode`·`NOT_XML`·`TRUNCATED` 등을, hyve 실패 자리 파일은 `error: hyve` +
+  hyve 코드를 싣는다(리뷰 m2·M3).
+- **`--summary` 는 해제 거래를 뺀다** (리뷰 M6). 결과 행에 `cdeal_type`·`cdeal_day` 를 싣고 행은 그대로 남긴다(원본 수집). 뺀 수는 `excluded.cancelled`,
+  넣으려면 `--include-cancelled`. `sources` 에 `num_of_rows`·`sgg_cd` 를 더했다.
+
+### Fixed
+
+- **같은 쪽 중복·쪽 경계 밀림이 건수 대조를 통과하던 결함** (리뷰 M1). 같은 (달, 쪽) 이 두 파일에 있으면 인자 오류, 저장 이름을 본문과 대조
+  (`-p<쪽>` ↔ `pageNo`·`<YYYYMM>` ↔ 거래월·`<코드>` ↔ `sggCd`·`<유형>` ↔ `--type`), 같은 달 쪽마다 `totalCount`·`numOfRows` 가 다르거나 쪽 경계에서
+  행이 겹치거나 건수가 넘치면 그 달을 `refetch` 로 둔다(`max` 로 합치지 않는다). `--type` 과 받은 파일의 단지명 필드도 대조한다(리뷰 m4).
+- 입력 인자의 글로브(`*`)를 스크립트가 펼친다 — PowerShell 은 와일드카드를 넘기지 않는다(리뷰 m6).
+- 공용 파서: `totalCount`·`pageNo`·`numOfRows` 가 숫자가 아니면 `BAD_XML`(파일 이름 포함), 성공 코드인데 `<body>` 가 없으면 `NOT_RESPONSE`,
+  닫히지 않은 `<OpenAPI_ServiceResponse` 는 `TRUNCATED`. 오류 메시지의 키 가림이 JSON 꼴·퍼센트 인코딩 꼴도 잡는다(리뷰 m3).
+- **게이트웨이 오류가 0건 성공으로 통과하던 결함** — 루트가 `<OpenAPI_ServiceResponse>` 인 응답(키·활용신청 단계 오류, `returnReasonCode`)을 공용 파서가 "`<body>` 없음 = 0건"으로 읽고 있었다. SKILL.md 는 이미 이것을 오류로 적고 있었다. 이제 `error: api` 로 낸다. XML 이 아닌 본문(HTTP 오류 페이지)·닫히지 않은 XML(절단)·`<header>` 없는 응답·itda-hyve 응답 JSON 의 오류(`error`·HTTP 4xx/5xx·`body_truncated`)도 각각 명시 오류다.
+- 매매 유형에 전월세 파일(또는 반대)을 넘기면 금액 0 으로 가공하지 않고 인자 오류로 거부한다. 거래 0건인 달은 저장 이름(`-<YYYYMM>-p<쪽>.xml`)에서 달을 읽어 `months` 에 싣는다.
+
+### Changed
+
+- 공용 모듈 `data_go_client`·`deals_collector` 에서 네트워크 코드(`fetch_xml`·`fetch_all_pages`·`collect_deals_for_month`·`collect_deals_range`, `urllib.request`)를 지웠다 — 배포본에 주입되는 모듈에 소켓 코드가 더는 없어 래칫 가드 `LEGACY` 에서 빠졌다. 파일 읽기·전량 대조(`read_sources`·`month_completeness`)를 공용으로 올려 형제 스킬(realty-jeonse-gap·realty-price-stats)과 같은 판정을 쓴다. 테스트의 네트워크 모킹을 저장 파일 입력으로 바꿨다.
+- Windows 콘솔(cp949)에서 한국어 출력이 죽지 않게 stdout·stderr 를 UTF-8 로 재설정한다.
+## [0.12.3] — 2026-09-30 (itda-work/skills#47)
+
+### Fixed
+
+- **SKILL_DIR 확정 블록이 새 Cowork 배치에서 빈 값을 내던 것** — Cowork 가 플러그인을 `/root/.claude/plugins/synced/` 에 두고
+  `CLAUDE_PLUGIN_ROOT` 를 주지 않자 옛 블록의 1·2순위가 둘 다 비었다. 새 블록(규칙 `skill-dir-resolution` 정본)은 스킬을 불러올 때 받은
+  base directory 를 먼저 넣게 하고 그 값을 검증해 쓴다. 넣지 못했을 때만 설정 홈(`CLAUDE_CONFIG_DIR`)의 동기화본·Code 캐시와
+  Cowork 배치를 찾으며, 후보마다 `SKILL.md` 를 확인하고 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다.
+  Windows 명령이 쓰던 `$env:SKILL_DIR` 을 정하는 PowerShell 블록이 없던 것도 정본 블록으로 채웠다.
+
 ## [0.12.2] — 2026-09-29 (itda-work/skills#44)
 
 ### Changed

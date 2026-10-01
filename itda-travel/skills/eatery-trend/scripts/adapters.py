@@ -46,14 +46,13 @@ _LOCAL_DISPLAY_CAP = 5  # 지역검색 쿼리당 최대 5건(§10 라이브 확�
 _OPEN_GUIDE = (
     "{var}가 설정되지 않았습니다.\n"
     "네이버 개발자센터(https://developers.naver.com)에서 애플리케이션을 등록하고\n"
-    "검색·데이터랩 API 사용 신청 후 발급받은 Client ID/Secret을 .env에 설정하세요:\n"
-    "  NAVER_CLIENT_ID=...\n  NAVER_CLIENT_SECRET=...\n"
+    "검색·데이터랩 API 사용 신청 후 Client ID/Secret(NAVER_CLIENT_ID·NAVER_CLIENT_SECRET)을 발급받으세요.\n"
 )
 _SEARCHAD_GUIDE = (
     "{var}가 설정되지 않았습니다.\n"
     "네이버 검색광고(https://searchad.naver.com) > 도구 > API 관리자에서\n"
-    "액세스 라이선스/비밀키/Customer ID를 발급받아 .env에 설정하세요:\n"
-    "  NAVER_SEARCHAD_ACCESS_KEY=...\n  NAVER_SEARCHAD_SECRET_KEY=...\n  NAVER_SEARCHAD_CUSTOMER_ID=...\n"
+    "액세스 라이선스/비밀키/Customer ID(NAVER_SEARCHAD_ACCESS_KEY·NAVER_SEARCHAD_SECRET_KEY·"
+    "NAVER_SEARCHAD_CUSTOMER_ID)를 발급받으세요.\n"
 )
 
 

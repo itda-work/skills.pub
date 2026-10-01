@@ -8,18 +8,6 @@
  "pep723": null,
  "rows": [
   {
-   "dist": "requests",
-   "specifier": ">=2.31,<3",
-   "marker": "",
-   "necessity": "startup_required",
-   "scope": "runtime",
-   "provisioning": "direct",
-   "owner": "self",
-   "import_names": [
-    "requests"
-   ]
-  },
-  {
    "dist": "beautifulsoup4",
    "specifier": ">=4.12,<5",
    "marker": "",
@@ -29,18 +17,6 @@
    "owner": "self",
    "import_names": [
     "bs4"
-   ]
-  },
-  {
-   "dist": "lxml",
-   "specifier": ">=5.0,<6",
-   "marker": "",
-   "necessity": "feature_required",
-   "scope": "runtime",
-   "provisioning": "direct",
-   "owner": "self",
-   "import_names": [
-    "lxml"
    ]
   },
   {

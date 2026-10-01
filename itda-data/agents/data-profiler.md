@@ -24,10 +24,27 @@ description: >
 
 ## 작업 절차
 
-1. **스크립트 위치 확인** — data-compass 스킬의 `scripts/compass.py` 를 찾는다.
-   - Claude Code: 스킬 디렉토리 경로가 프롬프트에 있으면 그대로 사용.
-   - Cowork: 플러그인 마운트에서 탐색 —
-     `find /sessions/*/mnt/.remote-plugins -path "*data-compass/scripts/compass.py" 2>/dev/null | head -1`
+1. **스크립트 위치 확인** — data-compass 스킬 디렉토리를 규칙 `skill-dir-resolution` 정본 블록으로 정한다. 프롬프트에 스킬
+   디렉토리 경로가 있으면 **먼저** `SKILL_DIR="그 경로"` 로 넣는다 — 블록이 그 값을 검증하고, 없을 때만 설치 위치를 찾는다
+   (후보가 없거나 여럿이면 멈춘다 — 그때는 추측하지 말고 리드에게 경로를 요청한다):
+
+   ```bash
+   # SKILL_DIR 확정(skill-dir-resolution) — 스킬을 불러올 때 받은 base directory 를 먼저 SKILL_DIR="그 경로" 로 넣는다(항상)
+   # 블록은 그 값을 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾는다 — SKILL.md 가 있는 후보가 하나일 때만 받고 아니면 멈춘다
+   SKILL_DIR=$(sh -c '
+   S=$1 P=$2 H=${5:-$HOME/.claude}
+   ok() { d=${1%/}; [ "${d##*/}" = "$S" ] && [ -f "$d/SKILL.md" ] && (cd "$d" && pwd -P); }
+   [ -n "$3" ] && { ok "$3" && exit; d=${3%/}; [ "${d##*/}" = "$S" ] && echo "SKILL_DIR 무시: $3 에 SKILL.md 가 없다" >&2; }
+   [ -n "$4" ] && { ok "$4/skills/$S" && exit; echo "CLAUDE_PLUGIN_ROOT 무시: $4/skills/$S 에 SKILL.md 가 없다" >&2; }
+   c=$(for d in "$H"/plugins/synced/*/"$P"/skills/"$S" "$H"/plugins/synced/*/"$P"~*/skills/"$S" "$H"/plugins/cache/*/"$P"/*/skills/"$S" \
+       /root/.claude/plugins/synced/*/"$P"/skills/"$S" /root/.claude/plugins/synced/*/"$P"~*/skills/"$S" \
+       /sessions/*/mnt/.remote-plugins/*/skills/"$S" /sessions/*/mnt/.claude/skills/"$S"; do ok "$d"; done | sort -u)
+   [ "$(printf "%s\n" "$c" | grep -c .)" -gt 1 ] && { printf "SKILL_DIR 후보가 여럿이다 — 어느 설치본이 쓰이는지 모른다:\n%s\n" "$c" >&2; exit 1; }
+   printf "%s\n" "$c"' _ data-compass itda-data "${SKILL_DIR:-}" "${CLAUDE_PLUGIN_ROOT:-}" "${CLAUDE_CONFIG_DIR:-}")
+   : "${SKILL_DIR:?정하지 못했다 — 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 SKILL_DIR 에 넣고 이 블록을 다시 실행하라}"
+   ```
+
+   스크립트는 `"$SKILL_DIR/scripts/compass.py"` 다.
 2. **실행** — 셸 도구(`Bash` 또는 `mcp__workspace__bash`)로:
    `python3 <compass.py 경로> <데이터경로> --interest "<관심사>" [--out <지도경로>]`
 3. **검증** — 지도 파일이 실제로 생성됐는지 확인하고, stdout JSON 을 그대로 회수한다.

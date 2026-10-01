@@ -12,9 +12,9 @@ argument-hint: "부동산 스킬 목록 / itda-gov 도움말"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
-  version: "0.9.5"
+  version: "0.11.0"
   created_at: "2026-05-15"
-  updated_at: "2026-09-28"
+  updated_at: "2026-09-30"
   tags: "realty, real-estate, meta, guide"
 ---
 
@@ -29,8 +29,8 @@ data.go.kr · 한국부동산원 R-ONE · KOSIS · 건축HUB 공식 API만 사�
 |------|------|:-------:|
 | **realty-deals** | 국토부 12개 유형 실거래가 통합 수집 (아파트·오피스텔·연립다세대·단독다가구·토지·상업·공장·분양입주권 × 매매/전월세) | KO_DATA_API_KEY |
 | **realty-jeonse-gap** | 전세가율·갭 스크리너 — 매매×전월세 단지·면적 조인, 임계값 필터 | KO_DATA_API_KEY |
-| **realty-supply** | KOSIS 미분양·인허가·착공·준공·입주물량 + 청약홈 경쟁률·분양·당첨 | KO_DATA_API_KEY, KOSIS_API_KEY |
-| **realty-price-stats** | 한국부동산원 R-ONE 주간/월간 가격지수·전월세전환율 | RONE_API_KEY (파생 지표는 KO_DATA_API_KEY) |
+| **realty-supply** | KOSIS 미분양·인허가·착공·준공 + 청약홈 분양 공고 | KO_DATA_API_KEY, KOSIS_API_KEY |
+| **realty-price-stats** | 한국부동산원 R-ONE 주간/월간 아파트 매매가격지수·전월세전환율 + 실거래 파생 통계 | RONE_API_KEY (파생 통계는 KO_DATA_API_KEY) |
 | **court-auction** | 대법원 법원경매정보 매각공고·사건·물건 read-only 조회 | 불필요 |
 
 ## 빠른 시작
@@ -44,21 +44,19 @@ data.go.kr · 한국부동산원 R-ONE · KOSIS · 건축HUB 공식 API만 사�
 
 ## API 키 설정
 
-**권장 (비개발자 포함 모든 사용자) — 작업 폴더 `.env`에 키 등록:**
+**키는 전부 itda-hyve GUI 시크릿 탭에 등록한다** — realty 스킬 스크립트는 네트워크를 하지 않고, 요청은 itda-hyve 의 `http_request` 가
+`{{secret:<KEY>}}` 자리에 키를 채워 보낸다(Cowork·Claude Code 공통, itda-work/skills#45). 어느 스킬도 `.env` 같은 파일이나 환경변수를 읽지 않는다.
 
-작업 폴더(Cowork 연결 폴더 / Claude Code 프로젝트 루트, 연결한 폴더가 여러 개면 아무 폴더나) 루트에 `.env` 파일을 만들고 아래 내용을 넣어 두면 스킬이 자동으로 찾아 읽습니다. 파일명 별칭 `.env.txt`·`환경변수.txt` 도 동일하게 탐색된다. 셸 환경변수나 `~/.claude/settings.json` 의 `env` 로 설정해도 되며(로더가 자동 탐색), `.env` 가 없으면 그 값을 사용합니다.
+| 키 | 쓰는 스킬 | 요청 호스트 |
+|---|---|---|
+| `KO_DATA_API_KEY` (data.go.kr **Decoding 키**) | realty-deals · realty-jeonse-gap · realty-price-stats(derive) · realty-supply(청약) | `apis.data.go.kr`, 청약홈은 `api.odcloud.kr` |
+| `KOSIS_API_KEY` | realty-supply(공급 지표) | `kosis.kr` |
+| `RONE_API_KEY` | realty-price-stats(R-ONE 지수) | `www.reb.or.kr` |
 
-```dotenv
-KO_DATA_API_KEY=발급받은_키
-KOSIS_API_KEY=발급받은_키
-```
+> 청약홈 분양정보(realty-supply)는 `api.odcloud.kr` 로 나간다. itda-hyve 0.10.4 전에 `KO_DATA_API_KEY` 를 등록했다면 GUI 시크릿 탭에서
+> 허용 호스트에 `api.odcloud.kr` 를 추가한다(프리셋 변경은 새 등록에만 적용된다 — 안 하면 `secret_host_denied`). 데이터셋 15098547 활용신청도 따로 필요하다.
 
-> `KO_DATA_API_KEY` = data.go.kr 범용(국토부 실거래가·청약홈·공시가격 공통), `KOSIS_API_KEY` = KOSIS(공급통계).
-> **키 주입 (Claude 실행 규칙):** 자격증명 유무를 `ls`/`find` 등으로 **사전 점검하지 않는다** — 스크립트가 `.env`·`.env.txt`·`환경변수.txt` 를 스스로 탐색하므로 **우선 실행**한다(셸 glob·검색 패턴은 별칭을 놓쳐 오탐한다: `.env*`·`*env*` 는 `환경변수.txt` 를, `*.env` 는 `.env.txt` 를 놓친다). 실행이 자격증명 누락으로 실패하면, 사용자 지침("Claude 지침"·`CLAUDE.md`)에 해당 변수(`KO_DATA_API_KEY`·`KOSIS_API_KEY`)가 선언돼 있는 경우 그 값을 각 realty 스킬 실행 시 환경변수로 전달해 재시도한다. 지침에도 없으면 발급 안내를 제시한다. 수동 확인이 꼭 필요하면 파일명 3종(`.env`·`.env.txt`·`환경변수.txt`)을 그대로 나열해 확인한다.
-
-> **출처 표시 (Claude 실행 규칙):** 스크립트 stderr 에 `[자격증명] KEY ← 출처` 줄이 나오면, 그 내용을 사용자에게 짧게 알린다(예: "환경변수.txt 의 KO_DATA_API_KEY 를 사용했습니다") — 사용자가 어느 설정파일이 쓰였는지 인지하게 하는 계약이다. 값은 어디에도 표시하지 않는다.
-
-**개발자 (선택):** `claude config set env.KO_DATA_API_KEY "키"`·`claude config set env.KOSIS_API_KEY "키"`, 작업 폴더 `.env`, 또는 셸 환경변수.
+> 키 값을 묻지 않고, 대화에 붙여 넣어도 쓰지 않는다. `secret_missing` 이 나오면 시크릿 탭 등록을 안내하고 멈춘다.
 
 API 키 발급: [data.go.kr](https://www.data.go.kr) | [KOSIS Open API](https://kosis.kr/openapi)
 

@@ -61,11 +61,7 @@ KORAIL_PASSWORD_VAR = "KORAIL_PASSWORD"
 
 _ID_GUIDE = (
     "KORAIL_USER_ID가 설정되지 않았습니다.\n\n"
-    "코레일 회원 자격증명을 아래 중 한 곳에 설정하세요"
-    " (회원번호 8자리 / 휴대폰번호 / 이메일):\n"
-    "  - 셸 환경변수 KORAIL_USER_ID\n"
-    "  - ~/.claude/settings.json 의 env\n"
-    "  - 작업 폴더 또는 홈의 .env 파일\n\n"
+    "KORAIL_USER_ID 는 코레일 회원번호 8자리 / 휴대폰번호 / 이메일입니다.\n\n"
     "코레일 회원이 아니면 https://www.letskorail.com 에서 가입하세요.\n"
 )
 _PW_GUIDE = (
@@ -93,7 +89,7 @@ def resolve_credentials(
     """KORAIL_USER_ID / KORAIL_PASSWORD 를 resolve (REQ-006).
 
     조회 우선순위는 env_loader.resolve_api_key 를 그대로 따른다
-    (CLI 인자 > 환경변수 > settings.json > .env). 누락 시 가이드를 담은
+    (CLI 인자 > 환경변수 — env 파일은 읽지 않는다, #45). 누락 시 가이드를 담은
     MissingAPIKeyError 가 발생한다.
     """
     korail_id = resolve_api_key(KORAIL_USER_ID_VAR, cli_arg=cli_id, guide_msg=_ID_GUIDE)

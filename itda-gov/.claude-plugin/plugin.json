@@ -1,7 +1,7 @@
 {
   "name": "itda-gov",
   "description": "공공·정부 공식 데이터를 수집한다 — DART 공시·한국은행 ECOS·KOSIS 통계·나라장터·국세법령·지원사업 공고, 부동산 실거래·가격지수·공급·전세가율·법원경매.",
-  "version": "13.0.1",
+  "version": "14.0.0",
   "author": {
     "name": "스킬.잇다",
     "url": "https://github.com/itda-work"

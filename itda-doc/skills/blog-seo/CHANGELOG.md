@@ -1,5 +1,24 @@
 # Changelog — itda-work/blog-seo
 
+## [0.11.0] — 2026-09-30 (itda-work/skills#45)
+
+### Changed
+
+- **BREAKING — env 파일을 더 읽지 않는다** (itda-work/skills#45, 사용자 결정 2026-09-30). `.env`·`.env.txt` 를 포함해 어떤 env 파일도, `~/.claude/settings.json` 도 스크립트가 직접 열지 않는다. 키(`NAVER_SEARCHAD_ACCESS_KEY`·`NAVER_SEARCHAD_SECRET_KEY`·`NAVER_SEARCHAD_CUSTOMER_ID`·`NAVER_CLIENT_ID`·`NAVER_CLIENT_SECRET`)는 Claude Code 의 셸 환경변수 또는 `claude config set env.<KEY> "키"` 로만 받는다(스크립트가 `os.environ` 에서 읽음). 스크립트가 API 를 직접 부르므로 itda-hyve 시크릿 경로는 아직 없다. SKILL.md·GUIDE.md·references 의 키 설정 안내·키 주입 규칙·출처 표시 예시를 고쳤다.
+
+## [0.10.11] — 2026-09-30 (itda-work/skills#45, #47)
+
+### Changed
+
+- **자격증명 파일 별칭에서 `환경변수.txt` 제거** (itda-work/skills#45, BREAKING) — 읽는 파일명은 `.env`·`.env.txt` 두 가지다. `환경변수.txt` 로 키를 두었다면 파일 이름을 `.env.txt`(또는 `.env`)로 바꾼다 — 내용은 그대로 두면 된다. SKILL.md·GUIDE.md 의 파일명 별칭 안내·키 주입 규칙(파일명 2종·셸 glob 오탐 설명)·출처 표시 예시를 맞췄다.
+
+### Fixed
+
+- **SKILL_DIR 확정 블록이 새 Cowork 배치에서 빈 값을 내던 것** — Cowork 가 플러그인을 `/root/.claude/plugins/synced/` 에 두고
+  `CLAUDE_PLUGIN_ROOT` 를 주지 않자 옛 블록의 1·2순위가 둘 다 비었다. 새 블록(규칙 `skill-dir-resolution` 정본)은 스킬을 불러올 때 받은
+  base directory 를 먼저 넣게 하고 그 값을 검증해 쓴다. 넣지 못했을 때만 설정 홈(`CLAUDE_CONFIG_DIR`)의 동기화본·Code 캐시와
+  Cowork 배치를 찾으며, 후보마다 `SKILL.md` 를 확인하고 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다. PowerShell 블록도 같은 계약으로 바꿨다.
+
 ## [0.10.10] — 2026-09-28 (itda-work/skills#26)
 
 ### Changed

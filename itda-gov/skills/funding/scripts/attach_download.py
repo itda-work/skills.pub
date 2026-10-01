@@ -1,99 +1,36 @@
-#!/usr/bin/env python3
-# Portions derived from ir-search (https://github.com/djfksjd/ir-search, MIT)
-# 개작 요지: 로그 태그를 [funding] 으로 교체. 보안 계약(리다이렉트 사전검증·
-# robots·50MB 상한·sha256·경로 탈출 차단)은 원본 그대로 유지한다.
-# 라이선스 전문·차용 파일 목록은 ../references/third-party.md 참조.
-"""첨부 다운로드 공용 모듈 — detail 크롤러 (hash v2/v3).
+"""첨부 계약 공용 모듈 — robots·호스트 검사, 본문 해시, 받은 파일 검사 (네트워크 없음).
 
-robots·리다이렉트·크기 상한을 강제하는 첨부 다운로드 계약을 담는다.
-run_manifest.py처럼 두 크롤러(sources_crawl.py, kstartup_crawl.py)가 공유한다.
+첨부는 itda-hyve 가 받는다(itda-work/skills#45, 규칙 ``cowork-network-via-hyve``). 이 모듈은
+**요청 전**(계획 단계)에 URL 을 거르고, **받은 뒤** 저장 파일이 진짜 문서인지 검사한다.
 
-보안 계약:
-  - 모든 요청은 자동 리다이렉트를 끈 opener로 보낸다(_NoRedirect).
-  - 각 Location을 **요청을 보내기 전에** 절대 URL로 해석해 https+허용 호스트
-    검사를 통과할 때만 최대 5홉(MAX_REDIRECTS) 수동 추적한다. 위반 시
-    RedirectBlocked — 외부 호스트로는 요청 자체가 나가지 않는다.
-  - 첨부는 50MB 스트리밍 상한(MAX_ATTACH_BYTES). 초과·실패 시 부분 파일 삭제.
-  - Content-Disposition 파일명은 latin-1→UTF-8 모지바케를 복구하고
-    basename + 문자 정제(safe_filename) + commonpath 검사로만 저장한다
-    (경로 탈출·심볼릭 링크 차단).
-  - robots.txt 불허 경로는 다운로드하지 않고 링크만 남긴다
-    (download_status "skipped_robots") — robots 우회 금지.
+요청 전 계약:
+  - https + 정확한 호스트(`ATTACH_HOSTS` — '=' 접두는 서브도메인 배제)만 계획에 넣는다.
+  - robots.txt 불허 경로는 요청하지 않고 링크만 남긴다(download_status "skipped_robots").
+    퍼센트 인코딩 위장·와일드카드·끝 앵커까지 판정한다(`robots_allowed`).
+  - 호출은 ``follow_redirects:false`` 로 보낸다 — 3xx 는 따라가지 않고 실패로 판정하므로
+    허용 호스트 밖·robots 불허 경로로 요청이 나갈 수 없다.
+
+받은 뒤 계약(`verify_attachment`):
+  - 크기 > 0, 50MiB(itda-hyve 저장 상한) 미만, 첫 바이트가 ``<`` 가 아님(HTML 오류·차단 페이지),
+    확장자와 매직 바이트가 맞음, 형식별 끝 검사(PDF ``%%EOF``·ZIP 중앙 디렉터리 끝·OLE 머리가 가리키는
+    FAT 가 쓰는 마지막 섹터까지 파일 안에 있음). 모르는 확장자는 ``unverified_format``(v3 을 찍지 않는다).
+    저장 파일에는 상태 코드·헤더가 없어서(``save_as`` 는 본문만 쓴다) 판정 근거는 이 바이트뿐이다.
 
 hash 계약:
   HASH_VERSION_BODY(2)   = 본문 텍스트만의 sha256
-  HASH_VERSION_ATTACH(3) = 본문 + 정렬된 첨부 sha256 (content_hash_of —
-                           sole-search sbiz_crawl.content_hash_of와 동일 산식)
-  첨부가 **전부** 다운로드 성공("ok")일 때만 v3를 스탬프한다. 하나라도
-  실패·차단·robots 생략이면 본문만의 v2 해시를 유지하고
-  attachments_complete:false + exit 2(partial)로 표현한다 — 해시를 None으로
-  지우면 반복 실패 두 런 사이의 본문 변경이 diff에서 숨기 때문.
+  HASH_VERSION_ATTACH(3) = 본문 + 정렬된 첨부 sha256 (content_hash_of — sole-search 와 같은 산식)
+  첨부가 **전부** 검사를 통과했을 때만 v3 을 찍는다. 하나라도 실패·robots 생략·계약 미확정·형식 미확인이면
+  본문 v2 해시를 유지하고 attachments_complete:false + partial(exit 2) 로 표현한다.
 """
 import hashlib
-import html
 import os
-import pathlib
 import re
-import sys
-import time
-import urllib.error
+import struct
 import urllib.parse
-import urllib.request
 
-MAX_REDIRECTS = 5
-_REDIRECT_CODES = (301, 302, 303, 307, 308)
-MAX_ATTACH_BYTES = 50 * 1024 * 1024  # 첨부 다운로드 상한 50MB (sole-search와 동일)
+MAX_ATTACH_BYTES = 50 * 1024 * 1024  # itda-hyve save_as 절대 상한 50MiB — 이 크기면 잘렸다고 본다
 HASH_VERSION_BODY = 2
 HASH_VERSION_ATTACH = 3
-UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-      "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15")
-
-
-_BACKEND_NOTICE_SHOWN = []
-
-
-def notify_backend(backend):
-    """HTTP 백엔드를 stderr 에 1회 고지한다.
-
-    curl_cffi(권장, Safari TLS 지문)가 없어 urllib 로 내려간 것은 **조용한
-    폴백이 아니어야 한다**(no-silent-fallback) — 차단 확률이 올라가는 능력
-    저하이므로 사유와 해소 방법을 명시한다.
-    """
-    if _BACKEND_NOTICE_SHOWN:
-        return
-    _BACKEND_NOTICE_SHOWN.append(backend)
-    print(f"[funding] HTTP 백엔드: {backend}", file=sys.stderr)
-    if backend == "urllib":
-        print(
-            "[funding] 알림: curl_cffi 미설치 — 표준 urllib 경로로 진행합니다"
-            "(폴백). TLS 지문 위장이 없어 일부 사이트가 차단할 수 있습니다. "
-            "해소: pip install 'curl_cffi>=0.15'",
-            file=sys.stderr,
-        )
-
-
-class ManualEscalation(RuntimeError):
-    """401/403 — 우회하지 않고 수동 확인으로 전환하라는 신호."""
-
-
-class RedirectBlocked(RuntimeError):
-    """리다이렉트 대상이 https+허용 호스트 검사를 통과하지 못함 — 요청 전에 차단."""
-
-
-class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    """자동 리다이렉트 금지 — open_validated가 각 Location을 요청 전에 검증한다."""
-
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
-
-
-# 전역 opener를 오염시키지 않는다 — 이 모듈 전용 opener만 리다이렉트를 끈다.
-_opener = urllib.request.build_opener(_NoRedirect())
-
-
-def _urlopen(req, timeout):
-    """테스트가 monkeypatch하는 단일 통로 — 실제 소켓은 여기서만 열린다."""
-    return _opener.open(req, timeout=timeout)
 
 
 def host_allowed(url, allowed_hosts):
@@ -119,54 +56,12 @@ def host_allowed(url, allowed_hosts):
     return False
 
 
-def open_validated(url, allowed_hosts, timeout, robots_disallowed=()):
-    """자동 리다이렉트 없이 열고, 각 Location을 **요청을 보내기 전에** 절대 URL로
-    해석해 https+허용 호스트 + robots 불허 접두(경로) 검사를 통과할 때만 최대
-    5홉 수동 추적한다. 위반 시 RedirectBlocked — 외부 호스트로도, robots 불허
-    경로로도 요청 자체가 나가지 않는다 (예: /cmm/fms/ → 302 → /uploads/…
-    같은 동일 호스트 리다이렉트로 robots를 우회할 수 없다)."""
-    if not host_allowed(url, allowed_hosts):
-        raise RedirectBlocked(f"URL host/scheme 불허: {url[:80]}")
-    if not robots_allowed(url, robots_disallowed):
-        raise RedirectBlocked(f"robots 불허 경로 — 요청 차단: {url[:80]}")
-    for _ in range(MAX_REDIRECTS + 1):
-        req = urllib.request.Request(url, headers={"User-Agent": UA})
-        try:
-            return _urlopen(req, timeout)
-        except urllib.error.HTTPError as e:
-            if e.code not in _REDIRECT_CODES:
-                raise
-            loc = e.headers.get("Location") if e.headers else None
-            e.close()
-            if not loc:
-                raise RedirectBlocked(f"리다이렉트 Location 없음: {url[:80]}")
-            nxt = urllib.parse.urljoin(url, loc)
-            if not host_allowed(nxt, allowed_hosts):
-                raise RedirectBlocked(f"리다이렉트 대상 불허 — 요청 차단: {nxt[:80]}")
-            if not robots_allowed(nxt, robots_disallowed):
-                raise RedirectBlocked(
-                    f"리다이렉트 대상이 robots 불허 경로 — 요청 차단: {nxt[:80]}")
-            url = nxt
-    raise RedirectBlocked(f"리다이렉트 {MAX_REDIRECTS}홉 초과: {url[:80]}")
-
-
 def content_hash_of(body_text, attachment_hashes):
     """hash v3 산식 — sole-search sbiz_crawl.content_hash_of와 동일해야 한다."""
     payload = body_text + "\n" + "\n".join(sorted(attachment_hashes))
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
-def safe_filename(name, idx):
-    """서버 제공 파일명을 신뢰하지 않는다 — basename + 문자 정제 + 순번 프리픽스."""
-    base = re.sub(r"[^\w.\-가-힣()\[\] ]", "_",
-                  (name or "").replace("\\", "/").rsplit("/", 1)[-1])
-    return f"{idx:02d}_{base[:120]}" if base else f"{idx:02d}_attach"
-
-
-# 첨부로 위장한 HTML 오류/차단 페이지 감지 — HTML 첨부(.html)가 아닌데 본문이
-# HTML 태그로 시작하면 200 위장 소프트 차단(세션만료·CAPTCHA)으로 본다(Codex ir #1).
-# 파일명이 URL 기반(getFile.do 등)이라 확장자가 없을 수 있으므로 확장자 화이트리스트
-# 방식: .html/.htm 첨부만 예외로 허용하고 나머지는 HTML 바이트를 거부한다.
 # HTTP 200으로 위장한 소프트 차단(CAPTCHA·접근거부) 마커 — 상세 페이지 HTML을
 # 정상 공고로 해시/병합하면 잘못된 UNCHANGED가 된다(Codex ir #1). sources·kstartup 공용.
 _BLOCK_MARKERS = (
@@ -182,12 +77,12 @@ def looks_blocked(html):
     return any(m in low for m in _BLOCK_MARKERS)
 
 
-def _looks_like_html_error(first_bytes, content_type, filename):
+def looks_like_html_error(first_bytes, filename):
     """마크업/HTML 확장자 첨부가 아닌데 본문이 `<`(태그)로 시작하면 True.
     PDF(%PDF-)·OLE(D0CF)·ZIP/HWPX(PK)·이미지 등 실제 문서 바이너리는 어느 것도
     '<'로 시작하지 않으므로, `<`로 시작하면 HTML/XML 오류·차단 페이지다. 이렇게
     하면 `<!doctype>`뿐 아니라 `<body>`·`<!--`·`<html`·BOM 선행까지 모두 잡힌다
-    (Codex ir #1 후속). Content-Type은 서버가 자주 오기재하므로 근거로 쓰지 않는다."""
+    (Codex ir #1 후속). Content-Type 은 서버가 자주 오기재하고 저장 파일에는 없으므로 근거로 쓰지 않는다."""
     name = (filename or "").lower()
     if name.endswith((".html", ".htm", ".xhtml", ".xml", ".svg", ".xsl")):
         return False  # 마크업 첨부 자체는 정상
@@ -198,7 +93,6 @@ def _looks_like_html_error(first_bytes, content_type, filename):
 
 
 _MAX_UNQUOTE = 5  # 반복 percent-디코딩 상한 (이중 인코딩 %2575… 커버)
-_MAX_UNESCAPE = 5  # 반복 HTML 엔티티 디코딩 상한 (&amp;amp;amp; 다중 인코딩 커버)
 
 
 def _robots_path_match(path, pattern):
@@ -263,251 +157,107 @@ def robots_allowed(url, disallowed_prefixes):
                    for c in candidates for p in disallowed_prefixes)
 
 
-def _unescape_fixed_point(s):
-    """다중 인코딩 HTML 엔티티(&amp;amp;amp;)를 고정점까지 반복 디코드."""
-    for _ in range(_MAX_UNESCAPE):
-        un = html.unescape(s)
-        if un == s:
-            return s
-        s = un
-    return s
+# ---- 받은 첨부 파일 검사 ------------------------------------------------------
+
+_OLE = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
+_ZIP = b"PK\x03\x04"
+MAGIC = {
+    "pdf": (b"%PDF-",),
+    "hwp": (_OLE,), "doc": (_OLE,), "xls": (_OLE,), "ppt": (_OLE,),
+    "hwpx": (_ZIP,), "docx": (_ZIP,), "xlsx": (_ZIP,), "pptx": (_ZIP,), "zip": (_ZIP,), "odt": (_ZIP,),
+    "jpg": (b"\xff\xd8\xff",), "jpeg": (b"\xff\xd8\xff",), "png": (b"\x89PNG\r\n\x1a\n",),
+    "gif": (b"GIF87a", b"GIF89a"),
+}
 
 
-def filename_from_content_disposition(cd_header):
-    """원시 Content-Disposition 헤더에서 filename 값을 추출한다.
-
-    email 파서의 get_filename()은 **따옴표 없는** 값에서 `&amp;` 내부 `;`를
-    파라미터 구분자로 오인해 자른다(실측 SMTECH 2026-07-24):
-      `filename=2026³â R&amp;D.hwp` → `2026³â R&amp` (`;D.hwp` 소실).
-    그래서 원시 헤더를 직접 파싱한다:
-      1. RFC 6266 확장 `filename*=charset'lang'pct-encoded` 우선.
-      2. 따옴표로 감싼 `filename="..."`는 그 안을 그대로.
-      3. 따옴표 없는 `filename=`는 **엔티티를 먼저 고정점까지 디코드해**
-         `&amp;` 내부 `;`를 없앤 뒤 남은 첫 `;`까지를 값으로 본다 —
-         파라미터 구분 `;`만 남으므로 파일명 전체가 살아남는다.
-    latin-1 모지바케 바이트는 그대로 둔 채(값 문자열만 추출) recover_filename이
-    이후 인코딩을 복구한다. 파싱 실패 시 None."""
-    if not cd_header:
-        return None
-    m = re.search(r"filename\*\s*=\s*([^;]+)", cd_header, re.IGNORECASE)
-    if m:
-        parts = m.group(1).strip().split("'", 2)
-        if len(parts) == 3:
-            charset, _lang, enc = parts
-            try:
-                return urllib.parse.unquote(
-                    enc, encoding=charset or "utf-8", errors="strict")
-            except (LookupError, UnicodeDecodeError, ValueError):
-                pass  # 확장 파싱 실패 — 일반 filename= 폴백
-    m = re.search(r'filename\s*=\s*"([^"]*)"', cd_header, re.IGNORECASE)
-    if m:
-        return m.group(1)
-    m = re.search(r"filename\s*=\s*(.+)$", cd_header, re.IGNORECASE)
-    if not m:
-        return None
-    # 엔티티를 먼저 디코드(&amp;→&)해 파라미터 구분 ';' 오인을 제거한 뒤 절단
-    return _unescape_fixed_point(m.group(1)).split(";", 1)[0].strip() or None
+def ext_of(filename):
+    """파일 이름의 확장자(소문자, 점 없이). 확장자 글자만 허용한다 — 저장 이름에 그대로 쓰인다."""
+    m = re.search(r"\.([A-Za-z0-9]{1,5})\s*$", filename or "")
+    return m.group(1).lower() if m else "bin"
 
 
-def _has_mojibake_run(raw):
-    """연속된 high-byte(0x80-0xFF)가 2개 이상이면 True — latin-1로 잘못 흘러온
-    멀티바이트 인코딩의 서명이다. UTF-8·CP949 한글은 문자당 2~3바이트라 반드시
-    연속 high-byte 런을 남긴다. 반대로 0xB7(·) 하나처럼 **고립된** high-byte는
-    정상 문자이므로(예: 'AI·DX.pdf') 재해석하면 안 된다."""
-    run = 0
-    for b in raw:
-        if b >= 0x80:
-            run += 1
-            if run >= 2:
-                return True
-        else:
-            run = 0
-    return False
+_FREESECT = 0xFFFFFFFF
+_MAXREGSECT = 0xFFFFFFFA
 
 
-def recover_filename(cd_name):
-    """추출된 Content-Disposition 파일명 값의 인코딩을 복구한다.
+def _ole_truncated(data):
+    """OLE(CFB) 잘림 검사. 잘렸으면 사유, 멀쩡하면 "".
 
-    서버가 파일명 바이트를 latin-1로 흘려보내면 모지바케가 온다. 인코딩은
-    서버·파일마다 다르다 — 실측:
-      - bizinfo: UTF-8 바이트를 latin-1로 디코드 (2026-07-23)
-      - SMTECH: 일부 첨부는 **CP949(EUC-KR)** 바이트 + `&amp;` 엔티티 포함
-        (2026-07-24) → `Ú 2026³â Áß¼Ò_â¾_ R_amp`처럼 깨졌다.
-
-    규칙 — **모지바케 서명이 있을 때만 재디코드, UTF-8 우선 CP949 폴백**:
-      1. cd_name을 latin-1 바이트로 되돌린다. `.encode("latin-1")`이 실패하면
-         (이미 정상 한글 등) 재해석하지 않고 원본을 유지한다.
-      2. **연속 high-byte 런(_has_mojibake_run)이 있을 때만** 재디코드한다. 이게
-         없으면(예: 'AI·DX.pdf'의 고립된 0xB7) 정상 이름이므로 그대로 둔다 —
-         cp949가 0xB7을 lead byte로 오인해 'AI텱X.pdf'로 훼손하던 회귀 차단(Codex ir #6).
-      3. 런이 있으면 UTF-8 우선(bizinfo류) → 실패 시 CP949(SMTECH류) 폴백.
-      4. `html.unescape`를 고정점까지 반복해 잔여 엔티티를 디코드하고,
-         %-인코딩은 unquote한다(헤더 파서가 이미 처리했어도 심층 방어)."""
-    if not cd_name:
-        return cd_name
-    try:
-        raw = cd_name.encode("latin-1")
-    except UnicodeEncodeError:
-        raw = None  # 이미 non-latin1(정상 한글 등) — 바이트 재해석 금지
-    if raw is not None and _has_mojibake_run(raw):
-        try:
-            cd_name = raw.decode("utf-8")  # utf-8 성공 → 채택(bizinfo류)
-        except UnicodeDecodeError:
-            try:
-                cd_name = raw.decode("cp949")  # utf-8 실패 시 CP949 폴백(SMTECH류)
-            except UnicodeDecodeError:
-                pass  # 둘 다 실패 — 원본 유지
-    cd_name = _unescape_fixed_point(cd_name)
-    if "%" in cd_name:
-        cd_name = urllib.parse.unquote(cd_name)
-    return cd_name
-
-
-def download_attachment(url, dirpath, fallback_name, idx, allowed_hosts,
-                        robots_disallowed=()):
-    """보안 계약: 요청 전 host_allowed(https 강제 포함) + 각 리다이렉트 Location을
-    **요청 전에** 검증(open_validated — 허용 호스트와 robots 불허 접두 모두,
-    위반 시 RedirectBlocked) + 50MB 스트리밍 상한 + 실패 시 부분 파일 삭제.
-    저장 경로를 반환한다."""
-    if not host_allowed(url, allowed_hosts):
-        raise RuntimeError(f"첨부 URL host/scheme 불허: {url[:80]}")
-    dirpath = str(pathlib.Path(dirpath).resolve())
-    path = None
-    tmp = None
-    try:
-        with open_validated(url, allowed_hosts, timeout=60,
-                            robots_disallowed=robots_disallowed) as r:
-            # 사전 검증이 1차 방어 — geturl 재검사는 심층 방어로 유지한다
-            final = r.geturl() if hasattr(r, "geturl") else url
-            if not host_allowed(final, allowed_hosts):
-                raise RuntimeError(f"리다이렉트 최종 URL host 불허: {final[:80]}")
-            length = r.headers.get("Content-Length")
-            if length and length.isdigit() and int(length) > MAX_ATTACH_BYTES:
-                raise RuntimeError(f"첨부 Content-Length가 상한 초과: {length}")
-            # 원시 Content-Disposition을 직접 파싱한다 — email의 get_filename()은
-            # 따옴표 없는 값의 &amp; 내부 ';'를 파라미터 구분자로 오인해 자른다.
-            raw_name = filename_from_content_disposition(
-                r.headers.get("Content-Disposition"))
-            if raw_name is None:  # Content-Type name= 등 다른 경로는 email 파서 폴백
-                raw_name = r.headers.get_filename()
-            ctype = (r.headers.get("Content-Type") or "").lower()
-            cd_name = recover_filename(raw_name)
-            fname = safe_filename(cd_name or fallback_name, idx)
-            path = (pathlib.Path(dirpath) / fname).resolve()
-            if os.path.commonpath([str(path), dirpath]) != dirpath \
-                    or path.is_symlink():
-                raise RuntimeError("path_escape_blocked")
-            # O_CREAT|O_EXCL|O_NOFOLLOW: 사전 배치된 파일/symlink를 따라가거나
-            # 기존 정상 파일을 truncate하지 않는다(Codex ir #5, "wb" 교체). tmp에
-            # 받고 성공 시에만 최종 이름으로 교체 — 실패 시 잔여물 없음.
-            tmp_path = path.with_name(f".part-{os.getpid()}-{idx}-{path.name}"[:200])
-            nofollow = getattr(os, "O_NOFOLLOW", 0)
-            try:
-                fd = os.open(tmp_path,
-                             os.O_CREAT | os.O_EXCL | os.O_WRONLY | nofollow, 0o644)
-            except FileExistsError:
-                raise RuntimeError(f"tmp_preexists_blocked: {tmp_path.name}") from None
-            tmp = tmp_path
-            read = 0
-            first = b""
-            with os.fdopen(fd, "wb") as fh:
-                while True:
-                    chunk = r.read(1 << 20)
-                    if not chunk:
-                        break
-                    if not first:
-                        first = chunk[:512]
-                    read += len(chunk)
-                    if read > MAX_ATTACH_BYTES:
-                        raise RuntimeError(
-                            f"첨부가 {MAX_ATTACH_BYTES // (1 << 20)}MB 상한 초과")
-                    fh.write(chunk)
-            # 200으로 위장한 HTML 오류/CAPTCHA 페이지를 바이너리 첨부로 저장하는 것을
-            # 막는다(Codex ir #1) — 첨부 확장자가 문서인데 본문이 HTML이면 실패.
-            if _looks_like_html_error(first, ctype, path.name):
-                raise RuntimeError("soft_block_html — 첨부가 아닌 HTML 오류/차단 페이지")
-            os.replace(tmp, path)
-            tmp = None
-            return path
-    except urllib.error.HTTPError as e:
-        if e.code in (401, 403):
-            raise ManualEscalation(f"첨부 다운로드 HTTP {e.code}") from e
-        raise
-    except (RuntimeError, OSError):
-        if tmp is not None:
-            tmp.unlink(missing_ok=True)  # 부분 tmp 잔존 방지
-        raise
+    512 배수 검사만으로는 버퍼 경계(512 배수)에서 끊긴 파일을 못 잡는다(m2). 머리의 섹터 크기·FAT 섹터
+    위치(DIFAT)를 읽고, FAT 가 쓰고 있다고 적은 **마지막 섹터**까지 파일 안에 있어야 멀쩡하다고 본다.
+    """
+    size = len(data)
+    if size < 512:
+        return f"머리(512바이트)보다 짧다({size})"
+    shift = struct.unpack_from("<H", data, 0x1E)[0]
+    if shift not in (9, 12):
+        return f"섹터 크기 표지가 이상하다(shift {shift})"
+    ss = 1 << shift
+    if size % ss:
+        return f"크기 {size} 가 섹터 크기 {ss} 의 배수가 아니다"
+    n_sectors = size // ss - 1  # 머리가 섹터 하나를 차지한다(v3 512, v4 4096)
+    n_fat = struct.unpack_from("<I", data, 0x2C)[0]
+    difat = [x for x in struct.unpack_from("<109I", data, 0x4C) if x != _FREESECT]
+    nxt, n_difat = struct.unpack_from("<II", data, 0x44)
+    per = ss // 4
+    seen = 0
+    while nxt < _MAXREGSECT and seen <= n_difat:  # FAT 섹터가 109개를 넘는 큰 파일
+        if nxt >= n_sectors:
+            return f"DIFAT 섹터 {nxt} 가 파일 밖이다"
+        off = (nxt + 1) * ss
+        chunk = struct.unpack_from(f"<{per}I", data, off)
+        difat.extend(x for x in chunk[:-1] if x != _FREESECT)
+        nxt, seen = chunk[-1], seen + 1
+    if n_fat == 0 or len(difat) < n_fat:
+        return f"FAT 섹터 목록이 모자란다({len(difat)}/{n_fat})"
+    last_used = -1
+    for k, fs in enumerate(difat[:n_fat]):
+        if fs >= n_sectors:
+            return f"FAT 섹터 {fs} 가 파일 밖이다(섹터 {n_sectors}개)"
+        entries = struct.unpack_from(f"<{per}I", data, (fs + 1) * ss)
+        base = k * per
+        for i, v in enumerate(entries):
+            if v != _FREESECT:
+                last_used = max(last_used, base + i)
+    if last_used >= n_sectors:
+        return f"FAT 는 섹터 {last_used} 까지 쓰는데 파일에는 {n_sectors}개뿐이다"
+    return ""
 
 
-def safe_subdir(name):
-    """공고 식별자를 하위 폴더명으로 정제 — 경로 구분자·제어문자 제거."""
-    return re.sub(r"[^\w.\-가-힣]", "_", str(name))[:80] or "_"
+def verify_attachment(data, ext):
+    """받은 첨부 바이트를 검사한다. 반환: (ok, reason, sha256, size).
 
+    ok 는 True(검사 통과) · False(실패) · None(형식을 모름 — ``unverified_format``). True 일 때만 sha256 이 있다.
 
-def process_attachments(attachments, download_dir, delay, allowed_hosts,
-                        robots_disallowed_prefixes, tag="funding",
-                        subdir=None):
-    """첨부 목록을 다운로드하고 sha256 목록을 반환한다.
-
-    *subdir*(공고 식별자 — pblancId/pbancSn 등)를 주면 download_dir 아래
-    공고별 하위 폴더에 저장한다 — 여러 공고의 동명 첨부(00_공고문.pdf 등)가
-    서로 덮어쓰는 것을 막는다. local_path는 실제 저장 경로를 기록한다.
-
-    각 항목 dict에 download_status(ok/failed/blocked_redirect/skipped_robots),
-    sha256, local_path를 기록한다. 텍스트 추출은 이 라운드 범위 밖 —
-    hash v3 판단은 download_status "ok" 전건 여부만 본다.
-    ManualEscalation(401/403)은 그대로 올린다(호출부가 수동 전환 처리)."""
-    base = pathlib.Path(download_dir).resolve()
-    d = base
-    if subdir is not None:
-        d = base / safe_subdir(subdir)
-        # 사전 배치된 symlink 하위 폴더로 base 밖에 기록되는 탈출 차단:
-        # (a) 폴더 자체가 symlink면 거부, (b) 생성 후 realpath가 base 내부인지
-        # 재검증 — 파일 최종 경로 검사(download_attachment)도 이 realpath 기준
-        # dirpath로 수행된다.
-        if d.is_symlink():
-            raise RuntimeError(f"subdir_symlink_blocked: {d.name}")
-    d.mkdir(parents=True, exist_ok=True)
-    real_d = pathlib.Path(os.path.realpath(d))
-    real_base = pathlib.Path(os.path.realpath(base))
-    if real_d != real_base and \
-            os.path.commonpath([str(real_d), str(real_base)]) != str(real_base):
-        raise RuntimeError(f"subdir_escape_blocked: {d}")
-    d = real_d
-    attach_hashes = []
-    for idx, f in enumerate(attachments):
-        if f.get("download_status"):
-            # 사전 마킹된 항목(예: 계약 미확정 외부 시스템 링크
-            # "skipped_unverified") — 다운로드하지 않고 상태를 보존한다.
-            continue
-        if not robots_allowed(f["url"], robots_disallowed_prefixes):
-            f["download_status"] = "skipped_robots"
-            print(f"[{tag}] robots 불허 경로 — 다운로드 생략(링크만): "
-                  f"{f['url'][:80]}", file=sys.stderr)
-            continue
-        time.sleep(delay)
-        try:
-            path = download_attachment(f["url"], d, f.get("filename"), idx,
-                                       allowed_hosts,
-                                       robots_disallowed=robots_disallowed_prefixes)
-        except ManualEscalation:
-            raise  # 차단 신호 — 호출부에서 수동 전환
-        except RedirectBlocked as e:
-            f["download_status"] = "blocked_redirect"
-            f["download_reason"] = str(e)
-            print(f"WARNING [{tag}] attachment {f.get('filename') or '?'}: "
-                  f"리다이렉트 차단 — {e}", file=sys.stderr)
-            continue
-        except (urllib.error.URLError, urllib.error.HTTPError,
-                RuntimeError, OSError, TimeoutError) as e:
-            f["download_status"] = "failed"
-            f["download_reason"] = str(e)
-            print(f"WARNING [{tag}] attachment {f.get('filename') or '?'}: {e}",
-                  file=sys.stderr)
-            continue
-        f["local_path"] = str(path)
-        f["filename"] = path.name
-        f["download_status"] = "ok"
-        f["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
-        attach_hashes.append(f["sha256"])
-    return attach_hashes
+    - 빈 파일·50MiB 이상(itda-hyve 상한 — 잘렸다고 본다)·HTML 로 시작하는 파일은 실패.
+    - 알려진 확장자는 매직 바이트가 맞아야 하고, 끝 검사를 통과해야 한다(잘린 파일).
+    - 모르는 확장자(``bin``·``txt`` 등)는 잘림·오류 본문을 가를 근거가 없다 — 통과로 두지 않는다(m2).
+    """
+    size = len(data)
+    head, tail = data[:512], data[-1024:]
+    if size == 0:
+        return False, "빈 파일", None, 0
+    if size >= MAX_ATTACH_BYTES:
+        return False, "too_large — itda-hyve 저장 상한(50MiB)에 닿아 잘렸을 수 있다", None, size
+    if looks_like_html_error(head, f"x.{ext}"):
+        return False, "soft_block_html — 첨부가 아닌 HTML 오류·차단 페이지", None, size
+    magics = MAGIC.get(ext)
+    if not magics:
+        return None, f"unverified_format — .{ext} 는 형식 검사 규칙이 없어 잘림·오류 본문을 가를 수 없다", None, size
+    if not any(head.startswith(m) for m in magics):
+        return False, f"형식 불일치 — .{ext} 인데 파일 머리가 {head[:8].hex()}", None, size
+    if ext == "pdf" and b"%%EOF" not in tail:
+        return False, "잘린 PDF — 끝 표지(%%EOF)가 없다", None, size
+    if magics[0] == _ZIP and b"PK\x05\x06" not in tail:
+        return False, "잘린 ZIP 계열 — 중앙 디렉터리 끝이 없다", None, size
+    if magics[0] == _OLE:
+        why = _ole_truncated(data)
+        if why:
+            return False, f"잘린 OLE(HWP 등) — {why}", None, size
+    if ext in ("jpg", "jpeg") and b"\xff\xd9" not in tail:
+        return False, "잘린 JPEG — 끝 표지(FFD9)가 없다", None, size
+    if ext == "png" and b"IEND" not in tail:
+        return False, "잘린 PNG — IEND 가 없다", None, size
+    if ext == "gif" and not data.rstrip(b"\0").endswith(b";"):
+        return False, "잘린 GIF — 끝 표지(3B)가 없다", None, size
+    return True, "", hashlib.sha256(data).hexdigest(), size

@@ -14,9 +14,9 @@ argument-hint: "[plan | audit | config STATE.json] · 이후 cloudflared 런북"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "ops"
-  version: "0.1.3"
+  version: "0.2.0"
   created_at: "2026-06-21"
-  updated_at: "2026-07-26"
+  updated_at: "2026-09-30"
   tags: "cloudflare, tunnel, cloudflared, zero-trust, access, rdp, ssh, remote-access, ops"
 ---
 
@@ -35,15 +35,33 @@ Cloudflare Tunnel(`cloudflared`)로 **포트포워딩·인바운드 개방 없�
 
 ## 사전 준비 (Prerequisites)
 
+**먼저** 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 `SKILL_DIR` 에 넣고 아래 블록을 실행한다 — 블록은 그 값을 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾는다(후보가 여럿이면 멈춘다).
+
 ```bash
-# Claude Code(플러그인 설치) = $CLAUDE_PLUGIN_ROOT / Cowork = 세션 마운트 탐색
-SKILL_DIR="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/skills/cloudflare-tunnel}"
-[ -n "$SKILL_DIR" ] || SKILL_DIR=$(find /sessions/*/mnt/.remote-plugins -type d -path '*/skills/cloudflare-tunnel' 2>/dev/null | head -1)
-# 둘 다 아니면(저장소 체크아웃 등) 이 SKILL.md 가 있는 디렉토리 절대경로를 그대로 사용
+# SKILL_DIR 확정(skill-dir-resolution) — 스킬을 불러올 때 받은 base directory 를 먼저 SKILL_DIR="그 경로" 로 넣는다(항상)
+# 블록은 그 값을 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾는다 — SKILL.md 가 있는 후보가 하나일 때만 받고 아니면 멈춘다
+SKILL_DIR=$(sh -c '
+S=$1 P=$2 H=${5:-$HOME/.claude}
+ok() { d=${1%/}; [ "${d##*/}" = "$S" ] && [ -f "$d/SKILL.md" ] && (cd "$d" && pwd -P); }
+[ -n "$3" ] && { ok "$3" && exit; d=${3%/}; [ "${d##*/}" = "$S" ] && echo "SKILL_DIR 무시: $3 에 SKILL.md 가 없다" >&2; }
+[ -n "$4" ] && { ok "$4/skills/$S" && exit; echo "CLAUDE_PLUGIN_ROOT 무시: $4/skills/$S 에 SKILL.md 가 없다" >&2; }
+c=$(for d in "$H"/plugins/synced/*/"$P"/skills/"$S" "$H"/plugins/synced/*/"$P"~*/skills/"$S" "$H"/plugins/cache/*/"$P"/*/skills/"$S" \
+    /root/.claude/plugins/synced/*/"$P"/skills/"$S" /root/.claude/plugins/synced/*/"$P"~*/skills/"$S" \
+    /sessions/*/mnt/.remote-plugins/*/skills/"$S" /sessions/*/mnt/.claude/skills/"$S"; do ok "$d"; done | sort -u)
+[ "$(printf "%s\n" "$c" | grep -c .)" -gt 1 ] && { printf "SKILL_DIR 후보가 여럿이다 — 어느 설치본이 쓰이는지 모른다:\n%s\n" "$c" >&2; exit 1; }
+printf "%s\n" "$c"' _ cloudflare-tunnel itda-dev "${SKILL_DIR:-}" "${CLAUDE_PLUGIN_ROOT:-}" "${CLAUDE_CONFIG_DIR:-}")
+: "${SKILL_DIR:?정하지 못했다 — 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 SKILL_DIR 에 넣고 이 블록을 다시 실행하라}"
 ```
 
 ```powershell
-$env:SKILL_DIR = "$env:CLAUDE_PLUGIN_ROOT\skills\cloudflare-tunnel"  # 미설정이면 SKILL.md 위치 절대경로 사용
+# SKILL_DIR 확정(skill-dir-resolution) — bash 블록과 같은 계약. 스킬을 불러올 때 받은 base directory 를 먼저 $env:SKILL_DIR 에 넣는다(항상)
+$S = 'cloudflare-tunnel'; $P = 'itda-dev'; $H = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
+$ok = { param($d) if ($d -and (Split-Path $d.TrimEnd('\', '/') -Leaf) -eq $S -and (Test-Path -LiteralPath (Join-Path $d 'SKILL.md'))) { (Resolve-Path -LiteralPath $d).Path.TrimEnd('\', '/') } }
+$c = @(& $ok $env:SKILL_DIR) + @(if ($env:CLAUDE_PLUGIN_ROOT) { & $ok (Join-Path (Join-Path $env:CLAUDE_PLUGIN_ROOT 'skills') $S) })
+if (-not $c) { $c = @(@(Get-Item -Path (Join-Path $H "plugins/synced/*/*/skills/$S") -ErrorAction SilentlyContinue | Where-Object { $_.Parent.Parent.Name -eq $P -or $_.Parent.Parent.Name -like "$P~*" }) + @(Get-Item -Path (Join-Path $H "plugins/cache/*/$P/*/skills/$S") -ErrorAction SilentlyContinue) | Where-Object { $_.PSIsContainer } | ForEach-Object { & $ok $_.FullName } | Sort-Object -Unique) }
+if ($c.Count -gt 1) { Write-Warning "SKILL_DIR 후보가 여럿이다 — 어느 설치본이 쓰이는지 모른다: $($c -join ', ')"; $c = @() }
+if (-not $c) { throw 'SKILL_DIR 을 정하지 못했다 — 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 $env:SKILL_DIR 에 넣고 이 블록을 다시 실행하라' }
+$env:SKILL_DIR = $c[0]
 ```
 
 1. **도메인이 Cloudflare DNS** 에 있어야 합니다(zone 등록).
@@ -55,7 +73,7 @@ $env:SKILL_DIR = "$env:CLAUDE_PLUGIN_ROOT\skills\cloudflare-tunnel"  # 미설정
 4. **Cloudflare API 토큰** — DNS/Access 구성용. **Global API Key 금지**, 최소 스코프로 발급:
    - `Zone.DNS:Edit` (해당 zone)
    - (Access 앱을 API로 만들 경우) Account 의 `Access: Apps and Policies:Edit`
-   - 보관: OS 보안 저장소(Keychain / Windows 자격 증명 관리자 / secret-service) 권장. 폴백으로 **작업 폴더 루트 `.env`** 에 `CLOUDFLARE_API_TOKEN=...`. **토큰·자격증명은 절대 저장소에 커밋하지 않습니다.**
+   - 보관: OS 보안 저장소(Keychain / Windows 자격 증명 관리자 / secret-service) 권장. 폴백은 **셸 환경변수** `CLOUDFLARE_API_TOKEN`(Claude Code 는 `claude config set env.CLOUDFLARE_API_TOKEN "토큰"` 도 가능, 등록 뒤 세션 재시작). 토큰을 `.env` 파일에 두라고 안내하지 않는다(itda-work/skills#45). **토큰·자격증명은 절대 저장소에 커밋하지 않습니다.**
 
 ## desired-state (선언형 구성)
 
@@ -131,7 +149,7 @@ cloudflared service install     # Windows=서비스, macOS=launchd, Linux=system
 
 | 변수 | 용도 | 비고 |
 |------|------|------|
-| `CLOUDFLARE_API_TOKEN` | DNS/Access 구성 | OS 보안 저장소 권장, 폴백 작업 폴더 `.env`. 커밋 금지 |
+| `CLOUDFLARE_API_TOKEN` | DNS/Access 구성 | OS 보안 저장소 권장, 폴백은 셸 환경변수. `.env` 파일 안내 금지. 커밋 금지 |
 | `CLOUDFLARE_ACCOUNT_ID` | Access 앱 API 생성 시 | Zero Trust 대시보드로 만들면 불필요 |
 
 ## 트리거 키워드

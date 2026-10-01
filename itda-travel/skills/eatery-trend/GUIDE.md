@@ -45,19 +45,25 @@
 
 ### 3. 키 등록
 
-발급받은 키를 **`.env` 파일에 넣습니다 (권장)** — 작업 폴더(Cowork 연결 폴더 / Claude Code 프로젝트 루트)(연결한 폴더가 여러 개면 아무 폴더나) 루트에 `.env` 파일을 만들고 아래 다섯 줄을 넣어 두면 스킬이 자동으로 찾아 읽습니다. 점(`.`)으로 시작하는 파일을 만들기 어렵다면 **`환경변수.txt`** 라는 이름으로 만들어도 똑같이 읽힙니다(메모장이 `.txt` 를 붙여 `.env.txt` 가 되어도 됩니다).
+발급받은 키를 아래처럼 등록합니다. **`.env` 같은 파일에 적어 두는 방식은 더 이상 쓰지 않습니다** — 스킬이 그 파일을 읽지 않습니다.
 
-```dotenv
-NAVER_CLIENT_ID=...
-NAVER_CLIENT_SECRET=...
-NAVER_SEARCHAD_ACCESS_KEY=...
-NAVER_SEARCHAD_SECRET_KEY=...
-NAVER_SEARCHAD_CUSTOMER_ID=...
+- **Claude Code** — Claude Code 설정 파일(`~/.claude/settings.json`)의 `env` 에 넣으면 Claude Code 가 스킬에 전달합니다. 설정을 바꾼 뒤에는 Claude Code 를 다시 시작하세요. 셸 환경변수로 넣어도 됩니다.
+
+```json
+{
+  "env": {
+    "NAVER_CLIENT_ID": "...",
+    "NAVER_CLIENT_SECRET": "...",
+    "NAVER_SEARCHAD_ACCESS_KEY": "...",
+    "NAVER_SEARCHAD_SECRET_KEY": "...",
+    "NAVER_SEARCHAD_CUSTOMER_ID": "..."
+  }
+}
 ```
 
-Claude Desktop의 "Claude 지침"(설정 → 일반)에 같은 내용을 적는 방식도 동작하지만, 대화 컨텍스트에 값이 노출되므로 `.env` 파일을 권장합니다.
+- **Cowork** — 이 스킬은 아직 Cowork 에서 키를 넣을 방법이 없습니다. 키가 필요한 조회는 Claude Code 에서 하세요.
 
-> 개발자라면 셸 환경변수나 홈(`$HOME`) 루트의 `.env`에 넣어도 됩니다.
+키 값을 대화창에 붙여 넣지 마세요. Claude Desktop 의 "Claude 지침"에 적는 방식도 동작하지만 대화 컨텍스트에 값이 노출되므로 권장하지 않습니다.
 
 > API 키가 없으면 해당 데이터 소스를 가져오지 못한 이유를 알려줍니다(바로 멈추지 않고 원인을 표시합니다). 가게 이름 자동완성은 키 없이도 동작합니다.
 

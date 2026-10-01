@@ -1,33 +1,28 @@
 #!/usr/bin/env python3
-"""기업 정보 수집 CLI — DART 전자공시시스템.
+"""기업 정보 수집 CLI — DART 전자공시시스템. 파일 입력 전용.
 
-경쟁사 분석용 기업 정보를 수집하여 JSON/Table로 출력.
+네트워크는 itda-hyve 의 ``http_request`` 가 한다(itda-work/skills#45). 이 스크립트는 API 를 직접 부르지 않고
+키 값을 보지 않는다. 명령마다 같은 순환을 돈다:
+
+    명령 실행 → 모자라면 error=incomplete + next_calls → itda-hyve 로 받기 → 같은 명령에 --input 을 더해 다시 실행
 
 사용법:
-    python3 scripts/collect_company.py search --name "삼성전자"
-    python3 scripts/collect_company.py info --corp-code 00126380
-    python3 scripts/collect_company.py finance --corp-code 00126380 --year 2024
-    python3 scripts/collect_company.py employees --corp-code 00126380 --year 2024
-    python3 scripts/collect_company.py profile --name "삼성전자" --year 2024
+    python3 scripts/collect_company.py search --name "삼성전자" --input <연결 폴더>/dart
+    python3 scripts/collect_company.py finance --corp-code 00126380 --year 2024 --input <연결 폴더>/dart
+    python3 scripts/collect_company.py profile --name "삼성전자" --year 2024 --input <연결 폴더>/dart
 """
 from __future__ import annotations
 
 import argparse
 import csv
-import io
 import json
 import sys
 from pathlib import Path
 from typing import Any
 
 import dart_api
-import env_loader
-
-# DART API 키 환경변수
-_KEY_VAR = "DART_API_KEY"
 
 # SPEC-DART-FEEDBACK-001: --report 한글 라벨 SSOT (cmd_finance·cmd_compare 공유)
-# REQ-006: 'half' 키 제거 (q2로 대체)
 _REPORT_LABELS = {
     "annual": "사업보고서",
     "q1": "1분기보고서",
@@ -35,56 +30,35 @@ _REPORT_LABELS = {
     "q3": "3분기보고서",
 }
 
-_SETUP_GUIDE = (
-    "DART_API_KEY가 설정되지 않았습니다.\n\n"
-    "DART 인증키 발급 방법:\n"
-    "  1. https://opendart.fss.or.kr 회원가입\n"
-    "  2. 인증키 발급 (즉시 발급, 40자리)\n\n"
-    "설정 방법: 작업 폴더 루트(예: outputs/)에 .env 파일을 만들고 키를 추가하세요.\n"
-    "  DART_API_KEY=발급받은_인증키\n"
-)
-
-# corpCode.xml 캐시 경로
-_OLD_CACHE_PATH = ".itda-skills/dart-corp-codes.xml"
-_cache_path: str | None = None
+# --next-plan 을 줬을 때 stdout 에 싣는 호출 미리보기 수
+_PREVIEW = 3
+# disclosure stdout 에 싣는 기본 건수(전량은 --out 파일로)
+_DISCLOSURE_LIMIT = 20
 
 
-def _get_cache_path() -> str:
-    """환경에 따라 캐시 경로를 결정한다 (lazy 해석)."""
-    global _cache_path  # noqa: PLW0603
-    if _cache_path is not None:
-        return _cache_path
-    from pathlib import Path
-
-    from itda_path import resolve_cache_dir
-    cache_dir = resolve_cache_dir("dart")
-    new_path = str(cache_dir / "corp-codes.xml")
-    # 이전 경로 마이그레이션
-    if Path(_OLD_CACHE_PATH).exists() and not Path(new_path).exists():
-        try:
-            Path(_OLD_CACHE_PATH).rename(new_path)
-        except OSError:
-            pass
-    _cache_path = new_path
-    return _cache_path
+def _fetch(args: argparse.Namespace) -> dart_api.Fetch:
+    return dart_api.Fetch(dart_api.InputSet.from_paths(getattr(args, "input", None)))
 
 
-def _get_api_key(cli_arg: str | None = None) -> str:
-    """DART API 키 해석."""
-    return env_loader.resolve_api_key(_KEY_VAR, cli_arg, _SETUP_GUIDE)
+def _corp_list(fetch: dart_api.Fetch, detail: str) -> list[dict[str, str]]:
+    zf = dart_api.corpcode_zip(fetch)
+    fetch.require(detail)
+    assert zf is not None
+    return dart_api.load_corp_list(zf)
 
 
 def cmd_search(args: argparse.Namespace) -> int:
-    """회사명으로 고유번호 검색."""
-    api_key = _get_api_key(args.api_key)
-    results = dart_api.find_corp_code(api_key, args.name, cache_path=_get_cache_path())
+    """회사명으로 고유번호 검색 — corpCode ZIP(최근 7일 안에 받은 것)."""
+    fetch = _fetch(args)
+    corps = _corp_list(fetch, "기업 고유번호 목록(corpCode ZIP)을 받아야 합니다")
+    results = dart_api.match_corps(corps, args.name)
 
     if not results:
         if args.format == "csv":
             _write_csv([], ["corp_code", "corp_name", "corp_name_eng", "stock_code"])
         else:
             print(json.dumps(
-                {"status": "ok", "query": args.name, "count": 0, "results": []},
+                {"status": "ok", "query": args.name, "count": 0, "results": [], "sources": fetch.used},
                 ensure_ascii=False, separators=(",", ":"),
             ))
         return 0
@@ -98,29 +72,19 @@ def cmd_search(args: argparse.Namespace) -> int:
         _print_search_table(results, args.name)
     else:
         print(json.dumps(
-            {"status": "ok", "query": args.name, "count": len(results), "results": results},
+            {"status": "ok", "query": args.name, "count": len(results), "results": results,
+             "sources": fetch.used},
             ensure_ascii=False, separators=(",", ":"),
         ))
     return 0
 
 
 def cmd_info(args: argparse.Namespace) -> int:
-    """기업개황 조회.
-
-    ``--input`` 이 있으면 네트워크를 타지 않고 itda-hyve 가 ``save_as`` 로 저장해 둔
-    ``company.json`` 응답 파일을 읽는다 (#1707 — itda-hyve 단일 네트워크 경로의 가공 모드).
-    """
-    input_path = getattr(args, "input", None)
-    if input_path:
-        path = Path(input_path).expanduser()
-        if not path.is_file():
-            raise ValueError(f"입력 파일이 없습니다: {input_path}")
-        data = dart_api.parse_saved_json(path.read_bytes())
-    else:
-        if not getattr(args, "corp_code", None):
-            raise ValueError("--corp-code 또는 --input 중 하나를 지정하세요.")
-        api_key = _get_api_key(args.api_key)
-        data = dart_api.get_company_info(api_key, args.corp_code)
+    """기업개황 조회 — company.json(최근 7일 안에 받은 것)."""
+    fetch = _fetch(args)
+    data = dart_api.company(fetch, args.corp_code)
+    fetch.require(f"기업개황({args.corp_code})을 받아야 합니다")
+    assert data is not None
 
     if args.format == "csv":
         _info_fields = [
@@ -132,7 +96,7 @@ def cmd_info(args: argparse.Namespace) -> int:
         _print_info_table(data)
     else:
         print(json.dumps(
-            {"status": "ok", **data}, ensure_ascii=False, separators=(",", ":"),
+            {**data, "status": "ok", "sources": fetch.used}, ensure_ascii=False, separators=(",", ":"),
         ))
     return 0
 
@@ -150,38 +114,40 @@ def _make_source_meta(rcept_no: str) -> dict[str, str]:
     }
 
 
+def _resolve_latest(fetch: dart_api.Fetch, corp_code: str, prefer: str) -> dict[str, str]:
+    """--year 가 없을 때 최신 보고서(1년 + 95일 정기공시)로 연도·보고서를 정한다. stderr 에 채택 보고서를 알린다."""
+    report_info = dart_api.find_latest_report(fetch, corp_code, prefer=prefer)
+    label = _REPORT_LABELS.get(report_info["report_type"], report_info["report_type"])
+    print(
+        f"[자동 폴백] {label} {report_info['bsns_year']} 사용 (rcept_no={report_info['rcept_no']})",
+        file=sys.stderr,
+    )
+    return report_info
+
+
+def _prefer_for(report: str, prefer: str) -> str:
+    """연도 없이 준 ``--report`` 가 사업보고서가 아니면 그 유형 가운데 최신을 고른다(``--prefer`` 보다 먼저)."""
+    return report if report != "annual" else prefer
+
+
 def cmd_finance(args: argparse.Namespace) -> int:
-    """재무제표 주요계정 조회.
-
-    --year 미지정 시 find_latest_report()로 자동 폴백.
-    prefer 옵션에 따라 사업/반기/분기 폴백 범위 결정.
-    --detail 플래그 시 fnlttSinglAcntAll(전체 176항목) 반환.
-    """
-    api_key = _get_api_key(args.api_key)
-    reprt_code = dart_api.REPRT_CODES.get(args.report, "11011")
-
+    """재무제표 주요계정(또는 --detail 전체) 조회. --year 미지정 시 최신 보고서로 자동 폴백."""
+    fetch = _fetch(args)
+    report = args.report
     year = getattr(args, "year", None)
     prefer = getattr(args, "prefer", "annual")
     detail = getattr(args, "detail", False)
 
     if not year:
-        # REQ-DART-004-001: 자동 폴백 — prefer에 따라 범위 결정
-        report_info = dart_api.find_latest_report(api_key, args.corp_code, prefer=prefer)
+        report_info = _resolve_latest(fetch, args.corp_code, _prefer_for(report, prefer))
         year = report_info["bsns_year"]
-        report_type = report_info.get("report_type", "annual")
-        # stderr 메시지: 어떤 보고서 채택됐는지 명시 (UX 모호성 방지)
-        label = _REPORT_LABELS.get(report_type, report_type)
-        print(
-            f"[자동 폴백] {label} {year} 사용 (rcept_no={report_info['rcept_no']})",
-            file=sys.stderr,
-        )
+        report = report_info["report_type"]
+    reprt_code = dart_api.REPRT_CODES.get(report, "11011")
 
     if detail:
-        # REQ-004: 전체 재무제표 (fnlttSinglAcntAll)
-        all_items = dart_api.get_financial_statements_all(
-            api_key, args.corp_code, year, reprt_code, args.fs_div,
-        )
-        # rcept_no 추출 (첫 항목에서)
+        all_items = dart_api.financial_statements_all(fetch, args.corp_code, year, reprt_code, args.fs_div)
+        fetch.require(f"전체 재무제표({args.corp_code} {year} {reprt_code} {args.fs_div})를 받아야 합니다")
+        assert all_items is not None
         rcept_no = all_items[0].get("rcept_no", "") if all_items else ""
         source = _make_source_meta(rcept_no)
 
@@ -199,26 +165,21 @@ def cmd_finance(args: argparse.Namespace) -> int:
         else:
             print(json.dumps(
                 {"status": "ok", "corp_code": args.corp_code, "year": year,
-                 "report": args.report, "fs_div": args.fs_div,
+                 "report": report, "fs_div": args.fs_div,
                  "count": len(all_items), "items": all_items,
-                 "source": source},
+                 "source": source, "sources": fetch.used},
                 ensure_ascii=False, separators=(",", ":"),
             ))
         return 0
 
-    # 기본: 주요계정 (fnlttSinglAcnt)
-    statements = dart_api.get_financial_statements(
-        api_key, args.corp_code, year, reprt_code,
-    )
+    statements = dart_api.financial_statements(fetch, args.corp_code, year, reprt_code)
+    fetch.require(f"주요계정 재무제표({args.corp_code} {year} {reprt_code})를 받아야 합니다")
+    assert statements is not None
     key_items, fallback = dart_api.filter_key_financials(statements, args.fs_div)
 
     if fallback:
-        print(
-            "[참고] 연결재무제표 없음 — 개별재무제표(OFS) 기준",
-            file=sys.stderr,
-        )
+        print("[참고] 연결재무제표 없음 — 개별재무제표(OFS) 기준", file=sys.stderr)
 
-    # rcept_no 추출 (REQ-005)
     rcept_no = key_items[0].get("rcept_no", "") if key_items else ""
     source = _make_source_meta(rcept_no)
 
@@ -234,77 +195,78 @@ def cmd_finance(args: argparse.Namespace) -> int:
     else:
         print(json.dumps(
             {"status": "ok", "corp_code": args.corp_code, "year": year,
-             "report": args.report, "fs_div": args.fs_div,
+             "report": report, "fs_div": args.fs_div,
              "count": len(key_items), "items": key_items,
-             "source": source},
+             "source": source, "sources": fetch.used},
             ensure_ascii=False, separators=(",", ":"),
         ))
     return 0
 
 
 def cmd_disclosure(args: argparse.Namespace) -> int:
-    """공시 목록 조회 (REQ-001).
-
-    list.json 호출 → rcept_no, report_nm, rcept_dt, flr_nm, corp_name 출력.
-    status=013(결과 없음)은 정상 케이스로 처리.
-    """
-    api_key = _get_api_key(args.api_key)
-
-    result = dart_api.list_disclosures(
-        api_key,
-        args.corp_code,
-        args.bgn,
-        args.end,
-        pblntf_ty=getattr(args, "type", None) or None,
-        page_no=args.page,
-        page_count=args.page_count,
+    """공시 목록 조회 — 기간 전체를 쪽마다 받아 전량 대조한다(쪽당 100건, 상한 --max-pages)."""
+    fetch = _fetch(args)
+    result = dart_api.list_pages(
+        fetch, args.corp_code, args.bgn, args.end,
+        ty=getattr(args, "type", None) or None,
+        max_pages=args.max_pages, single_page=args.single_page,
     )
+    items = result["items"]
+    total = result["total_count"]
+    for w in result["warnings"]:
+        print(f"[경고] {w}", file=sys.stderr)
+    if result["truncated"]:
+        print(f"[경고] 전체 {total}건 중 앞 {len(items)}건만 받았습니다(--max-pages {args.max_pages})",
+              file=sys.stderr)
 
-    items = result.get("list", [])
-    total = int(result.get("total_count", len(items)))
+    payload: dict[str, Any] = {
+        "status": "ok", "corp_code": args.corp_code,
+        "total_count": total, "count": len(items),
+        "truncated": result["truncated"], "pages": result["pages"], "total_page": result["total_page"],
+        "message": "조회된 공시 없음" if not items else "ok", "items": items,
+        "sources": fetch.used,
+    }
+    if result["warnings"]:
+        payload["warnings"] = result["warnings"]
+    out_path = getattr(args, "out", None)
+    if out_path:
+        # 전량은 파일로 — stdout 은 앞 --limit 건만 싣는다(모델 컨텍스트에 기간 전량을 싣지 않는다)
+        Path(out_path).expanduser().parent.mkdir(parents=True, exist_ok=True)
+        Path(out_path).expanduser().write_text(
+            json.dumps(payload, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
+    limit = args.limit if args.limit and args.limit > 0 else len(items)
+    shown = items[:limit]
     if args.format == "csv":
-        _write_csv(
-            items,
-            ["rcept_no", "report_nm", "rcept_dt", "flr_nm", "corp_name"],
-        )
+        _write_csv(items, ["rcept_no", "report_nm", "rcept_dt", "flr_nm", "corp_name"])
     elif args.format == "table":
-        _print_disclosure_table(items, total)
+        _print_disclosure_table(shown, total)
+        if len(shown) < len(items):
+            print(f"(앞 {len(shown)}건만 보였습니다 — 받은 {len(items)}건 전부는 --out 파일에)")
     else:
-        msg = "조회된 공시 없음" if not items else "ok"
-        print(json.dumps(
-            {"status": "ok", "corp_code": args.corp_code,
-             "total_count": total, "count": len(items),
-             "message": msg, "items": items},
-            ensure_ascii=False, separators=(",", ":"),
-        ))
+        stdout = {**payload, "items": shown, "shown": len(shown)}
+        if out_path:
+            stdout["out"] = str(Path(out_path).expanduser())
+        elif len(shown) < len(items):
+            stdout["note"] = f"items 는 최근 {len(shown)}건이다 — 받은 {len(items)}건 전부가 필요하면 --out FILE 로 파일에 쓴다"
+        print(json.dumps(stdout, ensure_ascii=False, separators=(",", ":")))
     return 0
 
 
 def cmd_business(args: argparse.Namespace) -> int:
-    """사업보고서 텍스트 추출 (REQ-002/003).
-
-    --rcept-no 미지정 + --corp-code만 → 최신 사업보고서 자동 폴백.
-    """
-    api_key = _get_api_key(args.api_key)
-
+    """사업보고서 텍스트 추출 — document ZIP. --rcept-no 가 없으면 최신 사업보고서로 자동 폴백."""
+    fetch = _fetch(args)
     rcept_no = getattr(args, "rcept_no", None)
-
     if not rcept_no:
-        # REQ-003: 자동 폴백
-        report_info = dart_api.find_latest_business_report(api_key, args.corp_code)
+        report_info = dart_api.find_latest_report(fetch, args.corp_code, prefer="annual")
         rcept_no = report_info["rcept_no"]
-        bsns_year = report_info["bsns_year"]
-        print(
-            f"[자동 폴백] 사업보고서 {bsns_year} 사용 (rcept_no={rcept_no})",
-            file=sys.stderr,
-        )
+        print(f"[자동 폴백] 사업보고서 {report_info['bsns_year']} 사용 (rcept_no={rcept_no})", file=sys.stderr)
 
-    text = dart_api.get_document_text(
-        api_key,
-        rcept_no,
-        section_pattern=getattr(args, "section", None) or None,
-        max_chars=args.max_chars,
+    zf = dart_api.document_zip(fetch, rcept_no)
+    fetch.require(f"공시서류 원본 ZIP({rcept_no})을 받아야 합니다")
+    assert zf is not None
+    text = dart_api.document_text(
+        zf, section_pattern=getattr(args, "section", None) or None, max_chars=args.max_chars,
     )
 
     if args.format == "csv":
@@ -319,11 +281,7 @@ def cmd_business(args: argparse.Namespace) -> int:
 
 
 def _parse_raw_params(pairs: list[str]) -> dict[str, str]:
-    """`key=value` 문자열 목록을 쿼리 파라미터 dict로 파싱한다.
-
-    value에 '='가 포함될 수 있으므로 첫 '='만 분리(partition)한다.
-    형식 미준수 시 ValueError(→ exit 2).
-    """
+    """`key=value` 목록 → dict. value 에 '=' 가 있을 수 있어 첫 '=' 만 가른다. 형식이 틀리면 ValueError."""
     params: dict[str, str] = {}
     for pair in pairs:
         if "=" not in pair:
@@ -340,16 +298,13 @@ def _parse_raw_params(pairs: list[str]) -> dict[str, str]:
 
 
 def cmd_raw(args: argparse.Namespace) -> int:
-    """임의 DART 엔드포인트 직접 호출 (escape-hatch, SPEC-DART-KDART-001).
-
-    references/에 명세만 있고 전용 서브커맨드가 없는 엔드포인트(배당·소송·전환사채 등)를
-    호출한다. JSON 원문만 반환 — 단위변환·CSV·출처링크 미보장(전용 finance/compare 사용).
-    """
-    api_key = _get_api_key(args.api_key)
+    """전용 명령이 없는 DART 엔드포인트(배당·소송·전환사채 등) — JSON 원문만."""
     params = _parse_raw_params(getattr(args, "param", None) or [])
-    data = dart_api.request_raw(api_key, args.endpoint, params)
+    fetch = _fetch(args)
+    data = dart_api.raw(fetch, args.endpoint, params)
+    fetch.require(f"{args.endpoint} 응답을 받아야 합니다")
+    assert data is not None
 
-    # raw는 JSON 전용 — table/csv 가공은 임의 스키마라 보장 불가(EXC-6).
     fmt = getattr(args, "format", "json")
     if fmt != "json":
         print(
@@ -363,12 +318,11 @@ def cmd_raw(args: argparse.Namespace) -> int:
 
 def cmd_employees(args: argparse.Namespace) -> int:
     """직원현황 조회."""
-    api_key = _get_api_key(args.api_key)
+    fetch = _fetch(args)
     reprt_code = dart_api.REPRT_CODES.get(args.report, "11011")
-
-    data = dart_api.get_employee_status(
-        api_key, args.corp_code, args.year, reprt_code,
-    )
+    data = dart_api.employee_status(fetch, args.corp_code, args.year, reprt_code)
+    fetch.require(f"직원현황({args.corp_code} {args.year} {reprt_code})을 받아야 합니다")
+    assert data is not None
 
     if args.format == "csv":
         _write_csv(
@@ -381,21 +335,32 @@ def cmd_employees(args: argparse.Namespace) -> int:
     else:
         print(json.dumps(
             {"status": "ok", "corp_code": args.corp_code, "year": args.year,
-             "count": len(data), "items": data},
+             "count": len(data), "items": data, "sources": fetch.used},
             ensure_ascii=False, separators=(",", ":"),
         ))
     return 0
 
 
-def cmd_profile(args: argparse.Namespace) -> int:
-    """기업 프로필 종합 조회 (기업개황 + 재무 + 직원).
+def _part(fn, *a, retry: list[dict[str, Any]]) -> tuple[Any, str | None]:
+    """profile 의 한 부분 — API 오류·입력 오류는 그 부분에만 담고 나머지는 계속한다.
 
-    회사명으로 검색 → 첫 번째 결과의 corp_code로 종합 조회.
+    원인을 고친 뒤 다시 받을 호출(키 오류·이름과 본문 불일치 등)은 ``retry`` 에 모은다.
     """
-    api_key = _get_api_key(args.api_key)
+    try:
+        return fn(*a), None
+    except dart_api.DARTAPIError as e:
+        retry.extend(e.next_calls)
+        return None, str(e)
+    except dart_api.InputFileError as e:
+        retry.extend(e.next_calls)
+        return None, f"[{e.kind}] {e}"
 
-    # 1. 회사명으로 corp_code 검색
-    matches = dart_api.find_corp_code(api_key, args.name, cache_path=_get_cache_path())
+
+def cmd_profile(args: argparse.Namespace) -> int:
+    """기업 프로필 종합 조회 (기업개황 + 재무 + 직원). 회사명 → 상장사 우선 첫 결과."""
+    fetch = _fetch(args)
+    corps = _corp_list(fetch, "기업 고유번호 목록(corpCode ZIP)을 받아야 합니다")
+    matches = dart_api.match_corps(corps, args.name)
     if not matches:
         print(json.dumps(
             {"status": "error", "error": "not_found",
@@ -403,35 +368,29 @@ def cmd_profile(args: argparse.Namespace) -> int:
             ensure_ascii=False,
         ))
         return 1
-
-    # 상장사 우선
-    matches.sort(key=lambda x: (0 if x.get("stock_code") else 1))
-    corp = matches[0]
+    corp = dart_api.listed_first(matches)[0]
     corp_code = corp["corp_code"]
-
-    # 2. 기업개황
-    try:
-        company_info = dart_api.get_company_info(api_key, corp_code)
-    except dart_api.DARTAPIError as e:
-        company_info = {"error": str(e)}
-
-    # 3. 재무제표
     reprt_code = dart_api.REPRT_CODES.get(args.report, "11011")
-    try:
-        statements = dart_api.get_financial_statements(
-            api_key, corp_code, args.year, reprt_code,
-        )
-        financials, _fallback = dart_api.filter_key_financials(statements)
-    except dart_api.DARTAPIError as e:
-        financials = [{"error": str(e)}]
 
-    # 4. 직원현황
-    try:
-        employees = dart_api.get_employee_status(
-            api_key, corp_code, args.year, reprt_code,
-        )
-    except dart_api.DARTAPIError as e:
-        employees = [{"error": str(e)}]
+    # 2단계 — 셋은 서로 독립이라 한 번에 요청한다(batch 로 받을 수 있다)
+    retry: list[dict[str, Any]] = []
+    company_info, e1 = _part(dart_api.company, fetch, corp_code, retry=retry)
+    statements, e2 = _part(dart_api.financial_statements, fetch, corp_code, args.year, reprt_code, retry=retry)
+    employees, e3 = _part(dart_api.employee_status, fetch, corp_code, args.year, reprt_code, retry=retry)
+    fetch.require(f"{corp.get('corp_name', '')}({corp_code}) 기업개황·재무·직원현황을 받아야 합니다")
+
+    warnings = []
+    if e1:
+        company_info = {"error": e1}
+        warnings.append(f"기업개황: {e1}")
+    if e2:
+        financials: list[dict] = [{"error": e2}]
+        warnings.append(f"재무: {e2}")
+    else:
+        financials, _fallback = dart_api.filter_key_financials(statements or [])
+    if e3:
+        employees = [{"error": e3}]
+        warnings.append(f"직원현황: {e3}")
 
     profile: dict[str, Any] = {
         "status": "ok",
@@ -442,13 +401,18 @@ def cmd_profile(args: argparse.Namespace) -> int:
         "company_info": company_info,
         "financials": financials,
         "employees": employees,
+        "sources": fetch.used,
     }
+    if warnings:
+        profile["warnings"] = warnings
+    if retry:
+        # 원인(키 등)을 고친 뒤 이 호출로 다시 받으면 빠진 부분이 채워진다
+        profile["retry_calls"] = retry
 
     if args.format == "csv":
-        # profile CSV: 기업개황 필드를 단일 행으로
         info_fields = ["corp_name", "ceo_nm", "induty_code", "est_dt",
                        "adres", "hm_url", "corp_cls", "stock_code"]
-        row = {k: company_info.get(k, "") for k in info_fields}
+        row = {k: (company_info or {}).get(k, "") for k in info_fields}
         row["corp_code"] = corp_code
         row["year"] = args.year
         _write_csv([row], ["corp_code", "year"] + info_fields)
@@ -619,25 +583,19 @@ def _compute_growth_rate(current_val: str | None, prior_val: str | None) -> str:
 
 
 def cmd_compare(args: argparse.Namespace) -> int:
-    """다기업 재무 비교 커맨드.
+    """다기업 재무 비교 — 다중회사 주요계정(fnlttMultiAcnt) 한 번(100개사까지)으로 받는다.
 
     --names 또는 --corp-codes로 기업 지정 (병기 가능 — REQ-004).
-    --year와 --accounts로 조회. --unit·--with-ratios 옵션 지원.
-
-    --year 미지정 시 첫 corp_code 기준 find_latest_report()로 자동 폴백.
-    prefer 옵션은 finance 커맨드와 동형: annual=사업보고서만, latest=분기·반기 포함.
+    --year 미지정 시 첫 기업 기준 최신 보고서로 자동 폴백(prefer 는 finance 와 같다).
     """
-    api_key = _get_api_key(args.api_key)
+    fetch = _fetch(args)
     report = getattr(args, "report", "annual")
-    reprt_code = dart_api.REPRT_CODES.get(report, "11011")
     unit = getattr(args, "unit", "auto")
     with_ratios = getattr(args, "with_ratios", False)
 
-    # 기업 코드 목록 결정 — corp_codes 우선, names 보조 매핑 (REQ-004 OQ-5)
     corp_codes: list[str] = []
     corp_names: dict[str, str] = {}  # corp_code → 표시 이름
 
-    # 1) --names 입력값 파싱 (헤더 매핑 후보)
     name_list: list[str] = []
     if getattr(args, "names", None):
         name_list = [n.strip() for n in args.names.split(",") if n.strip()]
@@ -645,87 +603,81 @@ def cmd_compare(args: argparse.Namespace) -> int:
     if getattr(args, "corp_codes", None):
         # --corp-codes 명시: 코드 그대로 사용, --names가 있으면 순서대로 헤더 매핑
         code_list = [c.strip() for c in args.corp_codes.split(",") if c.strip()]
-        corp_codes.extend(code_list)
         for idx, code in enumerate(code_list):
-            if idx < len(name_list):
-                corp_names[code] = name_list[idx]
-            else:
-                corp_names[code] = code
+            if code in corp_names:
+                continue
+            corp_codes.append(code)
+            corp_names[code] = name_list[idx] if idx < len(name_list) else code
     elif name_list:
-        # --corp-codes 없을 때만 검색 — 기존 동작
+        corps = _corp_list(fetch, "기업 고유번호 목록(corpCode ZIP)을 받아야 합니다")
         for name in name_list:
-            matches = dart_api.find_corp_code(api_key, name, cache_path=_get_cache_path())
+            matches = dart_api.match_corps(corps, name)
             if not matches:
                 print(f"[경고] '{name}' 검색 결과 없음 — 스킵", file=sys.stderr)
                 continue
-            # 상장사 우선, 2+건이면 첫 결과 + 경고
-            matches.sort(key=lambda x: (0 if x.get("stock_code") else 1))
+            matches = dart_api.listed_first(matches)
             if len(matches) > 1:
                 print(
                     f"[경고] '{name}' 검색 결과 {len(matches)}건 — '{matches[0]['corp_name']}' 채택",
                     file=sys.stderr,
                 )
             corp = matches[0]
+            if corp["corp_code"] in corp_names:
+                continue
             corp_codes.append(corp["corp_code"])
             corp_names[corp["corp_code"]] = corp["corp_name"]
     else:
-        # 둘 다 미지정 — 명시적 에러 (mutually_exclusive_group 해제 보강)
         raise ValueError("--names 또는 --corp-codes 중 하나는 반드시 지정해야 합니다.")
 
-    # 계정 목록 결정 (REQ-007: 기본 4계정 명시)
     accounts_str = getattr(args, "accounts", None)
     if accounts_str:
         accounts = [a.strip() for a in accounts_str.split(",") if a.strip()]
     else:
         accounts = list(dart_api.DEFAULT_ACCOUNTS)
 
-    # REQ-DART-005: --year 미지정 시 첫 corp_code 기준 자동 폴백
-    # finance --prefer와 동형 UX: stderr에 채택된 보고서 명시
     year = getattr(args, "year", None)
     prefer = getattr(args, "prefer", "annual")
-
+    if not corp_codes:
+        print(json.dumps(
+            {"status": "error", "error": "args",
+             "detail": "비교할 기업이 없습니다 (--names/--corp-codes 모두 매칭 실패)."},
+            ensure_ascii=False,
+        ))
+        return 2
     if not year:
-        if not corp_codes:
-            print(json.dumps(
-                {"status": "error", "error": "args",
-                 "detail": "비교할 기업이 없습니다 (--names/--corp-codes 모두 매칭 실패)."},
-                ensure_ascii=False,
-            ))
-            return 2
-        report_info = dart_api.find_latest_report(api_key, corp_codes[0], prefer=prefer)
+        report_info = dart_api.find_latest_report(fetch, corp_codes[0], prefer=_prefer_for(report, prefer))
         year = report_info["bsns_year"]
-        report = report_info.get("report_type", "annual")
-        reprt_code = dart_api.REPRT_CODES.get(report, "11011")
+        report = report_info["report_type"]
         label = _REPORT_LABELS.get(report, report)
         ref_name = corp_names.get(corp_codes[0], corp_codes[0])
         print(
             f"[자동 폴백] {label} {year} 사용 ({ref_name} 기준, rcept_no={report_info['rcept_no']})",
             file=sys.stderr,
         )
-
+    reprt_code = dart_api.REPRT_CODES.get(report, "11011")
     with_prior = getattr(args, "with_prior", False)
 
-    # 비교 조회
-    raw_data = dart_api.compare_financials(api_key, corp_codes, year, accounts, reprt_code)
+    statements = dart_api.multi_statements(fetch, corp_codes, year, reprt_code)
+    fetch.require(f"다중회사 주요계정({len(corp_codes)}개사 {year} {reprt_code})을 받아야 합니다")
+    assert statements is not None
+    raw_data = dart_api.compare_from_statements(statements, corp_codes, accounts)
 
-    # 폴백 안내 + 데이터 평탄화 (REQ-003)
-    # raw_data: {corp_code: {"data": {...}, "fallback": bool, "rcept_no": str}}
     data: dict[str, dict] = {}
-    corp_source: dict[str, dict] = {}  # corp_code → source meta
+    corp_source: dict[str, dict] = {}
+    warnings: list[str] = []
     for code in corp_codes:
         entry = raw_data.get(code, {"data": {}, "fallback": False, "rcept_no": ""})
         data[code] = entry.get("data", {})
+        corp_name_display = corp_names.get(code, code)
+        if not statements.get(code):
+            msg = f"{corp_name_display}: {year} {_REPORT_LABELS.get(report, report)} 재무 데이터가 없습니다"
+            warnings.append(msg)
+            print(f"[경고] {msg}", file=sys.stderr)
         if entry.get("fallback"):
-            corp_name_display = corp_names.get(code, code)
-            print(
-                f"[참고] {corp_name_display}: 연결재무제표 없음 — 개별재무제표(OFS) 기준",
-                file=sys.stderr,
-            )
-        rcept_no = entry.get("rcept_no", "")
-        corp_source[code] = _make_source_meta(rcept_no)
+            print(f"[참고] {corp_name_display}: 연결재무제표 없음 — 개별재무제표(OFS) 기준", file=sys.stderr)
+        corp_source[code] = _make_source_meta(entry.get("rcept_no", ""))
 
-    # 파생 지표 계산 (REQ-005: --with-ratios)
-    ratios: dict[str, dict[str, str]] = {}  # corp_code → {'영업이익률': '12.34%', '순이익률': ...}
+    ratios: dict[str, dict[str, str]] = {}
     if with_ratios:
         for code in corp_codes:
             corp_data = data.get(code, {})
@@ -736,7 +688,6 @@ def cmd_compare(args: argparse.Namespace) -> int:
                 "영업이익률": _compute_ratio(op, sales),
                 "순이익률": _compute_ratio(ni, sales),
             }
-            # REQ-006: --with-prior 병행 시 전기 대비 증감률 추가
             if with_prior:
                 prior_sales = (corp_data.get("매출액") or {}).get("frmtrm_amount")
                 prior_op = (corp_data.get("영업이익") or {}).get("frmtrm_amount")
@@ -756,10 +707,12 @@ def cmd_compare(args: argparse.Namespace) -> int:
             "corp_codes": corp_codes, "corp_names": corp_names,
             "accounts": accounts, "unit": unit,
             "with_prior": with_prior, "data": data,
-            "source": corp_source,
+            "source": corp_source, "sources": fetch.used,
         }
         if with_ratios:
             out["ratios"] = ratios
+        if warnings:
+            out["warnings"] = warnings
         print(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
     return 0
 
@@ -1093,219 +1046,239 @@ def _report_choice(s: str) -> str:
 def build_parser() -> argparse.ArgumentParser:
     """CLI 인자 파서 생성.
 
-    공용 옵션(--api-key, --format)을 _add_common() 헬퍼로 메인 파서와 모든 서브파서에
+    공용 옵션(--format·--input·--next-plan)을 _add_common() 헬퍼로 메인 파서와 모든 서브파서에
     동시 등록하여 서브커맨드 앞/뒤 양쪽 위치에서 모두 동작하도록 한다 (REQ-1).
-
-    구현 주의사항:
-    - 서브파서 공용 옵션은 default=argparse.SUPPRESS로 두어 메인 파서 기본값을 보존한다.
-    - parents=[common] 패턴 사용 금지 — default 충돌 문제 (plan.md Risk-2 참고).
+    서브파서 공용 옵션은 default=argparse.SUPPRESS로 두어 메인 파서 기본값을 보존한다.
     """
-    # 메인 파서: 서브커맨드 앞 위치 공용 옵션 (REQ-1.2, 하위 호환)
     parser = argparse.ArgumentParser(
-        description="기업 정보 수집 — DART 전자공시시스템",
-    )
-    parser.add_argument(
-        "--api-key", default=None, dest="api_key", help="DART API 키 (직접 전달)",
-    )
-    parser.add_argument(
-        "--format", choices=["json", "table", "csv"], default="json",
-        help="출력 형식 (기본: json)",
+        description="기업 정보 수집 — DART 전자공시시스템 (itda-hyve 가 받은 응답 파일을 가공)",
     )
 
-    sub = parser.add_subparsers(dest="command", required=True)
-
-    # 서브파서 공용 옵션은 default=argparse.SUPPRESS로 두어 메인 파서 기본값을 보존한다.
-    # SUPPRESS: 미지정 시 Namespace에 속성을 추가하지 않으므로 메인 파서 기본값이 유지됨.
-    def _add_common(p: argparse.ArgumentParser) -> None:
-        """서브파서에 공용 옵션 추가 (SUPPRESS default로 메인 파서 값 보존)."""
+    def _common(p: argparse.ArgumentParser, suppress: bool) -> None:
+        d = (lambda v: argparse.SUPPRESS) if suppress else (lambda v: v)
         p.add_argument(
-            "--api-key", default=argparse.SUPPRESS, dest="api_key",
-            help="DART API 키 (직접 전달)",
-        )
-        p.add_argument(
-            "--format", choices=["json", "table", "csv"], default=argparse.SUPPRESS,
+            "--format", choices=["json", "table", "csv"], default=d("json"),
             help="출력 형식 (기본: json)",
         )
+        p.add_argument(
+            "--input", nargs="+", default=d(None), metavar="PATH",
+            help="itda-hyve 가 save_as 로 저장한 응답 파일 또는 그 폴더(여러 개). 폴더면 그 안과 dart/ 하위를 본다",
+        )
+        p.add_argument(
+            "--next-plan", dest="next_plan", default=d(None), metavar="FILE",
+            help="더 받을 호출을 itda-hyve batch 의 plan_file 로 쓴다(40개씩 나눠 FILE·FILEa·FILEb…)",
+        )
 
-    # search
-    p_search = sub.add_parser("search", help="회사명으로 고유번호 검색")
-    _add_common(p_search)
+    _common(parser, suppress=False)
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    def _add(name: str, help_: str) -> argparse.ArgumentParser:
+        p = sub.add_parser(name, help=help_)
+        _common(p, suppress=True)
+        return p
+
+    def _report(p: argparse.ArgumentParser) -> None:
+        p.add_argument(
+            "--report", "-r", type=_report_choice, default="annual",
+            help="보고서 유형: annual=사업, q1=1분기, q2=반기, q3=3분기 (기본: annual)",
+        )
+
+    p_search = _add("search", "회사명으로 고유번호 검색")
     p_search.add_argument("--name", "-n", required=True, help="회사명 (부분 일치)")
 
-    # info
-    p_info = sub.add_parser("info", help="기업개황 조회")
-    _add_common(p_info)
-    p_info.add_argument("--corp-code", "-c", default=None, help="8자리 고유번호 (--input 없을 때 필수)")
-    p_info.add_argument(
-        "--input", default=None, metavar="JSON",
-        help="itda-hyve 가 save_as 로 저장한 company.json 경로 (네트워크 없이 가공)",
-    )
+    p_info = _add("info", "기업개황 조회")
+    p_info.add_argument("--corp-code", "-c", required=True, help="8자리 고유번호")
 
-    # finance
-    p_fin = sub.add_parser("finance", help="재무제표 주요계정 조회")
-    _add_common(p_fin)
+    p_fin = _add("finance", "재무제표 주요계정 조회")
     p_fin.add_argument("--corp-code", "-c", required=True, help="8자리 고유번호")
-    p_fin.add_argument(
-        "--year", "-y", default=None,
-        help="사업연도 (예: 2024). 미지정 시 최신 사업보고서 자동 선택",
-    )
-    p_fin.add_argument(
-        "--report", "-r", type=_report_choice,
-        default="annual",
-        help="보고서 유형: annual=사업, q1=1분기, q2=반기, q3=3분기 (기본: annual)",
-    )
-    p_fin.add_argument(
-        "--fs-div", choices=["CFS", "OFS"], default="CFS",
-        help="연결(CFS)/개별(OFS) (기본: CFS)",
-    )
-    p_fin.add_argument(
-        "--prefer", choices=["annual", "latest"], default="annual",
-        help="폴백 범위: annual=사업보고서만, latest=분기·반기 포함 (기본: annual)",
-    )
-    p_fin.add_argument(
-        "--detail", action="store_true",
-        help="전체 재무제표 반환 (fnlttSinglAcntAll, 176항목). 기본 OFF (주요계정 약 30항목)",
-    )
+    p_fin.add_argument("--year", "-y", default=None,
+                       help="사업연도 (예: 2024). 미지정 시 최신 보고서 자동 선택")
+    _report(p_fin)
+    p_fin.add_argument("--fs-div", choices=["CFS", "OFS"], default="CFS",
+                       help="연결(CFS)/개별(OFS) (기본: CFS)")
+    p_fin.add_argument("--prefer", choices=["annual", "latest"], default="annual",
+                       help="폴백 범위: annual=사업보고서만, latest=분기·반기 포함 (기본: annual)")
+    p_fin.add_argument("--detail", action="store_true",
+                       help="전체 재무제표 반환 (fnlttSinglAcntAll). 기본 OFF (주요계정 약 30항목)")
 
-    # disclosure
-    p_disc = sub.add_parser("disclosure", help="공시 목록 조회")
-    _add_common(p_disc)
+    p_disc = _add("disclosure", "공시 목록 조회 (기간 전체, 쪽마다 전량 대조)")
     p_disc.add_argument("--corp-code", "-c", required=True, help="8자리 고유번호")
     p_disc.add_argument("--bgn", required=True, help="시작일 (YYYYMMDD)")
     p_disc.add_argument("--end", required=True, help="종료일 (YYYYMMDD)")
-    p_disc.add_argument("--type", default=None, help="공시 유형 (A=정기, B=주요사항, None=전체)")
-    p_disc.add_argument("--page", type=int, default=1, help="페이지 번호 (기본: 1)")
-    p_disc.add_argument("--page-count", type=int, default=10, dest="page_count",
-                        help="페이지당 건수 (기본: 10, 최대: 100)")
+    p_disc.add_argument("--type", default=None, choices=list("ABCDEFGHIJ"),
+                        help="공시 유형 (A=정기, B=주요사항 …, 미지정=전체)")
+    p_disc.add_argument("--max-pages", dest="max_pages", type=int, default=dart_api.MAX_PAGES,
+                        help=f"받을 쪽 상한 (쪽당 {dart_api.PAGE_COUNT}건, 기본 {dart_api.MAX_PAGES}). 넘으면 truncated")
+    p_disc.add_argument("--single-page", dest="single_page", action="store_true",
+                        help="전량 대조 없이 1쪽(최근 100건)만 본다")
+    p_disc.add_argument("--limit", type=int, default=_DISCLOSURE_LIMIT,
+                        help=f"stdout(json·table)에 싣는 건수 — 최근 순 (기본 {_DISCLOSURE_LIMIT}, 0=전부). 대조는 늘 전량")
+    p_disc.add_argument("--out", default=None, metavar="FILE",
+                        help="받은 전량을 JSON 파일로 쓴다(stdout 에는 --limit 건만)")
 
-    # business
-    p_biz = sub.add_parser("business", help="사업보고서 텍스트 추출")
-    _add_common(p_biz)
+    p_biz = _add("business", "사업보고서 텍스트 추출")
     p_biz_group = p_biz.add_mutually_exclusive_group(required=True)
     p_biz_group.add_argument("--rcept-no", dest="rcept_no", default=None,
-                             help="접수번호 (14자리). 미지정 시 --corp-code로 자동 검색")
+                             help="접수번호 (14자리). 미지정 시 --corp-code로 최신 사업보고서")
     p_biz_group.add_argument("--corp-code", "-c", dest="corp_code", default=None,
                              help="8자리 고유번호. --rcept-no 없을 때 자동 폴백용")
     p_biz.add_argument("--section", default=None, help="추출할 섹션 정규식 (예: '사업의 내용')")
     p_biz.add_argument("--max-chars", type=int, default=5000, dest="max_chars",
                        help="최대 출력 문자수 (기본: 5000, 0=무제한)")
 
-    # raw (escape-hatch: 임의 엔드포인트 — references 80개 doc-only API 직접 호출)
-    p_raw = sub.add_parser(
-        "raw", help="임의 DART 엔드포인트 직접 호출 (JSON 원문, 가공 없음)",
-    )
-    _add_common(p_raw)
-    p_raw.add_argument(
-        "--endpoint", "-e", required=True,
-        help="DART 엔드포인트 이름 (영숫자, 예: alotMatter, lwstLg, cvbdIsDecsn)",
-    )
-    p_raw.add_argument(
-        "--param", "-p", action="append", default=[], metavar="KEY=VALUE",
-        help="쿼리 파라미터 (반복 가능, 예: --param corp_code=00126380 "
-             "--param bsns_year=2024). crtfc_key는 자동 주입됨",
-    )
+    p_raw = _add("raw", "임의 DART 엔드포인트 (JSON 원문, 가공 없음)")
+    p_raw.add_argument("--endpoint", "-e", required=True,
+                       help="DART 엔드포인트 이름 (영숫자, 예: alotMatter, lwstLg, cvbdIsDecsn)")
+    p_raw.add_argument("--param", "-p", action="append", default=[], metavar="KEY=VALUE",
+                       help="쿼리 파라미터 (반복 가능). crtfc_key 는 자리표시자로 자동으로 들어간다")
 
-    # employees
-    p_emp = sub.add_parser("employees", help="직원현황 조회")
-    _add_common(p_emp)
+    p_emp = _add("employees", "직원현황 조회")
     p_emp.add_argument("--corp-code", "-c", required=True, help="8자리 고유번호")
     p_emp.add_argument("--year", "-y", required=True, help="사업연도")
-    p_emp.add_argument(
-        "--report", "-r", type=_report_choice,
-        default="annual",
-        help="보고서 유형: annual=사업, q1=1분기, q2=반기, q3=3분기 (기본: annual)",
-    )
+    _report(p_emp)
 
-    # profile (종합)
-    p_prof = sub.add_parser("profile", help="기업 프로필 종합 조회")
-    _add_common(p_prof)
+    p_prof = _add("profile", "기업 프로필 종합 조회")
     p_prof.add_argument("--name", "-n", required=True, help="회사명")
     p_prof.add_argument("--year", "-y", required=True, help="사업연도")
-    p_prof.add_argument(
-        "--report", "-r", type=_report_choice,
-        default="annual",
-        help="보고서 유형: annual=사업, q1=1분기, q2=반기, q3=3분기 (기본: annual)",
-    )
+    _report(p_prof)
 
-    # compare
-    p_cmp = sub.add_parser("compare", help="다기업 재무 비교")
-    _add_common(p_cmp)
-    # REQ-004: --names와 --corp-codes를 병기 가능하도록 mutually_exclusive 해제
-    # 둘 다 미지정 시 cmd_compare에서 ValueError 발생 (회귀 0)
-    p_cmp.add_argument(
-        "--names", default=None,
-        help="회사명 (쉼표 구분, 예: '삼성전자,LG전자'). "
-             "--corp-codes와 병기 시 헤더 표시명으로 사용됨.",
-    )
-    p_cmp.add_argument(
-        "--corp-codes", dest="corp_codes", default=None,
-        help="8자리 고유번호 (쉼표 구분, 예: '00126380,00401731')",
-    )
-    p_cmp.add_argument(
-        "--year", "-y", default=None,
-        help="사업연도 (예: 2024). 미지정 시 첫 기업 기준 최신 보고서 자동 선택",
-    )
+    p_cmp = _add("compare", "다기업 재무 비교")
+    p_cmp.add_argument("--names", default=None,
+                       help="회사명 (쉼표 구분, 예: '삼성전자,LG전자'). --corp-codes와 병기 시 헤더 표시명")
+    p_cmp.add_argument("--corp-codes", dest="corp_codes", default=None,
+                       help="8자리 고유번호 (쉼표 구분, 예: '00126380,00401731')")
+    p_cmp.add_argument("--year", "-y", default=None,
+                       help="사업연도 (예: 2024). 미지정 시 첫 기업 기준 최신 보고서 자동 선택")
     _default_accounts = ",".join(dart_api.DEFAULT_ACCOUNTS)
-    p_cmp.add_argument(
-        "--accounts", default=None,
-        help=f"계정명 (쉼표 구분, 기본: {_default_accounts})",
-    )
-    p_cmp.add_argument(
-        "--report", "-r", type=_report_choice,
-        default="annual",
-        help="보고서 유형: annual=사업, q1=1분기, q2=반기, q3=3분기 (기본: annual)",
-    )
-    p_cmp.add_argument(
-        "--prefer", choices=["annual", "latest"], default="annual",
-        help="폴백 범위: annual=사업보고서만, latest=분기·반기 포함 (기본: annual)",
-    )
-    p_cmp.add_argument(
-        "--unit", choices=UNIT_CHOICES, default="auto",
-        help="금액 단위: auto(>=1조 jo, >=1억 eok, 미만 million) | million | eok | jo (기본: auto)",
-    )
-    p_cmp.add_argument(
-        "--with-ratios", dest="with_ratios", action="store_true",
-        help="영업이익률·순이익률 행 추가 (매출액 기준). 매출액=0/누락이면 N/A",
-    )
-    p_cmp.add_argument(
-        "--with-prior", dest="with_prior", action="store_true",
-        help="전기(frmtrm_amount) 열/필드 추가. --with-ratios 병행 시 전기 대비 증감률 추가 (기본 OFF)",
-    )
-
+    p_cmp.add_argument("--accounts", default=None, help=f"계정명 (쉼표 구분, 기본: {_default_accounts})")
+    _report(p_cmp)
+    p_cmp.add_argument("--prefer", choices=["annual", "latest"], default="annual",
+                       help="폴백 범위: annual=사업보고서만, latest=분기·반기 포함 (기본: annual)")
+    p_cmp.add_argument("--unit", choices=UNIT_CHOICES, default="auto",
+                       help="금액 단위: auto(>=1조 jo, >=1억 eok, 미만 million) | million | eok | jo (기본: auto)")
+    p_cmp.add_argument("--with-ratios", dest="with_ratios", action="store_true",
+                       help="영업이익률·순이익률 행 추가 (매출액 기준). 매출액=0/누락이면 N/A")
+    p_cmp.add_argument("--with-prior", dest="with_prior", action="store_true",
+                       help="전기(frmtrm_amount) 열/필드 추가. --with-ratios 병행 시 전기 대비 증감률 추가")
     return parser
 
 
+def _plan_paths(path: str, n_chunks: int) -> list[Path]:
+    """plan.json 하나, 나눠야 하면 plan-a.json·plan-b.json … (itda-hyve batch 는 40개를 넘으면 하나도 실행하지 않는다)."""
+    out = Path(path).expanduser()
+    if n_chunks <= 1:
+        return [out]
+    letters = "abcdefghijklmnopqrstuvwxyz"
+    return [out.with_name(f"{out.stem}{letters[i]}{out.suffix}") for i in range(n_chunks)]
+
+
+def write_plans(path: str, calls: list[dict[str, Any]]) -> list[str]:
+    """batch plan_file 형식으로 40개씩 나눠 쓴다. save_dir 는 넣지 않는다 — batch 호출 인자로 준다."""
+    chunks = [calls[i:i + dart_api.BATCH_MAX] for i in range(0, len(calls), dart_api.BATCH_MAX)] or [[]]
+    paths = _plan_paths(path, len(chunks))
+    for p, chunk in zip(paths, chunks):
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(
+            json.dumps({"calls": chunk, "timeout_sec": dart_api.TIMEOUT_SEC}, ensure_ascii=False,
+                       separators=(",", ":")),
+            encoding="utf-8",
+        )
+    return [str(p) for p in paths]
+
+
+def plan_file_args(paths: list[str], inputs: list[str] | None) -> list[str] | None:
+    """계획 파일을 ``--input`` 폴더(= itda-hyve ``save_dir``) 기준 상대 경로로. 폴더 밖이면 None.
+
+    stdout 의 ``plan_files`` 는 스크립트가 본 경로(Cowork 면 샌드박스 경로)라 batch ``plan_file`` 에 그대로 넘길 수 없다.
+    """
+    roots = [Path(i).expanduser().resolve() for i in inputs or [] if Path(i).expanduser().is_dir()]
+    out: list[str] = []
+    for p in paths:
+        rp = Path(p).resolve()
+        for root in roots:
+            try:
+                out.append(rp.relative_to(root).as_posix())
+                break
+            except ValueError:
+                continue
+        else:
+            return None
+    return out
+
+
+def _emit_calls(out: dict[str, Any], calls: list[dict[str, Any]], args: argparse.Namespace) -> None:
+    """받을 호출을 출력에 싣는다 — ``--next-plan`` 이면 계획 파일(40개씩)로 쓰고 미리보기만."""
+    next_plan = getattr(args, "next_plan", None)
+    out["next_calls_count"] = len(calls)
+    if next_plan and calls:
+        files = write_plans(next_plan, calls)
+        out["plan_files"] = files
+        rel = plan_file_args(files, getattr(args, "input", None))
+        if rel is not None:
+            out["plan_file_args"] = rel
+        else:
+            out["warning"] = ("계획 파일이 --input 폴더 밖에 있어 batch plan_file 에 넘길 상대 경로를 알 수 없다 — "
+                              "--next-plan 을 연결 폴더의 dart/ 안으로 준다")
+        out["next_calls_preview"] = calls[:_PREVIEW]
+    else:
+        out["next_calls"] = calls
+        if len(calls) > dart_api.BATCH_MAX:
+            out["warning"] = (f"호출이 {len(calls)}개다 — batch 는 {dart_api.BATCH_MAX}개를 넘으면 하나도 실행하지 않으니 "
+                              "--next-plan 으로 나눠 쓴 계획 파일을 차례로 넘긴다")
+
+
+def _incomplete(exc: dart_api.IncompleteError, args: argparse.Namespace) -> None:
+    out: dict[str, Any] = {"status": "error", "error": "incomplete", "detail": str(exc)}
+    out.update(exc.extra)
+    _emit_calls(out, exc.next_calls, args)
+    print(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
+
+
+def _failed(out: dict[str, Any], calls: list[dict[str, Any]], args: argparse.Namespace) -> None:
+    """오류 출력. 원인을 고친 뒤 다시 받을 호출이 있으면 함께 싣는다(없으면 다시 받아도 같다)."""
+    if calls:
+        _emit_calls(out, calls, args)
+    print(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
+
+
 def main(argv: list[str] | None = None) -> int:
-    """CLI 진입점."""
+    """CLI 진입점. 종료 코드: 0 성공, 1 가공 실패·받을 것 남음(incomplete)·되풀이해도 안 맞음(unstable), 2 인자 오류."""
+    # Windows 콘솔(cp949)에서 한국어 출력이 죽지 않게 한다.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8")
+            except (OSError, ValueError):
+                pass
+
     parser = build_parser()
     args = parser.parse_args(argv)
 
+    commands = {
+        "search": cmd_search,
+        "info": cmd_info,
+        "finance": cmd_finance,
+        "employees": cmd_employees,
+        "profile": cmd_profile,
+        "disclosure": cmd_disclosure,
+        "business": cmd_business,
+        "compare": cmd_compare,
+        "raw": cmd_raw,
+    }
     try:
-        commands = {
-            "search": cmd_search,
-            "info": cmd_info,
-            "finance": cmd_finance,
-            "employees": cmd_employees,
-            "profile": cmd_profile,
-            "disclosure": cmd_disclosure,
-            "business": cmd_business,
-            "compare": cmd_compare,
-            "raw": cmd_raw,
-        }
         return commands[args.command](args)
-
-    except env_loader.MissingAPIKeyError as e:
-        print(json.dumps(
-            {"status": "error", "error": "config", "detail": str(e)},
-            ensure_ascii=False,
-        ))
+    except dart_api.IncompleteError as e:
+        _incomplete(e, args)
+        return 1
+    except dart_api.UnstableError as e:
+        print(json.dumps({"status": "error", "error": "unstable", "detail": str(e)}, ensure_ascii=False))
+        return 1
+    except dart_api.InputFileError as e:
+        _failed({"status": "error", "error": e.kind, "detail": str(e)}, e.next_calls, args)
         return 1
     except dart_api.DARTAPIError as e:
-        print(json.dumps(
-            {"status": "error", "error": "api", "detail": str(e),
-             "error_code": e.error_code},
-            ensure_ascii=False,
-        ))
+        _failed({"status": "error", "error": "api", "detail": str(e), "error_code": e.error_code},
+                e.next_calls, args)
         return 1
     except ValueError as e:
         print(json.dumps(

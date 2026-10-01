@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""부동산 실거래가 가공 CLI — 국토교통부 공공데이터 12유형 (파일 입력 전용).
+"""부동산 실거래가 CLI — 국토교통부 공공데이터 12유형. 호출 계획(plan)과 응답 가공(collect), 파일 입력 전용.
 
-네트워크는 itda-hyve 의 ``http_request`` 가 한다(#1707). 이 스크립트는 그렇게 받아 둔
-**응답 XML 파일을 읽어** 정규화·요약·전량 대조만 한다 — 직접 API 를 부르지 않는다.
+네트워크는 itda-hyve 가 한다(#1707, itda-work/skills#45). ``plan`` 이 batch ``plan_file`` 로 쓸 호출
+목록을 만들고, ``collect`` 가 그렇게 받아 둔 **응답 XML 파일을 읽어** 정규화·요약·전량 대조만 한다.
+모자라면 ``--next-plan`` 으로 다음 계획을 쓴다 — 모델이 쪽 번호·저장 이름을 손으로 옮기지 않는다.
 
 사용법:
-    python3 scripts/deals_cli.py collect --input a.xml b.xml \\
-        --region "강남구" --type apt_trade --summary
+    python3 scripts/deals_cli.py plan --region 강남구 --type apt_trade \\
+        --start-month 202601 --end-month 202603 --write "$D/plan-1.json"
+    python3 scripts/deals_cli.py collect --region 강남구 --type apt_trade \\
+        --start-month 202601 --end-month 202603 --input "$D/apt_trade-*.xml" --next-plan "$D/plan-2.json" --summary
 
     python3 scripts/deals_cli.py regions     # 지역명 → 법정동코드 (입력 불요)
 """
@@ -15,99 +18,88 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from collections import Counter
-from pathlib import Path
 from typing import Any
 
-from data_go_client import RealEstateAPIError, parse_response_xml
+from data_go_client import RealEstateAPIError, error_fields
 from deals_collector import (
     ENDPOINT_MAP,
     build_envelope,
+    calls_preview,
+    check_endpoint_fields,
+    check_month_range,
+    completeness,
     compute_summary,
+    is_cancelled,
+    next_calls,
     normalize_rent_item,
     normalize_trade_item,
+    plan_calls,
+    read_sources,
+    run_dir_name,
+    run_dir_of,
+    write_plan_files,
 )
 from lawd_codes import LAWD_CD_MAP, resolve_lawd_cd
+
+# 저장 폴더 머리 — 회차 폴더는 ``realty/<코드>-<시작월>-<종료월>[-<tag>]``.
+PREFIX = "realty"
+
+
+def _print(obj: dict[str, Any]) -> None:
+    print(json.dumps(obj, ensure_ascii=False, indent=2))
 
 
 def _resolve_region(args: argparse.Namespace) -> tuple[str, str]:
     """args에서 (lawd_cd, region_label) 튜플 반환."""
     if getattr(args, "lawd_cd", None):
-        return args.lawd_cd, args.lawd_cd
+        return args.lawd_cd, args.region or args.lawd_cd
     if getattr(args, "region", None):
         return resolve_lawd_cd(args.region), args.region
     return "", ""
 
 
-def _source_month(items: list[dict[str, str]]) -> str:
-    """그 파일이 담은 거래월(YYYYMM). 항목이 없으면 빈 문자열.
-
-    응답 XML 에는 조회 월(DEAL_YMD)이 없으므로 항목의 dealYear·dealMonth 최빈값으로 정한다.
-    """
-    months = [
-        f"{(i.get('dealYear') or '').strip()}{(i.get('dealMonth') or '').strip().zfill(2)}"
-        for i in items
-        if (i.get("dealYear") or "").strip() and (i.get("dealMonth") or "").strip()
-    ]
-    if not months:
-        return ""
-    return Counter(months).most_common(1)[0][0]
-
-
-def _read_sources(paths: list[str]) -> tuple[list[dict[str, str]], list[dict[str, Any]]]:
-    """입력 XML 파일들을 읽어 (원본 항목 누적, 파일별 메타) 를 돌려준다."""
-    raw_items: list[dict[str, str]] = []
-    sources: list[dict[str, Any]] = []
-    for p in paths:
-        path = Path(p).expanduser()
-        if not path.is_file():
-            raise ValueError(f"입력 파일이 없습니다: {p}")
-        parsed = parse_response_xml(path.read_bytes())
-        items = parsed["items"]
-        raw_items.extend(items)
-        sources.append({
-            "path": str(path),
-            "month": _source_month(items),
-            "total_count": parsed["total_count"],
-            "page": parsed["page"],
-            "item_count": len(items),
-        })
-    return raw_items, sources
-
-
-def _completeness(sources: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
-    """월별 totalCount 와 수집 건수를 대조한다 (전량 수집 판정).
-
-    같은 달의 여러 페이지는 같은 totalCount 를 싣는다 — 그 값이 그 달의 전체 건수다.
-    수집이 모자라면 경고를 남기고 호출자가 status 를 incomplete 로 내린다.
-    """
-    months: dict[str, dict[str, Any]] = {}
-    for s in sources:
-        month = s["month"]
-        if not month:
-            continue  # 빈 페이지 — 어느 달인지 알 수 없다(대조에서 제외)
-        entry = months.setdefault(month, {"month": month, "total_count": 0, "collected": 0})
-        entry["total_count"] = max(entry["total_count"], s["total_count"])
-        entry["collected"] += s["item_count"]
-
-    rows = [months[m] for m in sorted(months)]
-    warnings = [
-        f"{r['month']}: totalCount={r['total_count']} 인데 수집={r['collected']} — 페이지를 더 받아야 합니다"
-        for r in rows
-        if r["collected"] < r["total_count"]
-    ]
-    return rows, warnings
+def cmd_plan(args: argparse.Namespace) -> int:
+    """1차 호출 계획 — 달마다 1쪽. 2쪽 이후는 collect 가 totalCount 를 보고 정한다."""
+    check_month_range(args.start_month, args.end_month)
+    lawd_cd, region = _resolve_region(args)
+    run_dir = run_dir_name(PREFIX, lawd_cd, args.start_month, args.end_month, args.tag)
+    calls = plan_calls([args.type], lawd_cd, args.start_month, args.end_month, run_dir)
+    out: dict[str, Any] = {
+        "status": "ok", "region": region, "lawd_cd": lawd_cd, "type": args.type,
+        "start_month": args.start_month, "end_month": args.end_month, "run_dir": run_dir,
+        "call_count": len(calls),
+    }
+    if args.write:
+        out.update(write_plan_files(args.write, calls, run_dir))
+        out["calls_preview"] = calls_preview(calls)
+    else:
+        out["calls"] = calls
+    _print(out)
+    return 0
 
 
 def cmd_collect(args: argparse.Namespace) -> int:
-    """저장된 응답 XML 을 읽어 정규화·요약한다."""
+    """저장된 응답 XML 을 읽어 전량 대조·정규화·요약한다. 전량이 아니면 결과 없이 exit 1."""
+    check_month_range(args.start_month, args.end_month)
+    span = (args.start_month, args.end_month)
     lawd_cd, region = _resolve_region(args)
 
     ep = ENDPOINT_MAP[args.type]
     deal_type = ep["deal_type"]
 
-    raw_items, sources = _read_sources(args.input)
-    months, warnings = _completeness(sources)
+    raw_items, sources = read_sources(args.input, deal_type=deal_type, endpoint_type=args.type,
+                                      lawd_cd=lawd_cd or None, month_span=span)
+    check_endpoint_fields(args.type, raw_items)
+    codes = {s["sgg_cd"] for s in sources} - {""}
+    if len(codes) > 1:
+        raise ValueError(f"파일의 지역코드가 섞였다({sorted(codes)}) — 한 지역의 파일만 넘긴다")
+    lawd_cd = lawd_cd or next(iter(codes), "")
+    region = region or lawd_cd
+
+    rep = completeness(sources, month_span=span)
+    if not rep["complete"]:
+        # 부분본을 전량으로 내지 않는다(collection-completeness ②) — 형제 스킬과 같은 계약(W1 리뷰 m2).
+        return _incomplete(args, rep, lawd_cd)
 
     # 정규화
     if deal_type == "trade":
@@ -122,29 +114,71 @@ def cmd_collect(args: argparse.Namespace) -> int:
         name_lower = args.name.lower()
         items = [i for i in items if name_lower in i["apt_nm"].lower()]
 
-    # 요약 통계
+    # 요약 통계 — 해제 거래(cdealType)는 기본으로 뺀다(W1 리뷰 M6). 원본 행(results)은 그대로 싣는다.
+    cancelled = sum(1 for i in raw_items if is_cancelled(i))
     summary = None
     if getattr(args, "summary", False):
-        summary = compute_summary(raw_items, amount_field=amount_field_raw)
+        basis = raw_items if args.include_cancelled else [i for i in raw_items if not is_cancelled(i)]
+        summary = compute_summary(basis, amount_field=amount_field_raw)
 
     envelope = build_envelope(
-        status="incomplete" if warnings else "ok",
+        status="ok",
         region=region,
         items=items,
         lawd_cd=lawd_cd,
         summary=summary,
         type=args.type,
+        start_month=args.start_month,
+        end_month=args.end_month,
         sources=sources,
-        months=months,
-        warnings=warnings,
+        months=rep["months"],
+        # summary 에서 뺀 해제 거래 수 — results 에는 cdeal_type 을 실은 채 남는다.
+        excluded={"cancelled": 0 if (args.include_cancelled or summary is None) else cancelled},
+        warnings=[],
     )
 
     if getattr(args, "format", "json") == "table":
         _print_table(envelope, deal_type)
     else:
-        print(json.dumps(envelope, ensure_ascii=False, indent=2))
+        _print(envelope)
 
     return 0
+
+
+def _incomplete(args: argparse.Namespace, rep: dict[str, Any], lawd_cd: str) -> int:
+    """전량 미달 — 더 받을 쪽·다시 받을 달을 알리고, 되면 다음 계획을 쓴다."""
+    out: dict[str, Any] = {
+        "status": "incomplete",
+        "error": "incomplete",
+        "detail": "받은 쪽이 전량이 아니다 — 다음 계획의 호출을 받아 폴더의 파일을 전부 넘겨 다시 실행한다",
+        "warnings": rep["warnings"],
+        "missing_pages": {**{m: [1] for m in rep["absent"]}, **rep["missing_pages"]},
+        "months": rep["months"],
+    }
+    if rep["refetch"]:
+        out["refetch"] = rep["refetch"]
+        if not args.overwrite:
+            out["need_overwrite"] = True
+            out["detail"] += (". refetch 의 달은 받는 사이 목록이 바뀌어 1쪽부터 다시 받아야 한다 — 같은 이름을"
+                              " 덮어쓰므로 사용자에게 알리고 확인받은 뒤 --overwrite 를 붙여 다시 실행한다")
+    try:
+        run_dir = run_dir_of(list(args.input), PREFIX)
+    except ValueError:
+        if args.next_plan:
+            raise
+        run_dir = ""
+    if run_dir and lawd_cd:
+        calls = next_calls(rep, args.type, lawd_cd, run_dir, refetch=args.overwrite)
+        out["next_call_count"] = len(calls)
+        if args.next_plan and calls:
+            out.update(write_plan_files(args.next_plan, calls, run_dir, overwrite=args.overwrite))
+            out["next_calls_preview"] = calls_preview(calls)
+        elif calls:
+            out["next_calls"] = calls
+    elif args.next_plan:
+        raise ValueError("지역코드를 알 수 없어 다음 계획을 쓸 수 없다 — --region 또는 --lawd-cd 를 준다")
+    print(json.dumps(out, ensure_ascii=False))
+    return 1
 
 
 def cmd_regions(args: argparse.Namespace) -> int:
@@ -166,8 +200,7 @@ def _print_table(result: dict[str, Any], deal_type: str) -> None:
     """테이블 형식으로 출력."""
     region = result.get("region", "")
     count = result.get("count", 0)
-    months = result.get("months") or []
-    span = f"{months[0]['month']}~{months[-1]['month']}" if months else ""
+    span = f"{result.get('start_month', '')}~{result.get('end_month', '')}"
     label = "매매" if deal_type == "trade" else "전월세"
 
     print(f"\n{region} {label} 실거래가 ({span}) — {count}건\n")
@@ -197,7 +230,8 @@ def _print_table(result: dict[str, Any], deal_type: str) -> None:
 
     summary = result.get("summary")
     if summary:
-        print(f"\n  평균: {summary['avg']:,}만원  중위: {summary['median']:,}만원")
+        print(f"\n  평균: {summary['avg']:,}만원  중위: {summary['median']:,}만원"
+              f"  (해제 {result.get('excluded', {}).get('cancelled', 0)}건 제외)")
 
     for w in result.get("warnings", []):
         print(f"\n  ⚠️ {w}")
@@ -206,7 +240,7 @@ def _print_table(result: dict[str, Any], deal_type: str) -> None:
 def build_parser() -> argparse.ArgumentParser:
     """CLI 인자 파서 생성."""
     parser = argparse.ArgumentParser(
-        description="부동산 실거래가 응답 XML 가공 (국토교통부 공공데이터 12유형)",
+        description="부동산 실거래가 호출 계획·응답 XML 가공 (국토교통부 공공데이터 12유형)",
     )
     parser.add_argument(
         "--format", choices=["json", "table"], default="json",
@@ -215,22 +249,41 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = parser.add_subparsers(dest="command", required=True)
 
+    def region_args(p: argparse.ArgumentParser, *, required: bool) -> None:
+        g = p.add_mutually_exclusive_group(required=required)
+        g.add_argument("--region", default=None, help="한글 지역명 (regions 목록의 이름)")
+        g.add_argument("--lawd-cd", default=None, help="법정동코드 (5자리)")
+
+    def common_args(p: argparse.ArgumentParser) -> None:
+        p.add_argument("--type", choices=list(ENDPOINT_MAP.keys()), default="apt_trade",
+                       help="엔드포인트 유형 (기본: apt_trade)")
+        p.add_argument("--start-month", required=True, metavar="YYYYMM", help="요청 기간 시작월")
+        p.add_argument("--end-month", required=True, metavar="YYYYMM", help="요청 기간 종료월")
+
+    # plan
+    p_plan = sub.add_parser("plan", help="itda-hyve batch 호출 계획(달마다 1쪽)")
+    region_args(p_plan, required=True)
+    common_args(p_plan)
+    p_plan.add_argument("--tag", default=None, help="같은 지역·기간을 다시 받을 때 회차 폴더 끝에 붙일 영숫자")
+    p_plan.add_argument("--write", metavar="FILE", default=None,
+                        help="batch plan_file 로 쓸 계획 파일 — 회차 폴더 안(예: \"$D/plan-1.json\")")
+
     # collect
     p_collect = sub.add_parser("collect", help="저장된 응답 XML 가공 (단일/다월·다페이지)")
     p_collect.add_argument(
         "--input", nargs="+", required=True, metavar="XML",
-        help="itda-hyve 가 save_as 로 저장한 응답 XML 파일(들). 달·페이지마다 1개",
+        help="itda-hyve 가 save_as 로 저장한 응답 XML 파일(들)·글로브. 달·페이지마다 1개",
     )
-    p_collect.add_argument("--region", default=None, help="한글 지역명 (출력 라벨용)")
-    p_collect.add_argument("--lawd-cd", default=None, help="법정동코드 (출력 라벨용, 5자리)")
-    p_collect.add_argument(
-        "--type",
-        choices=list(ENDPOINT_MAP.keys()),
-        default="apt_trade",
-        help="엔드포인트 유형 (기본: apt_trade)",
-    )
+    region_args(p_collect, required=False)
+    common_args(p_collect)
     p_collect.add_argument("--name", default=None, help="단지명 부분 일치 필터")
-    p_collect.add_argument("--summary", action="store_true", help="요약 통계 포함")
+    p_collect.add_argument("--summary", action="store_true", help="요약 통계 포함(해제 거래 제외)")
+    p_collect.add_argument("--include-cancelled", action="store_true",
+                           help="요약 통계에 해제 거래(cdealType)도 넣는다 (기본: 뺀다)")
+    p_collect.add_argument("--next-plan", dest="next_plan", metavar="FILE", default=None,
+                           help="전량 미달이면 더 받을 호출을 batch plan_file 로 쓴다(회차 폴더 안)")
+    p_collect.add_argument("--overwrite", action="store_true",
+                           help="다시 받을 달(refetch)을 다음 계획에 넣고 덮어쓰기를 켠다 — 사용자 확인 뒤에만")
 
     # regions
     sub.add_parser("regions", help="지역명-법정동코드 목록 출력 (입력 불요)")
@@ -240,24 +293,29 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     """CLI 진입점."""
+    # Windows 콘솔(cp949)에서 한국어 출력이 UnicodeEncodeError 로 죽지 않게 한다.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8")
+            except (ValueError, OSError):
+                pass
     parser = build_parser()
     args = parser.parse_args(argv)
 
     try:
+        if args.command == "plan":
+            return cmd_plan(args)
         if args.command == "collect":
             return cmd_collect(args)
-        elif args.command == "regions":
+        if args.command == "regions":
             return cmd_regions(args)
-        else:
-            parser.print_help()
-            return 2
+        parser.print_help()
+        return 2
 
     except RealEstateAPIError as e:
-        # 저장된 XML 이 성공 응답이 아니다(resultCode 20·30 등) — 그대로 표면화한다.
-        print(json.dumps(
-            {"status": "error", "error": "api", "detail": str(e)},
-            ensure_ascii=False,
-        ))
+        # 저장된 XML 이 성공 응답이 아니다(resultCode 20·30 등) 또는 hyve 실패 자리 — 그대로 표면화한다.
+        print(json.dumps({"status": "error", **error_fields(e), "detail": str(e)}, ensure_ascii=False))
         return 1
     except ValueError as e:
         print(json.dumps(

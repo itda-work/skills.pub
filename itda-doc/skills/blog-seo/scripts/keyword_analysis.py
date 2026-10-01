@@ -251,7 +251,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"입력 오류: {e}", file=sys.stderr)
         return 1
 
-    # 환경변수에서 API 키 로드 (CLI > environ > .env, SPEC-ENV-ERROR-001)
+    # 환경변수에서 API 키 로드 (CLI > environ, SPEC-ENV-ERROR-001 · env 파일 미사용 #45)
     from _env_setup import (
         get_naver_client_id,
         get_naver_client_secret,

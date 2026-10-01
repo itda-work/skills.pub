@@ -12,9 +12,9 @@ metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
   recommended: true
-  version: "0.7.1"
+  version: "0.7.3"
   created_at: "2026-06-01"
-  updated_at: "2026-09-29"
+  updated_at: "2026-10-01"
   tags: "calendar, caldav, icloud, apple, naver, event, schedule, recurrence, rrule, alarm, reminder, timezone, etag, itda-hyve, multi-account, free-slots, availability, search, delete-confirmation"
 ---
 

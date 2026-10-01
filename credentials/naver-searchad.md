@@ -25,10 +25,16 @@
 | Secret Key (비밀키) | `NAVER_SEARCHAD_SECRET_KEY` |
 | 고객 ID (URL의 `/customers/숫자/`) | `NAVER_SEARCHAD_CUSTOMER_ID` |
 
-```dotenv
-NAVER_SEARCHAD_ACCESS_KEY=발급받은_액세스라이선스
-NAVER_SEARCHAD_SECRET_KEY=발급받은_시크릿키
-NAVER_SEARCHAD_CUSTOMER_ID=고객ID_숫자
+키는 Claude Code 설정 파일(`~/.claude/settings.json`)의 `env` 에 넣습니다(설정을 바꾼 뒤 Claude Code 를 다시 시작). 스킬이 itda-hyve 경로를 지원하면 itda-hyve 앱의 **시크릿** 탭에 같은 이름으로 등록해도 됩니다 — 어느 경로가 되는지는 각 스킬 GUIDE 에 적혀 있습니다. `.env` 같은 파일은 스킬이 읽지 않습니다(itda-work/skills#45).
+
+```json
+{
+  "env": {
+    "NAVER_SEARCHAD_ACCESS_KEY": "발급받은_액세스라이선스",
+    "NAVER_SEARCHAD_SECRET_KEY": "발급받은_시크릿키",
+    "NAVER_SEARCHAD_CUSTOMER_ID": "고객ID_숫자"
+  }
+}
 ```
 
 ## 4. 한도·주의사항

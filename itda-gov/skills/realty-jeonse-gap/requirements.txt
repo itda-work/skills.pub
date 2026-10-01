@@ -5,5 +5,5 @@
 # 사용 표준 라이브러리:
 #   - json (출력 포맷)
 #   - argparse (CLI)
-#   - urllib (HTTP — deals_collector 경유)
-#   - xml.etree.ElementTree (XML 파싱 — deals_collector 경유)
+#   - (네트워크 없음 — 요청은 itda-hyve http_request·batch, 스크립트는 저장된 응답 파일만 읽는다)
+#   - xml.etree.ElementTree (XML 파싱 — data_go_client 경유)

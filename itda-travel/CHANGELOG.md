@@ -3,6 +3,24 @@
 이 플러그인의 주요 변경 사항을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.0.0/),
 버전은 [SemVer](https://semver.org/lang/ko/)를 따릅니다.
 
+## [3.0.0] - 2026-10-01
+
+> 요구: **itda-hyve 0.10.4 이상**(hotel-search). itda-hyve 0.10.4 를 먼저 설치·업데이트한 뒤 이 판을 설치한다 — 0.10.3 이하는 응답 `final_url` 등에 시크릿이 되비치고 기본 User-Agent 에 제품명이 실린다.
+
+### BREAKING
+
+- **`hotel-search` 0.4.0 — 요청은 itda-hyve, 스크립트는 판독만** (itda-work/skills#46, 규칙 `cowork-network-via-hyve`). 키 없는 Xotelo·환율 조회를 itda-hyve 가 받고 스크립트는 응답을 대조(되비친 체크인·체크아웃·통화)해 가공한다. 저장 이름이 식별 계약이고, 결과 없음은 exit 3 이다.
+- **env 파일을 읽지 않는다** (itda-work/skills#45). `eatery-trend` 0.2.0(네이버 키 5종)·`train-ktx` 0.4.0(`KORAIL_USER_ID`·`KORAIL_PASSWORD`)은 Claude Code 의 셸 환경변수 또는 `claude config set env.<KEY> "값"` 으로만 받는다. 두 스킬은 스크립트가 직접 호출해서 itda-hyve 시크릿 경로가 아직 없다(요청 서명·로그인 세션 기능을 itda-hyve 에 요청할 예정).
+
+### Removed
+
+- `place-finder` — 카카오맵 검색의 키 없는 두 경로가 robots 불허(`map.kakao.com`)와 요청 프로파일 위반(Referer 를 지어내야 성립)에 걸린다(사용자 결정 2026-10-01). 카카오맵·네이버지도 앱에서 직접 검색한다.
+- `flight-search` — Google Flights 공개 화면을 조회하는 방식이 약관상 회색지대이고 스킬 문서 스스로 "배포하지 마세요" 였다(사용자 결정 2026-10-01). 항공권은 항공사·여행사 앱이나 사이트에서 직접 검색한다.
+
+### Fixed
+
+- **SKILL_DIR 확정 블록**(itda-work/skills#47) — 새 Cowork 배치(`/root/.claude/plugins/synced/…`, `CLAUDE_PLUGIN_ROOT` 없음)에서 빈 값을 내던 옛 블록을 바꿨다. 스킬을 불러올 때 받은 base directory 를 먼저 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾으며, 후보가 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다(PowerShell 블록도 같은 계약). `eatery-trend`·`hotel-search`·`train-ktx`·`train-srt` 0.3.1.
+
 ## [2.0.0] - 2026-09-28
 
 ### BREAKING

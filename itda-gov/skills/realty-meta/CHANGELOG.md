@@ -1,5 +1,24 @@
 # Changelog — itda-realty/realty-meta
 
+## [0.11.0] — 2026-09-30 (itda-work/skills#45)
+
+### Changed
+
+- **키 안내를 itda-hyve 시크릿 탭 하나로** (itda-work/skills#45) — realty-jeonse-gap·realty-supply·realty-price-stats 도 이제 스크립트가 네트워크를 하지 않고 itda-hyve 가 요청을 보낸다. 셸 환경변수·`claude config set env.<KEY>` 안내, 키 주입·출처 표시 규칙, "itda-hyve 시크릿 경로는 아직 없다" 문구를 지우고 키별로 쓰는 스킬·요청 호스트 표를 뒀다. 청약홈(`api.odcloud.kr`)은 `KO_DATA_API_KEY` 허용 호스트 추가가 필요하다는 안내를 더했다.
+- 스킬 표 — realty-supply 의 청약은 경쟁률이 아니라 분양 공고다(realty-supply 0.11.0), realty-price-stats 에 실거래 파생 통계를 적었다.
+
+## [0.10.0] — 2026-09-30 (itda-work/skills#45)
+
+### Changed
+
+- **BREAKING — env 파일을 더 읽지 않는다** (itda-work/skills#45, 사용자 결정 2026-09-30). `.env`·`.env.txt` 를 포함해 어떤 env 파일도, `~/.claude/settings.json` 도 realty 스킬 스크립트가 직접 열지 않는다. 키 설정 안내를 스킬별 표로 바꿨다 — realty-deals 의 `KO_DATA_API_KEY` 는 itda-hyve 시크릿 탭(`{{secret:KO_DATA_API_KEY}}`), realty-jeonse-gap·realty-supply·realty-price-stats 의 `KO_DATA_API_KEY`·`KOSIS_API_KEY`·`RONE_API_KEY` 는 Claude Code 셸 환경변수 또는 `claude config set env.<KEY> "키"`(itda-hyve 시크릿 경로 없음). 키 주입 규칙·출처 표시 예시를 맞췄다.
+
+## [0.9.6] — 2026-09-30 (itda-work/skills#45)
+
+### Changed
+
+- **자격증명 파일 별칭에서 `환경변수.txt` 제거** (itda-work/skills#45, BREAKING) — 읽는 파일명은 `.env`·`.env.txt` 두 가지다. `환경변수.txt` 로 키를 두었다면 파일 이름을 `.env.txt`(또는 `.env`)로 바꾼다 — 내용은 그대로 두면 된다. SKILL.md 의 파일명 별칭 안내·키 주입 규칙(파일명 2종·셸 glob 오탐 설명)·출처 표시 예시를 맞췄다.
+
 ## [0.9.5] — 2026-09-28 (itda-work/skills#26)
 
 ### Changed

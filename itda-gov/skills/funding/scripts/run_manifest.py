@@ -17,14 +17,18 @@ Schema v1 (one file per output folder, next to the jsonl):
       {
         "source": "kstartup",
         "status": "ok" | "partial" | "manual" | "inactive",
-        "exit_code": 0 | 2,
+        "exit_code": 0 | 2 | 3,       # inactive 는 0(설계상 받지 않는 소스)
         "pages_fetched": 12,
         "reported_total": 260,        # optional — only if the site reports one
         "collected": 178,
-        "duplicates": 30,             # optional — carousel/pagination repeats
-        "stop_reason": "no-new-2pages",
-        "cutoff": null,               # --since value when the run used one
-        "errors": ["page 3: HTTP 500"]
+        "duplicates": 30,             # optional — pagination repeats(받는 사이 밀림)
+        "stop_reason": "last-page",   # last-page · closed-streak · page-cap · round-cap · blocked · empty · smoke · robots-disallowed · parse-failure · fetch-failure
+        "cutoff": null,
+        "errors": ["p3: …"],
+        "coverage": "exhaustive",     # exhaustive · window(최근 구간 — diff 가 GONE 을 단정하지 않는다) · none
+        "last_page": 12,              # optional — 1쪽이 알려 준 마지막 쪽
+        "counted": {"closed_rows": 3},# optional — 정상 계수(마감 행·IRIS 행)
+        "dropped": {"no_link": 1}     # optional — 결손(링크·구조를 못 읽은 행 — 있으면 partial)
       }
     ]
   }
@@ -67,11 +71,12 @@ def make_run(source, status, exit_code, pages_fetched, collected, stop_reason,
     if status not in VALID_STATUS:
         raise ValueError(f"invalid status {status!r} (expected one of {VALID_STATUS})")
     # 정합성 계약(Codex #10): 상태와 종료코드는 모순될 수 없다. ok는 성공(0),
-    # 그 외(partial/manual/inactive)는 반드시 비-0이어야 한다. 음수 카운트도 거부.
+    # 그 외(partial/manual)는 반드시 비-0이어야 한다. 음수 카운트도 거부.
     exit_code = int(exit_code)
     if status == "ok" and exit_code != 0:
         raise ValueError(f"status=ok인데 exit_code={exit_code} (0이어야 함)")
-    if status != "ok" and exit_code == 0:
+    if status not in ("ok", "inactive") and exit_code == 0:
+        # inactive 는 설계상 받지 않는 소스(KOCCA 목록 — robots 불허)라 실패가 아니다.
         raise ValueError(f"status={status!r}인데 exit_code=0 (비-0이어야 함)")
     for label, val in (("pages_fetched", pages_fetched), ("collected", collected)):
         if int(val) < 0:

@@ -19,7 +19,7 @@
 
 > 브랜드 디자인 토큰과 Word·PPTX·Excel 신규 생성을 맡던 디자인 스킬 4종은 2026-09-27 제거했습니다(git 이력에는 남아 있음). 한글 문서는 `hwpx`, HTML 보고서는 `html-report` 가 만듭니다.
 
-> `imagegen`(이미지 생성)은 2026-09-25 저장소 이관 때 빠졌다가 2026-09-28 itda-hyve 의 에이전트 작업(`agent_run`) 경로로 되살렸습니다. itda-hyve 0.10.0 이상이 필요하고, codex 는 itda-hyve 창의 에이전트 탭에서 설치·로그인합니다(ChatGPT 구독, 따로 설치한 codex 는 쓰지 않음). `pptx-diff`(PPTX 버전 비교)는 빠진 그대로입니다(git 이력에는 남아 있음).
+> `imagegen`(이미지 생성)은 2026-09-25 저장소 이관 때 빠졌다가 2026-09-28 itda-hyve 의 에이전트 작업(`agent_run`) 경로로 되살렸습니다. itda-hyve 0.10.1 이상이 필요하고, codex 는 itda-hyve 창의 에이전트 탭에서 설치·로그인합니다(ChatGPT 구독, 따로 설치한 codex 는 쓰지 않음). `pptx-diff`(PPTX 버전 비교)는 빠진 그대로입니다(git 이력에는 남아 있음).
 
 > hwpx 읽기는 동봉 Python native 변환기(`skills/hwpx/reader/hwpx_native`)로 동작합니다 — 외부 바이너리 동봉 계약은 없습니다(2026-09 R2 정리).
 

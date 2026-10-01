@@ -1,7 +1,7 @@
 # 데이터 소스 — Xotelo API (트립어드바이저 메타서치)
 
-가격 소스는 **Xotelo**(https://xotelo.com/) 무료 API 하나다. 순수 `urllib` 로 직접 호출한다
-(브라우저·hyve·API 키 불필요). 아래 사실은 **라이브 실측으로 확정**했다(#1013, 2026-07-09 —
+가격 소스는 **Xotelo**(https://xotelo.com/) 무료 API 하나다. 요청은 itda-hyve `http_request` 가 보내고
+(0.4.0 — 규칙 `cowork-network-via-hyve`), 스크립트는 저장된 응답만 판독한다(브라우저·API 키 불필요). 아래 사실은 **라이브 실측으로 확정**했다(#1013, 2026-07-09 —
 추측 금지·실측 우선(`skill-web-probe-aside`), data-accuracy: plausible ≠ correct).
 
 ## 엔드포인트 (무료 `data.xotelo.com` — 실측)
@@ -13,8 +13,11 @@
 | `/list` | `location_key[,offset,limit,sort]` | ❌ | 유효 geo(g60763)로도 400 — 무료 티어 폐기, 미사용 |
 | `/search` | `query` | ❌ | 401 "RapidAPI 전용"(유료 키) — 미사용 |
 
-- **인증 없음** — `/rates`·`/heatmap` 은 키 없이 200. 순수 Python `urllib` 로 호출됨(coupang 처럼
-  Akamai 에 막히지 않음) → 이 스킬이 web_browse 의존을 벗은 근거.
+- **인증 없음** — `/rates`·`/heatmap` 은 키 없이 200. 헤더 없이(범용 UA `Mozilla/5.0`) 성립한다(2026-10-01 itda-hyve 실측 —
+  옛판은 브라우저 UA 를 실었다). robots.txt 는 404(Next.js 404 페이지 — 규칙 없음).
+- **응답이 조회 조건을 되비친다** — `/rates` 는 `chk_in`·`chk_out`·`currency`, `/heatmap` 은 `chk_out`. 판독이 요청과 대조한다(`mismatch`).
+  `hotel_key`·`adults`·`rooms` 는 되비치지 않아 저장 이름(`hotel/rates-<key>-<체크인>-<체크아웃>-<통화>-a<성인>-r<객실>.json`)이
+  식별 계약이다. 응답 `timestamp`(epoch ms)를 조회 시각(KST)으로 표에 싣는다.
 - **`rate` = 1박 평균가** — 실측: 1박 \$308 / 2박 \$261 / 3박 \$243 (박수↑ 시 1박 단가↓). 각 OTA에서
   **예약 가능한 최저 객실**의 1박가 대표값. 총액 = `rate × nights`. **객실 타입 구분·객실별 가격 없음**.
 - **`tax` 대부분 null** — 세금 분해 미제공.
@@ -32,7 +35,8 @@
 
 파서: `xotelo.parse_rates` → 공통 offer(`ota_code,ota_name,per_night,total,tax,per_night_krw,total_krw`),
 1박가 오름차순. 실측 fixture: `tests/fixtures/xotelo_rates_multi.json`·`xotelo_heatmap.json`·
-`xotelo_rates_error_currency.json`, 테스트 `tests/test_xotelo.py`.
+`xotelo_rates_error_currency.json`(2026-07-09)·`live_rates_20261119.json`·`live_heatmap_20261121.json`·`erapi_usd_20261001.json`(2026-10-01 itda-hyve),
+테스트 `tests/test_xotelo.py`·`tests/test_fx.py`.
 
 ## hotel_key / location_key (TripAdvisor 식별자)
 
@@ -45,7 +49,12 @@
 
 - Xotelo 허용 통화(실측): **USD·GBP·EUR·CAD·CHF·AUD·JPY·CNY·INR·THB·BRL·HKD·RUB·BZD** — **KRW 없음**.
 - → USD 등으로 수집 후 `open.er-api.com/v6/latest/<base>`(무료·키 없음, `.rates.KRW`)로 원화 환산 표시
-  (`fx.krw_rate`). 조회 실패는 조용히 덮지 않고 출력에 명시(no-silent-fallback).
+  (`fx.read_krw_rate`). 판독 실패는 조용히 덮지 않고 출력에 명시(no-silent-fallback).
+- **이용 조건**(https://www.exchangerate-api.com/docs/free — 2026-10-01 판독): 키 없는 Open API 는 **출처 표기 필수**
+  ("Rates By Exchange Rate API" 링크) → 출력 주석에 늘 싣는다. 하루 한 번 갱신·캐시 허용·한 시간에 한 번 넘게 부르지
+  말라는 권고 → 저장 이름에 받은 날(`hotel/fx-<통화>-<YYYYMMDD KST>.json`)을 넣어 회차 폴더에서 하루 한 번만 받는다.
+  재배포 불가 → 환율 표를 내보내지 않고 환산에만 쓴다. `time_last_update_unix` 가 48시간 넘게 묵으면 경고한다.
+- robots.txt 는 404(nginx — 규칙 없음, 2026-10-01).
 
 ## 정확성 게이트 (P3 — 통과 2026-07-09, #1013)
 

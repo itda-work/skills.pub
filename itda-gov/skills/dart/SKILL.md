@@ -6,8 +6,8 @@ description: >
   "네이버 배당 현황", "셀트리온 소송 이력"처럼 말하면 됩니다.
   기업 프로필·재무·인력·사업보고서·공시 목록에 더해 배당·증자·소송·전환사채 등 주요사항도 반환합니다.
 license: Apache-2.0
-compatibility: "Claude Code & Cowork. Python 3.10+. 네트워크는 itda-hyve 0.9.0 이상(로컬 MCP 서버)."
-allowed-tools: "mcp__remote-devices__itda-hyve__http_request, Bash, Read, Write, mcp__workspace__bash"
+compatibility: "Claude Code & Cowork. Python 3.10+. 네트워크는 itda-hyve 0.10.4 이상(로컬 MCP 서버 — http_request·batch plan_file)이 한다."
+allowed-tools: "mcp__remote-devices__itda-hyve__http_request, mcp__remote-devices__itda-hyve__batch, Bash, Read, Write, mcp__workspace__bash"
 user-invocable: true
 argument-hint: "[search|info|finance|employees|profile|disclosure|business|compare|raw] [--name 회사명] [--corp-code 코드] [--year 연도] [--report annual|q1|q2|q3] [--prefer annual|latest] [--detail] [--unit auto|million|eok|jo] [--with-ratios] [--with-prior] [--endpoint 엔드포인트] [--param key=value] [--format json|table|csv]"
 metadata:
@@ -15,9 +15,9 @@ metadata:
   category: "domain"
   status: "active"
   recommended: true
-  version: "0.19.3"
+  version: "0.21.1"
   created_at: "2026-03-29"
-  updated_at: "2026-09-29"
+  updated_at: "2026-10-01"
   tags: "DART, CSV, company, financial, disclosure, competitor, business report, compare"
 ---
 
@@ -26,359 +26,299 @@ metadata:
 금융감독원 DART 전자공시시스템 API로 기업 정보를 수집합니다.
 경쟁사 분석, 입찰 제안서, 사업계획서에 필요한 기업 재무·직원 데이터를 제공합니다.
 
-## 환경 변수
+## 흐름 — 요청은 itda-hyve, 가공은 스크립트
 
-| Variable | Service | Guide |
-|---|---|---|
-| `DART_API_KEY` | 금융감독원 DART ([링크](https://opendart.fss.or.kr)) | 회원가입 → 오픈 API → 인증키 신청/관리 → 40자리 키 즉시 발급<br>형식: `[A-Za-z0-9]{40}` |
+네트워크는 **itda-hyve 의 `http_request`**(`mcp__remote-devices__itda-hyve__http_request`)로만 나간다. 여러 호출은
+**itda-hyve 의 `batch`**(`mcp__remote-devices__itda-hyve__batch`)로 한 번에 받는다. 스크립트는 네트워크를 하지 않는다 —
+명령에 필요한 호출을 알려 주고, itda-hyve 가 `save_as` 로 저장한 응답을 `--input` 으로 읽어 판정·전량 대조·가공만 한다.
+공용 규약(자리표시자·실패 코드·보안 계약)은 동봉한 [references/netbridge.md](references/netbridge.md) 가 정본이다.
 
-## Prerequisites
+모든 명령이 같은 순환을 돈다:
+
+```
+명령 실행 → error: "incomplete" + next_calls → itda-hyve 로 받기 → 같은 명령을 --input 을 붙여 다시 실행 → … → status: "ok"
+```
+
+- 회사명→코드, 연도 미지정→최신 보고서 찾기처럼 **앞 단 결과로 다음 요청이 정해지는 명령**(profile·finance·business·compare)은
+  순환을 두세 번 돈다. 스크립트가 단계를 정한다 — 모델이 URL·날짜 창·쪽 번호를 계산하지 않는다.
+- **incomplete 인 채로 결과를 말하지 않는다.** `status: "ok"` 가 나와야 끝이다.
+
+API 키는 사용자가 itda-hyve GUI 시크릿 탭에 **`DART_API_KEY`** 로 등록해 둔 것을 이름으로만 가리킨다(값을 묻지 않고,
+대화에 붙여 넣어도 쓰지 않는다). 발급: <https://opendart.fss.or.kr> 회원가입 → 오픈API → 인증키 신청/관리(40자리, 즉시 발급).
+
+## 준비
+
+**먼저** 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 `SKILL_DIR` 에 넣고 아래 블록을 실행한다 — 블록은 그 값을 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾는다(후보가 여럿이면 멈춘다).
 
 ```bash
-# Claude Code(플러그인 설치) = $CLAUDE_PLUGIN_ROOT / Cowork = 세션 마운트 탐색
-SKILL_DIR="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/skills/dart}"
-[ -n "$SKILL_DIR" ] || SKILL_DIR=$(find /sessions/*/mnt/.remote-plugins -type d -path '*/skills/dart' 2>/dev/null | head -1)
-# 둘 다 아니면(저장소 체크아웃 등) 이 SKILL.md 가 있는 디렉토리 절대경로를 그대로 사용
+# SKILL_DIR 확정(skill-dir-resolution) — 스킬을 불러올 때 받은 base directory 를 먼저 SKILL_DIR="그 경로" 로 넣는다(항상)
+# 블록은 그 값을 검증해 쓰고, 넣지 못했을 때만 설치 위치를 찾는다 — SKILL.md 가 있는 후보가 하나일 때만 받고 아니면 멈춘다
+SKILL_DIR=$(sh -c '
+S=$1 P=$2 H=${5:-$HOME/.claude}
+ok() { d=${1%/}; [ "${d##*/}" = "$S" ] && [ -f "$d/SKILL.md" ] && (cd "$d" && pwd -P); }
+[ -n "$3" ] && { ok "$3" && exit; d=${3%/}; [ "${d##*/}" = "$S" ] && echo "SKILL_DIR 무시: $3 에 SKILL.md 가 없다" >&2; }
+[ -n "$4" ] && { ok "$4/skills/$S" && exit; echo "CLAUDE_PLUGIN_ROOT 무시: $4/skills/$S 에 SKILL.md 가 없다" >&2; }
+c=$(for d in "$H"/plugins/synced/*/"$P"/skills/"$S" "$H"/plugins/synced/*/"$P"~*/skills/"$S" "$H"/plugins/cache/*/"$P"/*/skills/"$S" \
+    /root/.claude/plugins/synced/*/"$P"/skills/"$S" /root/.claude/plugins/synced/*/"$P"~*/skills/"$S" \
+    /sessions/*/mnt/.remote-plugins/*/skills/"$S" /sessions/*/mnt/.claude/skills/"$S"; do ok "$d"; done | sort -u)
+[ "$(printf "%s\n" "$c" | grep -c .)" -gt 1 ] && { printf "SKILL_DIR 후보가 여럿이다 — 어느 설치본이 쓰이는지 모른다:\n%s\n" "$c" >&2; exit 1; }
+printf "%s\n" "$c"' _ dart itda-gov "${SKILL_DIR:-}" "${CLAUDE_PLUGIN_ROOT:-}" "${CLAUDE_CONFIG_DIR:-}")
+: "${SKILL_DIR:?정하지 못했다 — 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 SKILL_DIR 에 넣고 이 블록을 다시 실행하라}"
 
 # 의존성 설치(defusedxml — XML 보안 파싱) — 정문
 python3 "$SKILL_DIR/scripts/install_skill_deps.py"
 # 수동 폴백: python3 -m pip install --user -r "$SKILL_DIR/requirements.txt"
-```
 
-> 설치 정문은 `install_skill_deps.py` 다(#1630) — 이 환경(venv·PEP 668 관리형·권한 부족)에 맞는 pip 인자를 스스로 고르고 실행한 명령을 보여 준다. `--check` 는 상태만, `--all` 은 선택 의존까지, `--dry-run` 은 명령만.
+# 연결 폴더 — itda-hyve save_dir(호스트 경로)와 같은 폴더가 샌드박스의 $HOME/mnt/<폴더 이름> 이다
+WORK="$HOME/mnt/작업폴더"      # save_dir 가 /Users/me/Projects/작업폴더 일 때
+```
 
 Windows(PowerShell):
 
 ```powershell
-$env:SKILL_DIR = "$env:CLAUDE_PLUGIN_ROOT\skills\dart"  # 미설정이면 SKILL.md 위치 절대경로 사용
+# SKILL_DIR 확정(skill-dir-resolution) — bash 블록과 같은 계약. 스킬을 불러올 때 받은 base directory 를 먼저 $env:SKILL_DIR 에 넣는다(항상)
+$S = 'dart'; $P = 'itda-gov'; $H = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }
+$ok = { param($d) if ($d -and (Split-Path $d.TrimEnd('\', '/') -Leaf) -eq $S -and (Test-Path -LiteralPath (Join-Path $d 'SKILL.md'))) { (Resolve-Path -LiteralPath $d).Path.TrimEnd('\', '/') } }
+$c = @(& $ok $env:SKILL_DIR) + @(if ($env:CLAUDE_PLUGIN_ROOT) { & $ok (Join-Path (Join-Path $env:CLAUDE_PLUGIN_ROOT 'skills') $S) })
+if (-not $c) { $c = @(@(Get-Item -Path (Join-Path $H "plugins/synced/*/*/skills/$S") -ErrorAction SilentlyContinue | Where-Object { $_.Parent.Parent.Name -eq $P -or $_.Parent.Parent.Name -like "$P~*" }) + @(Get-Item -Path (Join-Path $H "plugins/cache/*/$P/*/skills/$S") -ErrorAction SilentlyContinue) | Where-Object { $_.PSIsContainer } | ForEach-Object { & $ok $_.FullName } | Sort-Object -Unique) }
+if ($c.Count -gt 1) { Write-Warning "SKILL_DIR 후보가 여럿이다 — 어느 설치본이 쓰이는지 모른다: $($c -join ', ')"; $c = @() }
+if (-not $c) { throw 'SKILL_DIR 을 정하지 못했다 — 스킬을 불러올 때 받은 base directory(이 SKILL.md 가 있는 절대경로)를 $env:SKILL_DIR 에 넣고 이 블록을 다시 실행하라' }
+$env:SKILL_DIR = $c[0]
 py -3 "$env:SKILL_DIR\scripts\install_skill_deps.py"
+py -3 "$env:SKILL_DIR\scripts\collect_company.py" search --name "삼성전자" --input "C:\Users\me\Projects\작업폴더"
 ```
 
-## API 키 설정
+Claude Code CLI 처럼 같은 머신에서 도는 환경이면 `WORK` 는 `save_dir` 호스트 경로 그대로다.
 
-| 환경변수 | 발급처 | 승인 방식 |
-|---------|-------|----------|
-| `DART_API_KEY` | https://opendart.fss.or.kr | 회원가입 → 오픈API → 인증키 신청/관리 → **즉시 발급** (40자리, 수동 승인 없음) |
-
-**권장 (비개발자 포함 모든 사용자) — 작업 폴더 `.env`에 키 등록:**
-
-작업 폴더(Cowork 연결 폴더 / Claude Code 프로젝트 루트, 여러 개면 아무 폴더나) 루트에 `.env` 파일을 만들고 아래 한 줄을 넣어 두면 스킬이 자동으로 찾아 읽습니다. 파일명 별칭 `.env.txt`·`환경변수.txt` 도 동일하게 탐색된다. 셸 환경변수나 `~/.claude/settings.json` 의 `env` 로 설정해도 되며, 로더가 자동으로 탐색합니다.
-
-```
-DART_API_KEY=발급받은_키
-```
-
-> **키 주입 (Claude 실행 규칙):** 자격증명 유무를 `ls`/`find` 등으로 **사전 점검하지 않는다** — 스크립트가 `.env`·`.env.txt`·`환경변수.txt` 를 스스로 탐색하므로 **우선 실행**한다(셸 glob·검색 패턴은 별칭을 놓쳐 오탐한다: `.env*`·`*env*` 는 `환경변수.txt` 를, `*.env` 는 `.env.txt` 를 놓친다). 실행이 자격증명 누락으로 실패하면, 사용자 지침("Claude 지침"·`CLAUDE.md`)에 해당 변수가 선언돼 있는 경우 그 값을 환경변수로 전달해 재시도한다 — 예: `DART_API_KEY=<키> python3 "$SKILL_DIR/scripts/..."`. 지침에도 없으면 GUIDE의 발급 안내를 제시한다. 수동 확인이 꼭 필요하면 파일명 3종(`.env`·`.env.txt`·`환경변수.txt`)을 그대로 나열해 확인한다.
-
-> **출처 표시 (Claude 실행 규칙):** 스크립트 stderr 에 `[자격증명] KEY ← 출처` 줄이 나오면, 그 내용을 사용자에게 짧게 알린다(예: "환경변수.txt 의 DART_API_KEY 를 사용했습니다") — 사용자가 어느 설정파일이 쓰였는지 인지하게 하는 계약이다. 값은 어디에도 표시하지 않는다.
-
-**개발자 (선택) — 환경변수 / `.env`:** 작업 폴더 루트 `.env`에 `DART_API_KEY=키`, `claude config set env.DART_API_KEY "키"`, 또는 셸 환경변수도 사용할 수 있습니다.
-
-> **네트워크는 itda-hyve 가 한다(#1707).** 요청은 **itda-hyve 의 `http_request`**
-> (`mcp__remote-devices__itda-hyve__http_request`)로 보내고, 키는 사용자가 GUI 시크릿 탭에 등록한
-> `DART_API_KEY` 를 `{{secret:DART_API_KEY}}` 자리표시자로만 가리킨다(값을 묻지 않는다).
-> 규약은 동봉한 [references/netbridge.md](references/netbridge.md). 아래 [기업 개황(info)](#기업-개황-info) 이
-> `--input` 패턴의 정본이며, **나머지 명령의 itda-hyve 흐름은 후속 이슈**다 — 그 명령들은 아직 스크립트가 직접 호출한다.
-> 키 소스 우선순위: `--api-key` > `os.environ`(Claude 주입 포함) > `~/.claude/settings.json` > `.env`(자동 탐색).
-
-### 첫 호출 실패 시 점검 절차
-
-1. **키 문자열 정확성**: 40자리 영숫자, 앞뒤 공백 없는지 확인
-2. **URL 인코딩**: 본 스크립트가 자동 처리 (수동 인코딩 불필요)
-3. **시간 후 재시도**: 발급 직후 일시적 미반영 가능 — 수 분 대기 후 재시도
-4. **권한 오류 (HTTP 403)**: 게이트웨이 단계 거부 → 동일 발급처에서 활용 상태 확인
-
-## 사용법
-
-### 기업 검색 (search)
+## 1단계 — 명령을 실행한다
 
 ```bash
-# macOS/Linux
-python3 "$SKILL_DIR/scripts/collect_company.py" search --name "삼성전자"
-python3 "$SKILL_DIR/scripts/collect_company.py" --format table search --name "카카오"
-
-# Windows
-py -3 "$env:SKILL_DIR\scripts\collect_company.py" search --name "삼성전자"
+python3 "$SKILL_DIR/scripts/collect_company.py" profile --name "삼성전자" --year 2024 \
+  --input "$WORK" --next-plan "$WORK/dart/plan-1.json"
 ```
 
-### 기업 개황 (info)
-
-**정본은 itda-hyve 경로다.** itda-hyve 가 응답을 파일로 받고, 스크립트는 그 파일을 읽어 표시만 한다.
-
-1. itda-hyve 의 `http_request` 로 조회하고 `save_as` 로 저장한다.
+- `--input` 에는 **연결 폴더**를 준다(파일을 하나씩 나열해도 된다). 스크립트는 그 폴더와 `dart/` 하위의 응답 파일을
+  저장 이름으로 알아본다. 연결 폴더는 처음부터 있으니 첫 실행에도 그대로 준다(`dart/` 는 없어도 된다).
+- `--next-plan` 은 더 받을 호출을 itda-hyve `batch` 의 `plan_file` 로 쓴다. **연결 폴더의 `dart/` 안**에 쓰고, 회차마다 이름을
+  바꾼다(`plan-1.json`, `plan-2.json` …). 호출이 40개를 넘으면 `plan-1a.json`·`plan-1b.json` 처럼 나눠 쓰고 `plan_files` 로 알려 준다.
+- 모자라면 stdout 이 이렇다(exit 1):
 
 ```json
-{"url": "https://opendart.fss.or.kr/api/company.json",
- "params": {"crtfc_key": "{{secret:DART_API_KEY}}", "corp_code": "00126380"},
+{"status":"error","error":"incomplete","detail":"삼성전자(00126380) 기업개황·재무·직원현황을 받아야 합니다",
+ "next_calls_count":3,"plan_files":[".../dart/plan-1.json"],"plan_file_args":["dart/plan-1.json"],
+ "next_calls_preview":[{"id":"company-00126380-20260930","tool":"http_request","args":{…}}]}
+```
+
+  `--next-plan` 이 없으면 `next_calls` 에 호출 전부가 온다(`args` 가 `http_request` 인자 그대로).
+  `plan_files` 는 스크립트가 본 경로(Cowork 면 샌드박스 경로)다 — batch 에는 `plan_file_args`(연결 폴더 기준 상대 경로)를 넘긴다.
+  `--next-plan` 을 연결 폴더 밖에 주면 `plan_file_args` 가 없고 `warning` 이 온다 — 연결 폴더의 `dart/` 안으로 다시 준다.
+
+## 2단계 — itda-hyve 로 받는다
+
+### 한꺼번에: `batch` + `plan_file`
+
+계획 파일을 옮겨 적지 않고 경로만 넘긴다. `plan_file` 에는 1단계 출력의 **`plan_file_args` 값을 그대로** 쓴다(`save_dir` 기준 상대 경로).
+
+```json
+{"save_dir": "/Users/me/Projects/작업폴더", "plan_file": "dart/plan-1.json"}
+```
+
+- `plan_file_args` 가 여럿이면(`dart/plan-1a.json`·`dart/plan-1b.json` …) 차례로 한 번씩 부른다(batch 는 40개를 넘으면 하나도 실행하지 않는다). 계획 파일의 `timeout_sec` 은 50 이다.
+- 도구 목록에 `batch` 가 없거나 입력 스키마에 `plan_file` 이 없으면 옛 판이다 — `next_calls` 를 하나씩 `http_request` 로 부른다.
+
+### 하나씩: `http_request`
+
+`next_calls[i].args` 에 **`save_dir`(Cowork 연결 폴더의 호스트 경로)** 만 더해 그대로 보낸다. 예 — 재무제표:
+
+```json
+{"url": "https://opendart.fss.or.kr/api/fnlttSinglAcnt.json",
+ "params": {"crtfc_key": "{{secret:DART_API_KEY}}", "corp_code": "00126380", "bsns_year": "2024", "reprt_code": "11011"},
  "legacy_tls": true,
+ "timeout_sec": 50,
  "save_dir": "/Users/me/Projects/작업폴더",
- "save_as": "dart/company-00126380.json"}
+ "save_as": "dart/fin-00126380-2024-11011.json"}
 ```
 
-`legacy_tls: true` 는 OpenDART 의 구형 핸드셰이크 때문에 필요하다(handshake failure 실측).
-`save_dir` 에는 **Cowork 연결 폴더의 호스트 경로**(절대 경로, 사용자 홈 아래 폴더 — 홈 자체·숨김 폴더·`AppData`·`~/Library` 제외, 클라우드 드라이브는 허용)를 넣는다 — 생략하면 itda-hyve 기본 저장 폴더에 쓴다.
-그 폴더에 같은 이름이 있으면 덮어쓰지 않고 `invalid_input` 으로 거부되므로 **회차마다 겹치지 않는 이름**을 짓는다(덮어쓰기는 사용자 확인 후 `overwrite: true`).
+- `crtfc_key` 는 반드시 `params` 에 둔다. URL 쿼리에 자리표시자를 쓰면 `invalid_input` 으로 거부된다.
+- `legacy_tls: true` 는 OpenDART 의 구형 핸드셰이크 때문에 필요하다(handshake failure 실측).
+- **`save_as` 는 스크립트가 준 이름을 바꾸지 않는다.** 응답 본문에는 요청 인자가 없어 스크립트가 이름으로 어떤 질의의 응답인지 안다.
+- `save_dir` 는 절대 경로(사용자 홈 아래 폴더 — 홈 자체·숨김 폴더·`AppData`·`~/Library` 제외, 클라우드 드라이브는 허용).
+- ZIP(`corpcode-*.zip` 약 3.6MB, `doc-*.zip`)도 `save_as` 로 받는다 — 본문으로 받으면 1MB 에서 잘린다.
+- 응답 요약의 `final_url`·헤더를 대화에 옮겨 적지 않는다. 필요한 것은 `status`·`saved_path` 뿐이다.
 
-2. 저장된 파일을 `--input` 으로 가공한다. 연결 폴더는 샌드박스의 `$HOME/mnt/<폴더 이름>` 에 마운트되므로
-   `save_dir` 의 폴더 이름 + `saved_path` 로 경로가 정해진다(파일을 찾아 헤매지 않는다).
+### 응답 판정 — HTTP 200 은 성공이 아니다
+
+DART 는 오류를 HTTP 200 본문의 `status` 로 알린다(JSON `{"status":"013",…}`, ZIP 자리에는 `<result><status>010</status>…` XML,
+키가 빠지면 오류 안내 HTML). 판정은 3단계 스크립트가 파일을 읽어 대신 한다.
+
+## 3단계 — 같은 명령을 다시 실행한다
+
+1단계 명령에 `--input "$WORK"` 를 붙여(이미 있으면 그대로) 다시 실행하고, `--next-plan` 이름은 다음 회차로 바꾼다.
+`error: "incomplete"` 인 동안만 되풀이한다 — `status: "ok"` 가 나오면 끝이다.
+
+- **다시 받으면 풀리는 오류는 스크립트가 알아서 다음 회차로 받게 한다** — 요청 한도(`020`)·시스템 점검(`800`)·정의되지 않은
+  오류(`900`)·오류 안내 HTML·HTTP 5xx·본문 절단·깨진 ZIP·itda-hyve `timeout`·`network_error` 자리. 같은 질의를 `-r2`·`-r3`
+  이름으로 받으라고 `incomplete` + `next_calls` 를 준다(오류 응답이 정본 이름에 남아도 막히지 않는다). 몇 초 기다렸다가 받는다.
+  3회차도 같으면 `error: "api"`(또는 그 입력 오류)로 멈춘다 — `020` 이면 일 20,000건 한도일 수 있으니 내일 다시.
+- **`incomplete` 가 아닌 오류에 `next_calls` 가 붙어 오면** 원인을 먼저 해결해야 한다는 뜻이다. 되풀이하지 말고 멈춘다.
+  - `error: "api"` + `010`·`011`·`012`·`901`·`HTTP_403`(키·IP·권한) — 사용자에게 알리고, 사용자가 시크릿 탭 등을 고쳤다고 하면
+    그 `next_calls` 로 받고 같은 명령을 다시 돌린다.
+  - `error: "input"` + "저장 이름과 본문이 다릅니다"·"다른 질의의 쪽이 섞였습니다" — 다른 질의의 응답이 그 이름으로 저장됐다
+    (호출 JSON 을 고쳐 쓰다 `corp_code`·기간을 놓친 경우). `save_as` 이름을 바꾸지 않았는지 확인하고, 그 `next_calls` 로 다시 받는다.
+  - `next_calls` 가 없는 오류(`013` 데이터 없음·`100` 인자 오류 등)는 다시 받아도 같다.
+- **쪽이 모자라거나 받는 사이 목록이 밀리면** — 빠진 쪽을 정확히 알려 주고, 건수가 맞지 않으면 전 쪽을 다음 회차 이름으로 다시 받게 한다.
+  3회차에도 맞지 않으면 `error: "unstable"` 로 멈춘다 — **같은 명령을 되풀이하지 않는다.** `detail` 대로 기간을 좁히거나
+  (받는 날을 포함하는 기간이면 끝 날짜를 어제로) 새 폴더에서 1쪽부터 받는다.
+- 같은 폴더에 이미 받은 응답은 다시 받지 않는다. 날짜가 든 이름(`corpcode-<날짜>.zip`·`company-<코드>-<날짜>.json`)은
+  **7일까지** 다시 쓰고, 그보다 오래되면 오늘 날짜 이름으로 새로 받게 한다. 그 파일이 오류 응답이면 오늘 날짜 이름으로 다시 받게 한다.
+
+## 호출 수 — 받기 전에 알린다
+
+| 명령 | 호출 | 수 |
+|---|---|---|
+| search | corpCode ZIP | 0~1 (7일 안에 받은 ZIP 이 있으면 0) |
+| info | company.json | 1 |
+| finance | (연도 없으면 공시 목록 1) → 주요계정 또는 `--detail` 전체 재무제표 | 1~2 |
+| employees | empSttus.json | 1 |
+| profile | corpCode ZIP → 기업개황·재무·직원현황 3개(batch 한 번) | 3~4 |
+| disclosure | 공시 목록 쪽마다 1(쪽당 100건) | ⌈총건수 ÷ 100⌉, 상한 `--max-pages`(기본 10) |
+| business | (접수번호 없으면 공시 목록 1) → document ZIP | 1~2 |
+| compare | (이름이면 corpCode ZIP) → (연도 없으면 공시 목록 1) → 다중회사 주요계정 1(100개사까지) | 1~3 |
+| raw | 그 엔드포인트 1 | 1 |
+
+- 호출이 5개를 넘을 것 같으면(대개 disclosure) **첫 응답 뒤 남은 호출 수를 사용자에게 먼저 알린다.**
+- disclosure 의 incomplete 에 `need_pages`(전체 쪽 수)·`will_truncate: true` 가 오면 상한 때문에 뒤쪽을 받지 않는다는 뜻이다.
+  **받기 전에 사용자에게 묻는다** — 기간을 좁히거나 `--max-pages` 를 늘릴지. 결과의 `truncated: true` 도 그대로 알린다.
+
+## itda-hyve 실패 코드
+
+| 코드 | 대응 |
+|---|---|
+| `secret_missing` | GUI 시크릿 탭에 `DART_API_KEY` 등록을 안내하고 **멈춘다**. 값을 대화로 받지 않는다 |
+| `secret_host_denied` | URL 호스트가 `opendart.fss.or.kr` 인지 먼저 확인. 같으면 사용자가 GUI 에서 허용 호스트를 추가해야 한다. 다른 주소로 우회하지 않는다 |
+| `tls_error` | `legacy_tls: true` 가 빠졌는지 확인하고 넣어 다시 보낸다 |
+| `invalid_input`(같은 이름 파일) | 앞 회차의 호출을 다시 보낸 것이다 — 3단계를 다시 돌려 새 `next_calls` 를 받는다(오류 응답이면 스크립트가 `-r<n>` 이름을 준다). `overwrite: true` 는 쓰지 않는다 |
+| `body_truncated: true` | `save_as` 없이 받은 것이다 — `save_as` 로 다시 받는다 |
+| `timeout` | `timeout_sec` 을 늘려 1회만 다시 보낸다 |
+
+batch 에서 `ok: false` 인 호출은 파일이 없으니 3단계가 같은 호출을 다시 달라고 한다. 원인이 위 코드면 먼저 해결한다.
+실패 자리를 파일로 따로 적어 두지 않는다(그 이름에 적으면 다음 회차로 넘어가며 회차 하나를 쓴다).
+
+## 명령
+
+모든 명령은 `--input`(연결 폴더 또는 응답 파일들)·`--next-plan FILE`·`--format json|table|csv` 를 받는다(서브커맨드 앞·뒤 어디든).
 
 ```bash
-# save_dir 가 /Users/me/Projects/작업폴더 였다면
-INPUT="$HOME/mnt/작업폴더/dart/company-00126380.json"
+C="$SKILL_DIR/scripts/collect_company.py"
 
-python3 "$SKILL_DIR/scripts/collect_company.py" info --input "$INPUT"
-python3 "$SKILL_DIR/scripts/collect_company.py" --format table info --input "$INPUT"
+python3 "$C" search --name "삼성전자" --input "$WORK"                         # 회사명 → 고유번호
+python3 "$C" info --corp-code 00126380 --input "$WORK"                        # 기업개황
+python3 "$C" finance --corp-code 00126380 --year 2024 --input "$WORK"         # 주요계정
+python3 "$C" finance --corp-code 00126380 --year 2023 --detail --input "$WORK"   # 전체 재무제표
+python3 "$C" finance --corp-code 00126380 --prefer latest --input "$WORK"     # 연도 없이 — 분기·반기 포함 최신
+python3 "$C" employees --corp-code 00126380 --year 2024 --input "$WORK"       # 직원현황
+python3 "$C" profile --name "카카오" --year 2023 --input "$WORK"               # 종합 프로필(권장)
+python3 "$C" disclosure --corp-code 00126380 --bgn 20240101 --end 20241231 --type A --input "$WORK"
+python3 "$C" business --corp-code 00126380 --section "사업의 내용" --input "$WORK"   # 최신 사업보고서 원문
+python3 "$C" business --rcept-no 20250311001085 --max-chars 2000 --input "$WORK"
+python3 "$C" --format table compare --names "삼성전자,LG전자,SK하이닉스" --year 2024 \
+  --accounts "매출액,영업이익,자산총계" --with-ratios --input "$WORK"
+python3 "$C" --format csv compare --corp-codes "00159023,00190321,00231363" --names "SKT,KT,LGU+" \
+  --year 2024 --report q2 --unit eok --input "$WORK"                         # ok 가 된 뒤에만 > compare.csv
+python3 "$C" raw --endpoint alotMatter --param corp_code=00126380 --param bsns_year=2023 \
+  --param reprt_code=11011 --input "$WORK"                                    # 전용 명령이 없는 엔드포인트
 ```
 
-Claude Code CLI 처럼 같은 머신에서 도는 환경이면 `save_dir`/`saved_path` 를 이어 붙인 절대 경로를 그대로 쓴다.
+(실제로는 각 줄에 `--next-plan "$WORK/dart/plan-<n>.json"` 을 붙여 1~3단계 순환으로 돌린다.)
 
-`--input` 은 네트워크를 타지 않는다. 저장된 응답의 `status` 가 `000` 이 아니면 그대로 `error: api` 로 표면화한다
-(HTTP 200 이어도 성공이 아니다).
+**CSV 를 파일로 받을 때** — 받을 것이 남은 동안의 출력은 JSON(`incomplete`)이다. 순환을 JSON 으로 돌려 `status: "ok"` 를 본 뒤에
+같은 명령에 `--format csv … > 파일.csv` 를 붙여 한 번 더 실행한다(처음부터 리다이렉트하면 `incomplete` JSON 이 CSV 파일에 들어간다).
 
-```bash
-# 네트워크가 열린 환경에서 스크립트가 직접 부르는 기존 경로(유지)
-python3 "$SKILL_DIR/scripts/collect_company.py" info --corp-code 00126380
-```
-
-### 재무제표 (finance)
-
-```bash
-# 주요계정 조회 (기본)
-python3 "$SKILL_DIR/scripts/collect_company.py" finance --corp-code 00126380 --year 2024
-python3 "$SKILL_DIR/scripts/collect_company.py" --format table finance --corp-code 00126380 --year 2024
-
-# 전체 재무제표 (v0.16.0+, --detail → fnlttSinglAcntAll, 176항목류)
-python3 "$SKILL_DIR/scripts/collect_company.py" finance --corp-code 00126380 --year 2023 --detail
-python3 "$SKILL_DIR/scripts/collect_company.py" --format table finance --corp-code 00126380 --year 2023 --detail
-```
-
-> JSON 출력에는 공시원문 링크(`source.url`)가 기본 포함됩니다 (v0.16.0+).
-> 개별재무제표만 있는 기업은 자동으로 OFS 폴백 + stderr 안내합니다 (v0.16.0+).
-
-### 직원현황 (employees)
-
-```bash
-python3 "$SKILL_DIR/scripts/collect_company.py" employees --corp-code 00126380 --year 2024
-```
-
-### 종합 프로필 (profile) — 권장
-
-```bash
-# 회사명으로 검색 → 코드 자동 확인 → 프로필·재무·직원 일괄 조회
-python3 "$SKILL_DIR/scripts/collect_company.py" profile --name "삼성전자" --year 2024
-python3 "$SKILL_DIR/scripts/collect_company.py" --format table profile --name "카카오" --year 2023
-```
-
-### 공시 목록 (disclosure) — 신규
-
-```bash
-# 특정 기간 공시 목록 조회
-python3 "$SKILL_DIR/scripts/collect_company.py" disclosure --corp-code 00126380 --bgn 20240101 --end 20241231
-python3 "$SKILL_DIR/scripts/collect_company.py" --format table disclosure --corp-code 00126380 --bgn 20240101 --end 20241231 --type A
-
-# Windows
-py -3 "$env:SKILL_DIR\scripts\collect_company.py" disclosure --corp-code 00126380 --bgn 20240101 --end 20241231
-```
-
-> **`--type`(pblntf_ty) 공시유형 코드:** A=정기공시, B=주요사항보고, C=발행공시, D=지분공시,
-> E=기타공시, F=외부감사관련, G=펀드공시, H=자산유동화, I=거래소공시, J=공정위공시. 미지정 시 전체 조회.
->
-> **gotcha:** DART `list.json`은 `corp_name`(회사명)을 **요청 파라미터로 받지 않습니다**(응답에만 존재).
-> 회사명으로 특정 기업 공시를 좁히려면 `--corp-code`(8자리 고유번호)를 먼저 확보하세요(`search`/`profile`).
-
-### 사업보고서 텍스트 (business) — 신규
-
-```bash
-# 접수번호로 사업보고서 원문 추출
-python3 "$SKILL_DIR/scripts/collect_company.py" business --rcept-no 20240401000123
-
-# 섹션 지정 (정규식 매칭)
-python3 "$SKILL_DIR/scripts/collect_company.py" business --rcept-no 20240401000123 --section "사업의 내용"
-
-# 기업코드만으로 자동 폴백 (최신 사업보고서 자동 선택)
-python3 "$SKILL_DIR/scripts/collect_company.py" business --corp-code 00126380
-
-# 출력 길이 제한
-python3 "$SKILL_DIR/scripts/collect_company.py" business --rcept-no 20240401000123 --max-chars 2000
-```
-
-### 미구현 엔드포인트 직접 호출 (raw) — 신규 (v0.17.0)
-
-`references/`에 명세는 있으나 전용 서브커맨드가 없는 80여 개 엔드포인트(배당·소송·전환사채·증자·해외상장 등)를
-직접 호출합니다. **JSON 원문만 반환** — 단위변환·CSV·출처링크는 미보장입니다(가공이 필요하면 `finance`/`compare` 사용).
-
-```bash
-# 배당에 관한 사항 (alotMatter)
-python3 "$SKILL_DIR/scripts/collect_company.py" raw --endpoint alotMatter \
-  --param corp_code=00126380 --param bsns_year=2023 --param reprt_code=11011
-
-# 소송 등의 제기 (lwstLg) — 기간 필요
-python3 "$SKILL_DIR/scripts/collect_company.py" raw --endpoint lwstLg \
-  --param corp_code=00126380 --param bgn_de=20240101 --param end_de=20241231
-
-# 전환사채 발행결정 (cvbdIsDecsn)
-python3 "$SKILL_DIR/scripts/collect_company.py" raw --endpoint cvbdIsDecsn \
-  --param corp_code=00126380 --param bgn_de=20200101 --param end_de=20241231
-```
-
-> `--endpoint`는 영숫자만 허용합니다(경로·URL·쿼리 주입 차단). `crtfc_key`는 자동 주입됩니다.
-> 엔드포인트 이름·파라미터는 [references/dart.md](references/dart.md)의 disambiguation 표와 각 분류 가이드를 참고하세요.
-> status `013`(데이터 없음)은 에러가 아니라 빈 결과로 반환됩니다.
-
-### 재무제표 자동 폴백 (finance) — 갱신
-
-```bash
-# --year 없이 corp-code만 → 최신 사업보고서 자동 선택
-python3 "$SKILL_DIR/scripts/collect_company.py" finance --corp-code 00126380
-
-# --prefer latest → 분기·반기 포함 가장 최신 보고서 자동 선택
-python3 "$SKILL_DIR/scripts/collect_company.py" finance --corp-code 00126380 --prefer latest
-```
-
-### 다기업 재무 비교 (compare)
-
-```bash
-# 회사명으로 비교 (쉼표 구분) — 자동 단위 변환(억/조)
-python3 "$SKILL_DIR/scripts/collect_company.py" --format table compare \
-  --names "삼성전자,LG전자,SK하이닉스" \
-  --year 2024 \
-  --accounts "매출액,영업이익,자산총계"
-
-# 기업코드로 비교 + 회사명 매핑(v0.15.0+: 둘 다 지정 가능 — 헤더에 회사명 표시)
-python3 "$SKILL_DIR/scripts/collect_company.py" --format table compare \
-  --corp-codes "00159023,00190321,00231363" \
-  --names "SKT,KT,LGU+" \
-  --year 2024 --report q1
-
-# 파생 지표 함께(v0.15.0+) — 영업이익률·순이익률 행 추가
-python3 "$SKILL_DIR/scripts/collect_company.py" --format table compare \
-  --names "삼성전자,LG전자" --year 2024 --with-ratios
-
-# 단위 강제(v0.15.0+) — 백만원/억/조
-python3 "$SKILL_DIR/scripts/collect_company.py" --format table compare \
-  --names "삼성전자" --year 2024 --unit eok
-
-# CSV로 저장 (엑셀 호환) — formatted_amount 컬럼 신설(v0.15.0+)
-python3 "$SKILL_DIR/scripts/collect_company.py" --format csv compare \
-  --names "삼성전자,LG전자" \
-  --year 2024 --unit auto > compare.csv
-
-# --year 미지정 → 첫 기업 기준 최신 사업보고서 자동 선택 (stderr 안내)
-python3 "$SKILL_DIR/scripts/collect_company.py" compare \
-  --names "삼성전자,LG전자,SK하이닉스"
-
-# --prefer latest → 분기·반기 포함 가장 최신 보고서 자동 선택
-python3 "$SKILL_DIR/scripts/collect_company.py" compare \
-  --names "삼성전자,LG전자" --prefer latest
-
-# 전기 열 포함 (v0.16.0+)
-python3 "$SKILL_DIR/scripts/collect_company.py" --format table compare \
-  --names "삼성전자" --year 2023 --with-prior
-
-# 전기 + 증감률 동시 (v0.16.0+)
-python3 "$SKILL_DIR/scripts/collect_company.py" compare \
-  --names "삼성전자" --year 2023 --with-prior --with-ratios
-```
-
-> compare 계정 매칭은 정규화가 아닙니다. "영업이익" 검색어는 라벨로 표시되며,
-> 정확 일치 우선 + 부분 일치 fallback으로 동작합니다 (`_match_account` 동작).
-> 예: "영업이익" 검색 시 "영업이익(손실)"에도 매칭됩니다.
-> JSON 출력에 기업별 `source.rcept_no` + 공시원문 URL이 기본 포함됩니다 (v0.16.0+).
-
-### 분기 데이터가 필요할 때 — `--report` 옵션
-
-`finance`·`compare`·`employees`·`profile` 모두 `--report annual|q1|q2|q3` 옵션을 받습니다.
-(연 보고서 = `annual`, 1분기 = `q1`, 반기 = `q2`, 3분기 = `q3`)
-
-> **v0.15.0 BREAKING**: 구 `--report half` 는 제거되었습니다. `--report q2` 로 마이그레이션하세요.
-> `--report half` 입력 시 친절한 안내 메시지와 함께 즉시 에러로 안내됩니다.
-
-```bash
-# 단일 기업의 1분기 재무 (2026 1분기보고서)
-python3 "$SKILL_DIR/scripts/collect_company.py" finance \
-  --corp-code 00159023 --year 2026 --report q1
-
-# 다기업의 반기(2분기) 비교 — 회사명 헤더 + 비율
-python3 "$SKILL_DIR/scripts/collect_company.py" --format table compare \
-  --corp-codes "00159023,00190321,00231363" \
-  --names "SKT,KT,LGU+" \
-  --year 2026 --report q2 \
-  --accounts "매출액,영업이익,당기순이익" \
-  --with-ratios --unit auto
-```
-
-> 미공시 연도(예: 2026 사업보고서가 아직 안 나온 시점)는 `--year`를 빼고 호출하면
-> 첫 기업 기준 최신 보고서를 자동 채택합니다. 채택된 보고서는 stderr로 안내됩니다.
-
-### CSV 출력 — 모든 커맨드 지원
-
-```bash
-# 재무제표 CSV (엑셀에서 바로 열기)
-python3 "$SKILL_DIR/scripts/collect_company.py" --format csv \
-  finance --corp-code 00126380 --year 2024 > finance.csv
-
-# 공시 목록 CSV
-python3 "$SKILL_DIR/scripts/collect_company.py" --format csv \
-  disclosure --corp-code 00126380 --bgn 20240101 --end 20241231 > disc.csv
-```
+- **finance·compare 자동 폴백** — `--year` 가 없으면 최근 1년 + 95일 정기공시에서 최신 보고서를 고르고 stderr 로 알린다
+  (`--prefer annual`=사업보고서만, `latest`=분기·반기 포함). 고른 보고서의 연도와 보고서 코드(반기면 `11012`)를 함께 쓴다.
+  `--report q1|q2|q3` 를 연도 없이 주면 **그 유형 가운데 최신**을 고른다(`--prefer` 보다 먼저).
+- **compare** 는 다중회사 주요계정(`fnlttMultiAcnt`) 한 번으로 100개사까지 받는다(2026-09-30 실측: 한 회사의 행이 단일회사
+  주요계정과 같다). 데이터가 없는 회사는 빈 칸 + `warnings`. 계정 매칭은 정확 일치 우선 + 부분 일치 fallback
+  ("영업이익" → "영업이익(손실)"). JSON 에 기업별 `source.rcept_no` + 공시원문 URL 이 들어간다.
+- **disclosure** 는 기간 전체를 쪽당 100건으로 받아 전량 대조한다(쪽 번호·총건수·중복·회사·접수일). `--single-page` 는 최근 100건만 훑는다.
+  JSON·표 stdout 에는 최근 `--limit`(기본 20)건만 싣는다(`count` 는 받은 전량). 전량이 필요하면 `--out FILE` 로 파일에 쓴다.
+  `--type`(pblntf_ty): A=정기공시, B=주요사항보고, C=발행공시, D=지분공시, E=기타공시, F=외부감사관련, G=펀드공시,
+  H=자산유동화, I=거래소공시, J=공정위공시. `list.json` 은 회사명을 요청 인자로 받지 않는다 — 코드를 먼저 확보한다.
+- **profile** 은 기업개황·재무·직원현황 가운데 일부가 오류면 그 부분에 오류를 담아 `ok` 로 끝내고 `warnings` 를 싣는다.
+  키 오류처럼 고친 뒤 받을 수 있는 부분은 `retry_calls` 에 호출이 온다.
+- **business** 는 document ZIP 에서 가장 큰 파일을 꺼내 UTF-8/EUC-KR 로 풀고 태그를 걷는다. `--section` 은 정규식.
+- **raw** 는 `references/` 에 명세만 있는 80여 개 엔드포인트(배당·소송·전환사채·증자 등)용이다. JSON 원문만 준다 — 단위변환·CSV·
+  출처링크는 없다(가공이 필요하면 finance/compare). `--endpoint` 는 영숫자만(경로·URL·쿼리 주입 차단), `crtfc_key` 는 자리표시자로
+  자동으로 들어간다. status `013`·`014`(데이터 없음)는 빈 결과. 엔드포인트 이름·파라미터는 [references/dart.md](references/dart.md) 의 disambiguation 표.
+  스크립트를 거치는 이유는 이름 규칙·status 판정·020 재요청을 다른 명령과 같게 하기 위해서다.
+- **`--report`** `annual`(사업) / `q1` / `q2`(반기) / `q3` — finance·compare·employees·profile. 옛 `half` 는 친절한 오류로 거부한다.
 
 ## CLI 옵션
 
 | 옵션 | 설명 | 기본값 |
 |------|------|--------|
-| `--name` | 회사명 (search/profile 서브커맨드) | — |
-| `--corp-code` | DART 기업 코드 (8자리). `info` 에서는 `--input` 이 있으면 생략 | — |
-| `--input` | itda-hyve 가 `save_as` 로 저장한 `company.json` 경로. `info` 전용 — 네트워크 없이 가공만 한다 | — |
-| `--year` | 사업연도 (미지정 시 자동 폴백) | — |
-| `--report` | 보고서 유형: `annual`(사업) / `q1`(1분기) / `q2`(반기) / `q3`(3분기). `finance`·`compare`·`employees`·`profile` 공통 | `annual` |
-| `--prefer` | 폴백 범위: `annual`=사업보고서만, `latest`=분기·반기 포함. `finance`·`compare` 공통 | `annual` |
-| `--detail` | 전체 재무제표(fnlttSinglAcntAll, 176항목류) 반환. `finance` 전용. 기본 OFF(주요계정 ~30항목) | OFF |
-| `--bgn` | 시작일 YYYYMMDD (disclosure) | — |
-| `--end` | 종료일 YYYYMMDD (disclosure) | — |
-| `--type` | 공시 유형 A/B/None (disclosure) | None=전체 |
-| `--page` | 페이지 번호 (disclosure) | 1 |
-| `--page-count` | 페이지당 건수 최대100 (disclosure) | 10 |
+| `--input` | 연결 폴더(그 안과 `dart/` 하위를 본다) 또는 응답 파일들. 파일을 직접 주면 저장 이름 규칙을 지켜야 한다 | — |
+| `--next-plan` | 더 받을 호출을 batch `plan_file` 로 쓴다(40개씩 나눔) | — |
+| `--name` | 회사명 (search/profile) | — |
+| `--corp-code` | DART 기업 코드 (8자리) | — |
+| `--year` | 사업연도 (finance·compare 는 미지정 시 자동 폴백) | — |
+| `--report` | `annual` / `q1` / `q2` / `q3` (연도 없이 주면 그 유형의 최신) | `annual` |
+| `--prefer` | 폴백 범위: `annual`=사업보고서만, `latest`=분기·반기 포함 | `annual` |
+| `--detail` | 전체 재무제표(fnlttSinglAcntAll). finance 전용 | OFF |
+| `--fs-div` | `CFS`(연결)/`OFS`(개별). finance 전용 | `CFS` |
+| `--bgn` / `--end` | 기간 YYYYMMDD (disclosure) | — |
+| `--type` | 공시 유형 A~J (disclosure) | 전체 |
+| `--max-pages` | 받을 쪽 상한, 쪽당 100건 (disclosure) | 10 |
+| `--single-page` | 전량 대조 없이 1쪽만 (disclosure) | OFF |
+| `--limit` | stdout(json·table)에 싣는 건수, 0=전부 (disclosure — CSV 는 늘 전량) | 20 |
+| `--out` | 받은 전량을 JSON 파일로 (disclosure) | — |
 | `--rcept-no` | 접수번호 14자리 (business) | — |
-| `--section` | 섹션 정규식 (business) | None=전체 |
-| `--max-chars` | 최대 문자수 0=무제한 (business) | 5000 |
-| `--names` | 회사명 목록 쉼표 구분 (compare). `--corp-codes`와 병기 시 헤더 표시명 | — |
-| `--corp-codes` | 기업코드 목록 쉼표 구분 (compare) | — |
-| `--accounts` | 계정명 목록 쉼표 구분 (compare) | `매출액,영업이익,당기순이익,자산총계` |
-| `--unit` | 금액 단위 (compare): `auto`(>=1조 jo, >=1억 eok, 미만 million) / `million` / `eok` / `jo` | `auto` |
-| `--with-ratios` | 영업이익률·순이익률 행 추가 (compare, 매출액 기준) | OFF |
-| `--with-prior` | 전기(frmtrm_amount) 열/필드 추가 (compare). `--with-ratios` 병행 시 전기 대비 증감률 추가 | OFF |
-| `--endpoint` | DART 엔드포인트 이름 (raw 전용, 영숫자) | — |
-| `--param` | 쿼리 파라미터 `key=value` (raw 전용, 반복 가능). `crtfc_key` 자동 주입 | — |
-| `--format` | `json` / `table` / `csv` (raw는 json 전용) | `json` |
-| `--api-key` | DART API 키 (CLI 직접 전달) | 환경변수 |
+| `--section` | 섹션 정규식 (business) | 전체 |
+| `--max-chars` | 최대 문자수, 0=무제한 (business) | 5000 |
+| `--names` / `--corp-codes` | 회사명·코드 쉼표 구분 (compare, 병기 시 이름이 헤더) | — |
+| `--accounts` | 계정명 쉼표 구분 (compare) | `매출액,영업이익,당기순이익,자산총계` |
+| `--unit` | `auto`/`million`/`eok`/`jo` (compare) | `auto` |
+| `--with-ratios` / `--with-prior` | 영업이익률·순이익률 / 전기 열(둘 다면 증감률) (compare) | OFF |
+| `--endpoint` / `--param` | raw 전용 | — |
+| `--format` | `json` / `table` / `csv` (raw 는 json 만) | `json` |
+
+## 저장 이름 규칙 (스크립트가 짓는다)
+
+| 이름 | 응답 |
+|---|---|
+| `dart/corpcode-<오늘>.zip` | 기업 고유번호 목록(corpCode.xml) |
+| `dart/company-<코드>-<오늘>.json` | 기업개황 |
+| `dart/list-<코드>-<시작>-<끝>-<유형|all>-p<쪽>.json` | 공시 목록 한 쪽 |
+| `dart/fin-<코드>-<연도>-<보고서코드>.json` · `finall-…-<CFS|OFS>.json` | 주요계정 · 전체 재무제표 |
+| `dart/emp-<코드>-<연도>-<보고서코드>.json` | 직원현황 |
+| `dart/multi-<연도>-<보고서코드>-<해시>.json` | 다중회사 주요계정(해시 = 요청 회사 코드 목록) |
+| `dart/doc-<접수번호>.zip` | 공시서류 원본 |
+| `dart/raw-<엔드포인트>-<해시>.json` | raw(해시 = 파라미터) |
+
+다시 받는 회차는 `-r2`·`-r3` 이 붙고, 스크립트는 회차가 가장 큰 파일을 쓴다. 날짜·쪽·해시는 한글이 없다.
 
 ## 출력 형식
 
-- `--format json` (기본): 구조화된 JSON 출력
+- `--format json` (기본): 구조화된 JSON. 가공에 쓴 파일 이름이 `sources` 에 들어간다
 - `--format table`: 사람이 읽기 쉬운 테이블
 - `--format csv`: UTF-8 BOM CSV (엑셀 한글 호환, RFC 4180)
 
 ## 응답 규칙 (모델 표현)
 
-스크립트는 JSON/table/CSV를 **출력**합니다. 그 위에서 사용자에게 답할 때의 표현 규칙입니다
-(단위 변환·status 분류는 이미 코드가 처리하므로 여기서 중복 기술하지 않습니다).
-
-- **요약 우선**: 정상 응답이어도 JSON 원문을 그대로 붙여넣지 말고 핵심만 요약합니다.
-  - `info`: 회사명·대표자·업종·주소·결산월
-  - `finance`·`compare`: 매출액·영업이익·당기순이익·자산총계·부채총계·자본총계 우선
-  - `disclosure`: 최근 5~10건의 보고서명·접수일·제출인
-  - `business`: 요청 섹션의 요지
-- **원본 병기**: 금액을 억/조로 풀어 보여줄 때 원본 수치(원 단위)도 함께 남깁니다.
-- **비정상 status 안내**: `status`가 `000`이 아니면(스크립트가 error JSON·`error_code` 반환)
-  코드 의미를 사용자 언어로 안내합니다(예: `013`=해당 기간/보고서에 데이터 없음, `020`=요청 한도 초과 → 잠시 후 재시도).
-- **출처 동봉**: `finance`·`compare` JSON의 `source.url`(공시원문 링크)을 답변에 함께 제시합니다.
+- **요약 우선**: JSON 원문을 그대로 붙여넣지 말고 핵심만 요약한다.
+  - `info`: 회사명·대표자·업종·주소·결산월 / `finance`·`compare`: 매출액·영업이익·당기순이익·자산총계·부채총계·자본총계 우선
+  - `disclosure`: 최근 5~10건의 보고서명·접수일·제출인과 전체 건수(`count`) / `business`: 요청 섹션의 요지
+- **원본 병기**: 금액을 억/조로 풀어 보여줄 때 원본 수치(원 단위)도 함께 남긴다.
+- **비정상 status 안내**: `error: api` 면 `error_code` 의미를 사용자 언어로 안내한다(`013`=해당 기간/보고서에 데이터 없음,
+  `020`=요청 한도 초과 → 잠시 후 다시).
+- **출처 동봉**: `finance`·`compare` JSON 의 `source.url`(공시원문 링크)을 답변에 함께 제시한다.
 - **면책 푸터**: 답변 말미에 한 줄 — `※ 금융감독원 DART 공시 데이터 기준이며 투자 조언이 아닙니다`.
 
 ### Done when (작업 완료 기준)
 
-- `DART_API_KEY`(또는 작업 폴더 `.env`)를 확인했다.
-- 회사명만 받았으면 `search`/`profile`로 `corp_code`를 먼저 확보했다.
-- 요청에 맞는 서브커맨드를 실행하고 결과를 위 규칙대로 요약했다.
+- 명령이 `status: "ok"` 로 끝났다(`incomplete` 로 멈춘 결과를 말하지 않았다).
+- 회사명만 받았으면 `search`/`profile` 로 `corp_code` 를 먼저 확보했다.
+- `truncated`·`warnings`·`retry_calls`(profile 일부가 키 오류 등으로 빠짐)가 있으면 사용자에게 알렸다.
 - `source.url`(공시원문)을 동봉하고 면책 푸터를 남겼다.
 
 ## 종료 코드
@@ -386,8 +326,28 @@ python3 "$SKILL_DIR/scripts/collect_company.py" --format csv \
 | 코드 | 의미 |
 |------|------|
 | 0 | 성공 |
-| 1 | 실행 오류 (API 키 미설정, 인증 실패, 데이터 없음) |
-| 2 | 인자 오류 |
+| 1 | 더 받을 것이 있다(`incomplete`) · 가공 실패 — `error`: `api`(DART status) · `truncated`·`http`·`hyve`(입력이 잘림·HTTP 오류·itda-hyve 실패 자리 — 회차 상한까지 다시 받고도 같을 때) · `input`(파일 없음·이름 규칙 위반·형식 오류·이름과 본문 불일치) · `unstable`(공시 목록을 3회차까지 받아도 건수가 맞지 않음 — 되풀이하지 않는다) · `not_found`(profile 회사명). 원인을 고친 뒤 다시 받을 수 있으면 `next_calls` 가 붙는다 |
+| 2 | 인자 오류 (`args`) |
+
+### 정본 status 코드 (DART API)
+
+| 코드 | 의미 | 권장 조치 |
+|------|------|----------|
+| 000 | 정상 | — |
+| 010 | 등록되지 않은 키 | 시크릿 탭의 `DART_API_KEY` 값·활용신청 확인 → 고친 뒤 `next_calls` 로 다시 |
+| 011 | 사용할 수 없는 키 (일시 중지) | 활용신청 URL 확인 |
+| 012 | 접근할 수 없는 IP | DART 콘솔에서 IP 등록 |
+| 013 | 조회된 데이터 없음 | 다른 연도·보고서로 |
+| 014 | 파일이 존재하지 않습니다 | 접수번호 재확인 |
+| 020 | 요청 제한 초과 (일 20,000건) | 스크립트가 다음 회차 이름으로 다시 받게 한다(최대 3회) |
+| 021 | 조회 가능 회사 개수 초과 (최대 100건) | 스크립트가 100개사씩 나눈다 |
+| 100 | 필드의 부적절한 값 | 인자 형식 확인 |
+| 101 | 부적절한 접근 | 활용신청 URL 확인 |
+| 800 | 시스템 점검으로 인한 서비스 중지 | 스크립트가 다음 회차로 다시 받게 한다(최대 3회) — 그래도 같으면 나중에 |
+| 900 | 정의되지 않은 오류 | 스크립트가 다음 회차로 다시 받게 한다(최대 3회) — 그래도 같으면 문의 |
+| 901 | 사용자 계정 개인정보 보유기간 만료 | 재가입 또는 갱신 |
+
+권한 관련 오류(010/011/901)는 활용신청 URL(`https://opendart.fss.or.kr`)을 메시지에 붙인다. HTTP 403 게이트웨이 거부도 같다.
 
 ## 트리거 키워드
 
@@ -404,80 +364,40 @@ dart/
   GUIDE.md
   requirements.txt
   scripts/
-    dart_api.py         # DART API 모듈 (공시목록·사업보고서 텍스트 포함)
-    collect_company.py  # 기업정보 수집 CLI (9개 커맨드: search/info/finance/disclosure/business/employees/profile/compare/raw)
+    dart_api.py         # 호출·저장 이름·응답 판독·전량 대조·가공 (네트워크 없음)
+    collect_company.py  # 9개 명령 CLI (search/info/finance/disclosure/business/employees/profile/compare/raw)
   tests/
-    test_dart_api.py
-    test_collect_company.py
-    test_collect_company_arg_position.py
+    test_dart_api.py · test_collect_company.py · test_collect_company_arg_position.py · test_response_compact_guard.py
+    fixtures/           # 2026-09-30 itda-hyve 실측 응답(개인 제출인명 가림·일부 축소)
   references/
+    netbridge.md        # itda-hyve 규약 (정본 shared/netbridge.md 사본)
     dart.md             # 요약 가이드
-    공시정보/                  # DS001 (4)
-    정기보고서-주요정보/         # DS002 (28)
-    정기보고서-재무정보/         # DS003 (7)
-    지분공시-종합정보/           # DS004 (2)
-    주요사항보고서-주요정보/      # DS005 (36)
-    증권신고서-주요정보/         # DS006 (6)
+    공시정보/ 정기보고서-주요정보/ 정기보고서-재무정보/ 지분공시-종합정보/ 주요사항보고서-주요정보/ 증권신고서-주요정보/
 ```
 
-> API 키 관리(`env_loader.py`)와 데이터 경로 유틸리티(`itda_path.py`)는
-> 저장소 전역 `shared/` 디렉토리에 위치하며, PYTHONPATH로 import됩니다
-> (dart 직속 파일이 아님 — SPEC-DART-FEEDBACK-001 REQ-002a로 광고 정정됨).
-
-## 오류 처리
-
-### 일반 오류
-
-| 오류 | 원인 | 해결 방법 |
-|------|------|-----------|
-| `DART_API_KEY가 설정되지 않았습니다` | API 키 미설정 | `.env`(작업 폴더 루트)에 `DART_API_KEY=키` 추가(권장) — 스킬이 자동 탐색. "Claude 지침"도 동작하나 컨텍스트에 노출. 개발자는 셸 환경변수도 가능 |
-| `기업을 찾을 수 없습니다` | 회사명 불일치 | 공식 법인명 전체로 재검색 |
-| `재무 데이터가 없습니다` | 해당 연도 미공시 | 이전 연도로 재시도 |
-
-### 정본 status 코드 (DART API)
-
-| 코드 | 의미 | 권장 조치 |
-|------|------|----------|
-| 000 | 정상 | — |
-| 010 | 등록되지 않은 키 | 활용신청 URL 확인 |
-| 011 | 사용할 수 없는 키 (일시 중지) | 활용신청 URL 확인 |
-| 012 | 접근할 수 없는 IP | DART 콘솔에서 IP 등록 |
-| 013 | 조회된 데이터 없음 | 정상 응답 (결과 0건) |
-| 014 | 파일이 존재하지 않습니다 | 접수번호 재확인 |
-| 020 | 요청 제한 초과 (일 20,000건) | 자동 재시도(1s, 2s) |
-| 021 | 조회 가능 회사 개수 초과 (최대 100건) | 분할 호출 |
-| 100 | 필드의 부적절한 값 | 인자 형식 확인 |
-| 101 | 부적절한 접근 | 활용신청 URL 확인 |
-| 800 | 시스템 점검으로 인한 서비스 중지 | 잠시 후 재시도 |
-| 900 | 정의되지 않은 오류 | 재시도 또는 문의 |
-| 901 | 사용자 계정 개인정보 보유기간 만료 | 재가입 또는 갱신 |
-
-권한 관련 오류(010/011/012/101/901)는 시스템이 활용신청 URL(`https://opendart.fss.or.kr`)을
-자동 부착합니다. HTTP 403 게이트웨이 거부도 동일하게 처리됩니다.
+itda-hyve 입력 판독(`hyve_input.py`)은 저장소 `shared/` 에 있고 배포 때 `scripts/` 로 들어간다.
 
 ## Troubleshooting
 
 ### 한글 경로가 인식되지 않을 때
 
-Cowork sandbox 등 일부 환경의 bash는 `LANG`/`LC_ALL` 미설정 시 한글 디렉토리명을 직접 인자로 받지 못합니다.
-
-**증상:** `/sessions/.../mnt/실습-클로드-1기/` 경로에서 `No such file or directory`.
-
-**해결 — 변수 캡처 우회:**
+Cowork sandbox 등 일부 환경의 bash 는 `LANG`/`LC_ALL` 미설정 시 한글 디렉토리명을 직접 인자로 받지 못한다
+(증상: `/sessions/.../mnt/실습-클로드-1기/` 에서 `No such file or directory`). 변수로 캡처해 우회한다:
 
 ```bash
-WORKSPACE=$(ls /sessions/*/mnt/ | grep -v '^lost+found$' | head -1)
-WORKSPACE_PATH=$(ls -d /sessions/*/mnt/"$WORKSPACE" 2>/dev/null | head -1)
-
-python3 "$SKILL_DIR/scripts/collect_company.py" search --name "삼성전자" > "$WORKSPACE_PATH/result.json"
+WORK=$(ls -d "$HOME"/mnt/*/ | grep -v 'lost+found' | head -1)
+python3 "$SKILL_DIR/scripts/collect_company.py" search --name "삼성전자" --input "$WORK"
 ```
 
-> 이 패턴은 스크립트 코드 결함이 아니라 sandbox bash의 locale 설정 문제입니다.
-> macOS native bash 및 Windows PowerShell에서는 한글 경로가 정상 동작합니다.
+## 테스트 실행
+
+```bash
+python3 -m pytest itda-gov/skills/dart/tests -q     # Windows: py -3 -m pytest …
+```
 
 ## 상세 API 가이드
 
-`references/` 디렉토리에 OpenDART 공식 가이드 6개 분류 · 83개 API의 정본 명세를 보관합니다.
+`references/` 에 OpenDART 공식 가이드 6개 분류 · 83개 API 의 정본 명세를 보관한다.
 
 | 분류 | API 수 | 위치 |
 |------|--------|------|
@@ -488,9 +408,4 @@ python3 "$SKILL_DIR/scripts/collect_company.py" search --name "삼성전자" > "
 | 주요사항보고서 주요정보 | 36 | [references/주요사항보고서-주요정보/](references/주요사항보고서-주요정보/) |
 | 증권신고서 주요정보 | 6 | [references/증권신고서-주요정보/](references/증권신고서-주요정보/) |
 
-기존 요약본: [references/dart.md](references/dart.md)
-
-> **미구현 엔드포인트 호출**: 위 분류의 대부분은 전용 서브커맨드가 없습니다. 명세만 읽고 끝내지 말고
-> `collect_company.py raw --endpoint <이름> --param k=v ...`로 직접 호출하세요
-> (위 "미구현 엔드포인트 직접 호출 (raw)" 섹션 참고). 헷갈리는 엔드포인트(유무상/유상/무상 증자,
-> 주요계정/전체 재무제표 등)는 [references/dart.md](references/dart.md)의 disambiguation 표를 확인하세요.
+요약본: [references/dart.md](references/dart.md). 전용 명령이 없는 엔드포인트는 명세만 읽고 끝내지 말고 `raw` 로 받는다.

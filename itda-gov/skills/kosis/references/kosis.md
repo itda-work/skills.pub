@@ -1,58 +1,31 @@
-# KOSIS 국가통계포털 — collect_stats.py 상세
+# KOSIS 국가통계포털 — 요청 계약 요약
 
 제안서/사업계획서에 필요한 국가 공식 통계를 수집합니다.
 
-## API 키 설정
+## API 키
 
-```bash
-# 1. https://kosis.kr 회원가입
-# 2. https://kosis.kr/openapi/ 에서 서비스 신청 (자동 승인) → 인증키 발급
-#    - 서비스 소개: https://kosis.kr/openapi/introduce/introduce_01List.do
-# 3. 작업 폴더 루트(예: outputs/)에 .env 파일 생성 후 키 추가
-#    KOSIS_API_KEY=발급받은_인증키
-# (로컬 CLI 전용: claude config set env.KOSIS_API_KEY "키" 또는 셸 환경변수도 가능)
-```
+1. <https://kosis.kr> 회원가입 → <https://kosis.kr/openapi/> 에서 활용신청(자동 승인) → 마이페이지에서 인증키 확인
+2. itda-hyve GUI 시크릿 탭에 `KOSIS_API_KEY` 로 등록한다. 요청의 `params.apiKey` 는 `{{secret:KOSIS_API_KEY}}` 자리표시자뿐이다.
 
 > **주의**: KOSIS 인증키는 Base64 형태로 끝에 `=` 패딩 문자가 포함됩니다.
 > 복사 시 `=`가 잘리면 "유효하지않은 인증KEY" 오류가 발생합니다.
-> 키 전체를 정확히 복사했는지 확인하세요.
 
-**API 제한**: 분당 1,000회 호출, 1회 최대 40,000셀
+**API 제한**: 분당 1,000회 호출, 1회 최대 40,000셀(넘으면 오류 31)
 
-## 서브커맨드
+## 요청 URL (2026-09-30 확인)
 
-| 커맨드 | 역할 | 핵심 데이터 |
-|-------|------|-----------|
-| `search` | 키워드로 통계표 검색 | orgId, tblId, 통계표명 |
-| `data` | 통계자료 조회 | 시점별 수치 데이터 |
+| 명령 | URL | method |
+|---|---|---|
+| search | `https://kosis.kr/openapi/statisticsSearch.do` | getList |
+| data | `https://kosis.kr/openapi/Param/statisticsParameterData.do` | getList (`format=json`+`jsonVD=Y`, 또는 `format=sdmx`+`type=Generic`) |
+| info·region | `https://kosis.kr/openapi/statisticsData.do` | getMeta (`type=ITM` 등) |
+| list | `https://kosis.kr/openapi/statisticsList.do` | getList |
+| meta | `https://kosis.kr/openapi/statisticsExplData.do` | getList |
+| indicator | `https://kosis.kr/openapi/pkNumberService.do` | getList (`service=1`, `serviceDetail=pkAll`) |
 
-## 사용법
-
-```bash
-# 키워드로 통계표 검색
-python3 scripts/collect_stats.py search --keyword "인구"
-python3 scripts/collect_stats.py search --keyword "GDP" --count 20
-
-# 통계자료 조회 (최근 3년)
-python3 scripts/collect_stats.py data --org-id 101 --tbl-id DT_1B04005N --recent 3
-
-# 기간 지정 조회
-python3 scripts/collect_stats.py data --org-id 101 --tbl-id DT_1B04005N --start 2020 --end 2024
-
-# 월별 데이터
-python3 scripts/collect_stats.py data --org-id 101 --tbl-id DT_1B04005N --period month --start 202301 --end 202412
-
-# 특정 항목/분류
-python3 scripts/collect_stats.py data --org-id 101 --tbl-id DT_1B04005N --item "T2+T3" --obj1 "11"
-
-# 테이블 형식
-python3 scripts/collect_stats.py --format table data --org-id 101 --tbl-id DT_1B04005N --recent 3
-```
-
-Windows:
-```powershell
-py -3 scripts/collect_stats.py search --keyword "인구"
-```
+- 확정 근거: 매뉴얼 v1.0 §2.2.3.1(통계표선택 방식 입력변수) + 2026-09-30 itda-hyve 실측 — `Param/statisticsParameterData.do` 는
+  키 없이 `{"err":"10","errMsg":"인증 KEY값이 누락되었습니다."}`(HTTP 200)를, 오타 `Param/statisticsParamData.do` 는 HTTP 404 HTML 을 줬다.
+- 호출 인자는 스크립트 `plan <명령>` 이 만든다(`SKILL.md` 1단계). 응답은 itda-hyve `save_as` 로 저장해 `<명령> --input` 으로 가공한다.
 
 ## 자주 쓰는 통계표
 

@@ -2,6 +2,37 @@
 
 이 파일이 변경 이력의 유일 정본이다.
 
+## 0.12.4 (2026-10-01) — itda-work/skills#46
+
+> ⚠️ **배포 차단** — itda-hyve 0.10.4(itda-work/itda-hyve#31 — `final_url`·저장 경로에 키가 평문으로 남던 결함 수정) 공개 **뒤에** 배포한다.
+> 0.10.4 는 기본 User-Agent 도 범용 `Mozilla/5.0` 으로 바꾼다 — 이 판부터 날씨·환율을 늘 itda-hyve `http_request` 로 받고 요청에 UA 를 싣지 않으므로,
+> 그 전 판에서는 Open-Meteo·서울외국환중개 서버 로그에 제품명이 남는다. 이 경계는 `accounts_list` 의 `server_version` 으로 가를 수 있어
+> 스크립트가 집행한다(아래 요구 판).
+
+- **요구 판 0.10.1 → 0.10.4**(W9 리뷰 M1) — `HYVE_MIN_VERSION`. 0.10.1~0.10.3 은 이제 `hyve_outdated`(`required: "0.10.4"`)로 멈추고 날씨·환율도 받지 않는다.
+  compatibility·SKILL(옛 판 판별·예시 JSON·예약 회차)·GUIDE(준비·브라우저로 열기·문제 해결 표)·`render.py` 결손 안내 문구·판 경계 테스트(0.10.1~0.10.3 멈춤, 0.10.4·0.10.5 통과)·
+  픽스처 `accounts.json`(`server_version` 0.10.4)를 맞췄다. `server_features`·`attendees` 가 0.10.1 에 생겼다는 서술은 사실이라 그대로 둔다.
+- **환율 절을 새 exchange-rate 흐름으로**(W9 리뷰 M1 — exchange-rate 0.11.0 이 옛 인자 호출을 없애 환율 절이 늘 비던 결함) —
+  `exchange_rate.py plan --date today --currency USD --save-dir "$HOST_IN"` → `call` 그대로 `http_request` 한 번 → `show --date today --input "$IN/<saved_path>"`.
+  날짜는 스크립트가 한국 시간으로 푼다(`$(date +%F)` 를 쓰지 않는다 — 샌드박스 시계가 UTC 일 수 있다).
+  `show` 는 `plan` 출력 `then` 의 날짜로 부른다(`today` 를 다시 풀면 자정을 넘긴 회차에서 다른 질의 — W9 재확인 m3). exchange-rate 는 실패를 stdout JSON 으로 내므로
+  명령을 `… > section-환율.txt || : > section-환율.txt` 로 적고, `gather.py` 도 절 파일이 형제 스킬의 오류 JSON(`status: error`)이면 절로 싣지 않고 `section_missing`(detail 에 오류 종류)으로 거른다(W9 재확인 M1 — 오류 JSON 이 브리핑에 그대로 실리던 결함).
+- 도구 표의 "샌드박스에서 날씨 예보를 못 받았을 때" 를 "날씨 예보·환율 받기(각 한 번)" 로, README D17·Sections 판단(환율 행·"현행 유지" 문단)·입력 폴더 표(환율 파일 행)를 새 흐름으로(W9 리뷰 m8).
+- `tests/test_deployed.py` — 형제 스킬을 배포본처럼 스킬 폴더째 복사하고 publish 의 shared 주입 계산(`_shared_closure`)을 그대로 쓴다(손으로 적은 `hyve_input` 한 줄 대신). 날씨에 더해 환율도
+  `plan` → 저장 → `show` → gather 까지 따라간다. 새 테스트 `test_skill_sibling_commands_parse` 가 SKILL 1-4 의 형제 스킬 명령 문자열을 그 CLI 의 파서로 실제로 읽는다 —
+  옛 호출 형태가 남으면 RED(환율 절이 깨진 채 테스트가 통과하던 자리).
+- **날씨 예보를 늘 itda-hyve 로** — 형제 스킬 weather-here 0.15.0 이 Open-Meteo 직접 호출을 지웠다(규칙 `cowork-network-via-hyve`). SKILL 1-4 의 흐름을 "샌드박스 직접 → 실패 때만 `http_request`" 에서 "`weather_here.py … --weather-request --save-dir "$HOST_IN"` → `call` 그대로 `http_request` 한 번 → `--weather-input "$IN/<saved_path>"`" 하나로 바꿨다. 모델이 JSON 에 `save_dir`·`save_as`·`overwrite` 를 더하던 절차가 없어졌다(weather-here 가 `call` 에 싣는다). 예보 파일 이름은 `weather-forecast.json` 에서 weather-here 가 정하는 `weather-here/openmeteo-<위도>_<경도>-<시각>.json` 으로. `http_request` 나 판독이 실패하면 날씨 절을 비우고 계속한다. 스크립트(gather·render·verify) 동작은 그대로다.
+- README 판단표(D10·D17·입력 폴더 표·소스 표)와 `gather.py` 주석을 같은 흐름으로. `tests/test_deployed.py` 는 weather-here 를 배포본처럼(`hyve_input` 평면 복사) 돌려 `--weather-request` → 저장 → `--weather-input` 을 따라간다.
+
+## 0.12.3 (2026-09-30) — itda-work/skills#46, #47
+
+- 공개된 적 없는 itda-hyve 판(0.9.1~0.10.0) 표기를 공개판 0.10.1 로 맞췄다(0.9.0 다음 공개판이 0.10.1 — 그 사이 판은 사용자가 설치할 수 없다, itda-work/skills#46). 요구 판 `HYVE_MIN_VERSION` 을 0.9.6 → **0.10.1** 로 — 공개판 사용자에게는 동작이 같다(0.9.0 은 전과 같이 멈추고 0.10.1 이상은 통과). 개발판 0.9.6~0.10.0 은 이제 `hyve_outdated`(`required: "0.10.1"`)로 멈춘다. SKILL.md·GUIDE.md 의 요구 판·옛 판 판별 문장, `render.py` 의 결손 안내(`attendees_missing`·`thread_headers_missing`) 문구를 0.10.1 로. 테스트의 판 경계 표본을 옮겼다(0.9.6·0.9.7·0.10.0 → 멈춤 쪽).
+- `references/netbridge.md` 사본을 정본과 동기화 — itda-hyve 기능 판 표기를 공개판 기준으로 바꿨다(0.9.1~0.10.0 은 공개되지 않은 개발판이라 그 사이 기능을 모두 0.10.1 로 적는다, itda-work/skills#46).
+- **SKILL_DIR 확정 블록이 새 Cowork 배치에서 빈 값을 내던 것** — Cowork 가 플러그인을 `/root/.claude/plugins/synced/` 에 두고
+  `CLAUDE_PLUGIN_ROOT` 를 주지 않자 옛 블록의 1·2순위가 둘 다 비었다. 새 블록(규칙 `skill-dir-resolution` 정본)은 스킬을 불러올 때 받은
+  base directory 를 먼저 넣게 하고 그 값을 검증해 쓴다. 넣지 못했을 때만 설정 홈(`CLAUDE_CONFIG_DIR`)의 동기화본·Code 캐시와
+  Cowork 배치를 찾으며, 후보마다 `SKILL.md` 를 확인하고 없거나 여럿이면 빈 값으로 진행하지 않고 멈춘다.
+
 ## 0.12.2 (2026-09-29) — itda-work/skills#44
 
 - itda-hyve 설치·업데이트 안내의 받는 곳을 `https://itda.work/hyve/` 하나로 바꿨다(GitHub 릴리스 페이지 링크 제거, itda-work/skills#44). SKILL.md, `gather.py` 가 옛 itda-hyve 에 내놓는 `update_url`·`update_steps`, GUIDE.md 의 사전 준비·업데이트 절("강의에서 안내받은 곳" 대신 itda.work/hyve).

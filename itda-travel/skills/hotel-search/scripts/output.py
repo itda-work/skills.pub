@@ -9,7 +9,9 @@ rates data 스키마(단일 호텔의 OTA 비교):
     "checkin": str, "checkout": str, "nights": int,
     "adults": int | None, "rooms": int | None,
     "currency": str,                   # Xotelo 수집 통화(USD 등)
+    "fetched_at": str | None,          # Xotelo 응답 timestamp(KST) — 같은 회차 폴더의 파일을 다시 쓸 때 조회 시각
     "fx_rate": float | None,           # 수집통화 1단위당 KRW (None = 환산 생략)
+    "warnings": [str],                 # 환산 생략 사유·묵은 환율·버린 행 — 전부 사용자에게 전한다
     "offers": [
       {"ota_code": str, "ota_name": str, "per_night": int, "total": int,
        "tax": int | None, "per_night_krw": int | None, "total_krw": int | None},
@@ -63,6 +65,8 @@ def _meta_line(data: dict) -> str:
         parts.append(" ".join(occ))
     if data.get("currency"):
         parts.append(f"수집통화 {data['currency']}")
+    if data.get("fetched_at"):
+        parts.append(f"조회 {data['fetched_at']} KST")
     return " · ".join(parts)
 
 
@@ -93,6 +97,10 @@ def rates_to_markdown(data: dict) -> str:
         lines.append(f"| {mark}{name_cell} | {pn} | {tot} |")
 
     lines.append("")
+    for w in data.get("warnings") or []:
+        lines.append(f"> ⚠️ {w}")
+    if data.get("warnings"):
+        lines.append("")
     disc = data.get("_disclaimer")
     if disc:
         lines.append(f"_{disc}_")
@@ -109,7 +117,8 @@ def heatmap_to_markdown(data: dict) -> str:
     """가격 달력(싼날/평균/비싼날)을 렌더한다."""
     lines = [f"# 가격 달력 — {_title(data)}", ""]
     if data.get("chk_out"):
-        lines += [f"체크아웃 {data['chk_out']} 기준 · 1박 조회", ""]
+        when = f" · 조회 {data['fetched_at']} KST" if data.get("fetched_at") else ""
+        lines += [f"체크아웃 {data['chk_out']} 기준 · 1박 조회{when}", ""]
     lines.append(_day_line("싼 날", "🟢", data.get("cheap_days") or []))
     lines.append(_day_line("평균", "🟡", data.get("average_days") or []))
     lines.append(_day_line("비싼 날", "🔴", data.get("high_days") or []))

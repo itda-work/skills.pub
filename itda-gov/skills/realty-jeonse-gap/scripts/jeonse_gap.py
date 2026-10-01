@@ -2,9 +2,10 @@
 
 realty-deals raw 데이터를 단지·면적 키로 조인하여
 전세가율(전세보증금/매매가×100)과 갭(매매가-전세보증금)을 산출한다.
+전세보증금은 같은 단지·면적 **전세 계약(월세 0)의 보증금 중위값**이다.
 
 공개 API:
-    join_trade_rent       -- 매매×전월세 단지·면적 조인
+    join_trade_rent       -- 매매×전세 단지·면적 조인(보증금 중위값)
     compute_gap_stats     -- 전세가율·갭 산출
     filter_by_threshold   -- 임계값 스크린 필터
     build_gap_envelope    -- JSON envelope 생성
@@ -19,52 +20,70 @@ from typing import Any
 # ---------------------------------------------------------------------------
 
 def _join_key(item: dict[str, Any]) -> str:
-    """단지명 + 전용면적 기준 조인 키."""
+    """단지명 + 전용면적 기준 조인 키. 둘 중 하나라도 비면 빈 문자열(조인하지 않는다)."""
     apt_nm = str(item.get("apt_nm", "")).strip()
     area = str(item.get("exclu_use_ar", "")).strip()
+    if not apt_nm or not area:
+        return ""
     return f"{apt_nm}||{area}"
 
 
+def _median(values: list[int]) -> int:
+    ordered = sorted(values)
+    mid = len(ordered) // 2
+    if len(ordered) % 2:
+        return ordered[mid]
+    return (ordered[mid - 1] + ordered[mid]) // 2
+
+
 # ---------------------------------------------------------------------------
-# join_trade_rent — 매매×전월세 조인 (R15, AC-3)
+# join_trade_rent — 매매×전세 조인 (R15, AC-3)
 # ---------------------------------------------------------------------------
 
 def join_trade_rent(
     trade_items: list[dict[str, Any]],
     rent_items: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """매매 항목과 전월세 항목을 단지·면적 기준으로 조인한다.
+    """매매 항목과 **전세** 항목을 단지·면적 기준으로 조인한다.
 
-    같은 단지·면적에 전월세 복수 건이 있으면 최고 전세보증금을 사용한다.
+    - 전세는 ``monthly_rent == 0`` 인 계약만 쓴다. 월세·반전세의 보증금은 전세가가 아니다
+      (W1 리뷰 M5 — 실측 강남구 2026-08 조인 60건 중 11건이 월세 보증금이었다).
+    - 같은 단지·면적에 전세가 여러 건이면 **보증금 중위값**을 쓴다. 한 기간에 신규 계약과
+      갱신 계약(5% 상한)이 섞이므로, 최댓값은 한 건의 높은 계약에 끌려 전세가율을 부풀리고
+      최솟값은 갱신에 끌린다. 중위값을 ``deposit`` 에 싣고 표본 수·최소·최대를 함께 싣는다.
+    - 단지명이나 전용면적이 빈 행은 조인하지 않는다(모든 행이 한 키로 뭉치지 않게).
 
     Args:
-        trade_items: 정규화된 매매 거래 항목 리스트.
+        trade_items: 정규화된 매매 거래 항목 리스트(해제 거래는 호출 전에 뺀다).
         rent_items:  정규화된 전월세 거래 항목 리스트.
 
     Returns:
-        조인된 항목 리스트. 조인 실패 항목은 제외된다.
+        조인된 항목 리스트(``deposit``·``jeonse_count``·``deposit_min``·``deposit_max`` 추가).
     """
     if not trade_items or not rent_items:
         return []
 
-    # 전월세 항목을 키별로 그룹핑 (최고 전세가 유지)
-    rent_by_key: dict[str, dict[str, Any]] = {}
+    deposits: dict[str, list[int]] = {}
     for r in rent_items:
+        if r.get("monthly_rent", 0) != 0:
+            continue
+        deposit = r.get("deposit", 0) or 0
         key = _join_key(r)
-        existing = rent_by_key.get(key)
-        if existing is None or r.get("deposit", 0) > existing.get("deposit", 0):
-            rent_by_key[key] = r
+        if not key or deposit <= 0:
+            continue
+        deposits.setdefault(key, []).append(deposit)
 
-    # 매매 항목마다 전월세 항목 찾아 조인
     result = []
     for t in trade_items:
         key = _join_key(t)
-        rent = rent_by_key.get(key)
-        if rent is None:
+        found = deposits.get(key) if key else None
+        if not found:
             continue
         joined = dict(t)
-        joined["deposit"] = rent.get("deposit", 0)
-        joined["monthly_rent"] = rent.get("monthly_rent", 0)
+        joined["deposit"] = _median(found)
+        joined["jeonse_count"] = len(found)
+        joined["deposit_min"] = min(found)
+        joined["deposit_max"] = max(found)
         result.append(joined)
 
     return result

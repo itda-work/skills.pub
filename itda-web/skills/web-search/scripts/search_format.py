@@ -59,4 +59,10 @@ def _render_markdown(payload: dict[str, Any]) -> str:
                 f"- {err.get('engine')}: {err.get('message')} (`{err.get('code')}`)"
             )
 
+    notes = payload.get("notes") or []
+    if notes:
+        lines.append("\n## 참고")
+        for note in notes:
+            lines.append(f"- {note}")
+
     return "\n".join(lines)

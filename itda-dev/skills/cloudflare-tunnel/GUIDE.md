@@ -76,15 +76,20 @@ DNS와 Access를 구성하려면 API 토큰이 필요합니다.
 - ⚠️ **Global API Key는 쓰지 마세요.** 권한이 너무 넓습니다. 아래처럼 **최소 권한**으로 발급하세요:
   - `Zone.DNS:Edit` (해당 도메인 zone)
   - Access 앱을 API로 만들 경우에만, 계정의 `Access: Apps and Policies:Edit`
-- ⚠️ **토큰은 절대 코드 저장소(git)에 올리지 마세요.** OS 보안 저장소(macOS 키체인 · Windows 자격 증명 관리자 · Linux secret-service)에 보관하는 것을 권장합니다. 간편하게는 작업 폴더 루트의 `.env` 파일도 됩니다.
+- ⚠️ **토큰은 절대 코드 저장소(git)에 올리지 마세요.** OS 보안 저장소(macOS 키체인 · Windows 자격 증명 관리자 · Linux secret-service)에 보관하는 것을 권장합니다. 토큰을 `.env` 같은 파일에 적어 두는 방식은 쓰지 않습니다.
 
-발급한 토큰은 아래 형태로 작업 폴더의 `.env`에 넣어두면 Claude가 읽습니다.
+보안 저장소를 쓰지 않는다면 셸 환경변수로 넣거나, Claude Code 설정 파일(`~/.claude/settings.json`)의 `env` 에 넣습니다. 설정을 바꾼 뒤에는 Claude Code 를 다시 시작하세요.
 
-```dotenv
-CLOUDFLARE_API_TOKEN=발급받은_토큰
-# Access 앱을 API로 만들 때만 필요(대시보드로 만들면 불필요)
-CLOUDFLARE_ACCOUNT_ID=계정_ID
+```json
+{
+  "env": {
+    "CLOUDFLARE_API_TOKEN": "발급받은_토큰",
+    "CLOUDFLARE_ACCOUNT_ID": "계정_ID"
+  }
+}
 ```
+
+`CLOUDFLARE_ACCOUNT_ID` 는 Access 앱을 API로 만들 때만 필요합니다(대시보드로 만들면 불필요).
 
 ---
 
@@ -212,7 +217,7 @@ SSH도 비-HTTP 서비스라 공개로 열 수 없고, 접근 통제로 보호�
 - **항상 1단계(검증)부터.** 적용 전에 계획과 경고를 먼저 보면 의도치 않은 공개 노출을 막을 수 있습니다.
 - **접근 정책은 좁게.** 특정 이메일이나 그룹만 허용하도록 좁혀두는 게 안전합니다. 접근 통제는 연결이 맺어지기 *전에* 신원을 확인합니다.
 - **원격 데스크톱은 RDP 자체 보안도 챙기세요.** 강한 계정 암호 + 가능하면 NLA(윈도우 원격 접속의 추가 인증)를 유지하세요.
-- **토큰·자격증명은 git에 올리지 마세요.** OS 보안 저장소 보관을 권장하고, 부득이하면 작업 폴더 `.env`에만 두세요.
+- **토큰·자격증명은 git에 올리지 마세요.** OS 보안 저장소 보관을 권장하고, 부득이하면 셸 환경변수로만 넣으세요.
 
 ---
 
