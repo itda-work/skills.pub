@@ -2,6 +2,10 @@
 
 > 2026-06-16: `itda-egg/codex-image` → `itda-media/imagegen` 졸업 마이그레이션(SPEC-IMAGEGEN-002 P2). 이하 0.7.1까지는 codex-image 시절 이력.
 
+## 1.0.4 (2026-10-06) — itda-work/skills#46 W17 리뷰
+
+- `cases/blog-hero.md` 의 「blog-seo·draft-post 산출물과 연계」 에서 배포 보류된 blog-seo 를 뺐다(itda-hyve 검색광고 서명 #34 대기 — 공개 사용자는 설치할 수 없다). 보류가 풀리면 되돌린다.
+
 ## 1.0.3 (2026-10-01) — itda-work/skills#46
 
 - `references/netbridge.md` 사본을 정본과 동기화 — `secret_missing` 은 그 소스 하나에 대한 멈춤이다: 다른 경로로 키를 넣지 않고(같은 API 를 다른 통로·다른 키로 부르지 않는다), 여러 소스를 묶는 스킬은 그 소스만 빼고 계속할 수 있다. 앞 판 뒤에 사본이 바뀌어 배포본 내용이 달라졌으므로 patch 를 올린다(skills v14.0.0 준비).

@@ -82,7 +82,6 @@ Cowork·ChatGPT 등 다른 AI 도구가 만든 초안을 받아 사내·외부 �
 ```
 draft-post → human-tone               (사내 초안 → 송부 직전 검수)
 외부 AI 초안 → human-tone            (Cowork·ChatGPT 결과물 후처리)
-blog-seo → draft-post → human-tone   (네이버 블로그 발행 풀체인)
 ```
 
 `draft-post`는 처음부터 글 쓸 때, `human-tone`은 이미 나온 글을 다듬을 때 씁니다.

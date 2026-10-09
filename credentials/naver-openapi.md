@@ -27,30 +27,21 @@
 
    | 항목 | 용도 | 필요 스킬 |
    |------|------|----------|
-   | **검색** | 블로그·지역(local) 검색 | blog-seo · eatery-trend |
-   | **데이터랩(검색어트렌드)** | 검색량 추이·surge 분석 | blog-seo · eatery-trend |
+   | **검색** | 웹·뉴스·블로그·지역(local) 검색 | web-search · eatery-trend(지역) |
+   | **데이터랩(검색어트렌드)** | 검색량 추이·surge 분석 | eatery-trend |
 
    > "데이터랩(쇼핑인사이트)"는 쇼핑 카테고리 전용으로 위 스킬에서는 사용하지 않습니다.
 5. **환경 설정**: **WEB 설정** 선택 → Callback URL에 `https://example.com` 입력 (실제 콜백을 쓰지 않으므로 형식만 맞추면 됩니다)
 6. 등록 완료 화면에서 **Client ID**와 **Client Secret** 복사
 
-## 3. 키 ↔ 환경변수 매핑
+## 3. 키 ↔ 시크릿 이름 매핑
 
-| 발급 화면 명칭 | 환경변수 |
+| 발급 화면 명칭 | itda-hyve 시크릿 이름 |
 |---|---|
 | Client ID | `NAVER_CLIENT_ID` |
 | Client Secret | `NAVER_CLIENT_SECRET` |
 
-키는 Claude Code 설정 파일(`~/.claude/settings.json`)의 `env` 에 넣습니다(설정을 바꾼 뒤 Claude Code 를 다시 시작). 스킬이 itda-hyve 경로를 지원하면 itda-hyve 앱의 **시크릿** 탭에 같은 이름으로 등록해도 됩니다 — 어느 경로가 되는지는 각 스킬 GUIDE 에 적혀 있습니다. `.env` 같은 파일은 스킬이 읽지 않습니다(itda-work/skills#45).
-
-```json
-{
-  "env": {
-    "NAVER_CLIENT_ID": "발급받은_클라이언트ID",
-    "NAVER_CLIENT_SECRET": "발급받은_클라이언트시크릿"
-  }
-}
-```
+키는 itda-hyve 앱의 **시크릿** 탭에 위 이름 그대로 등록합니다. 값은 itda-hyve 에만 저장되고 스크립트·대화에는 나오지 않습니다. 스킬은 키를 환경변수(셸·Claude Code 설정 파일의 `env`)나 `.env` 같은 파일로 읽지 않습니다(itda-work/skills#45·#46) — 그런 곳에 넣어 둔 키는 지워도 됩니다. 아직 itda-hyve 로 옮기지 않은 스킬은 이 키를 쓸 수 없습니다 — 각 스킬 GUIDE 에 적혀 있습니다.
 
 ## 4. 한도·주의사항
 
@@ -61,8 +52,7 @@
 
 ## 5. 이 키를 쓰는 스킬
 
-- `itda-doc/blog-seo` — 블로그 문서수·검색 트렌드
-- `itda-travel/eatery-trend` — 데이터랩 surge·지역검색 가게 매핑·블로그검색 거품 필터
 - `itda-web/web-search` — 네이버 web·뉴스·블로그 검색(사용 API: 검색)
+- `itda-travel/eatery-trend` — 데이터랩 surge·지역검색 가게 매핑(2026-10-06 itda-hyve 이전). 블로그 검색은 부르지 않습니다 — 거품 판정의 분모(월 검색량)가 검색광고 서명(itda-work/itda-hyve#34)을 기다립니다
 
-> `itda-web/web-search` 는 키를 **itda-hyve 앱의 시크릿 탭**에서만 읽습니다 — 같은 이름(`NAVER_CLIENT_ID`·`NAVER_CLIENT_SECRET`)으로 등록하면 되고, 위 3절의 설정 파일 `env` 는 이 스킬이 읽지 않습니다(itda-work/skills#45).
+시크릿 탭에 한 번 등록하면 두 스킬이 함께 씁니다.

@@ -200,7 +200,7 @@ def check_env_var(var_name: str) -> GroundCheckResult:
     if var_name in _KNOWN_ENV_VARS or var_name in _catalog_env_vars():
         return GroundCheckResult(is_valid=True, name=var_name)
 
-    marker = f"⚠️ 확인 필요: '{var_name}' 환경변수가 알려진 목록에 없습니다."
+    marker = f"⚠️ 확인 필요: '{var_name}' 키 이름이 알려진 목록에 없습니다(itda-hyve 시크릿 이름)."
     return GroundCheckResult(is_valid=False, name=var_name, warning_marker=marker)
 
 

@@ -1,5 +1,30 @@
 # Changelog — itda-hwpx
 
+## [1.4.4] — 2026-10-02 (itda-work/skills#49)
+
+### Changed
+
+- **HWP 3.x·HWPML 대체 경로의 kordoc 고정판 4.15.7 → 4.18.3** — 올리기 전 실측(로컬 macOS · Docker linux/x64):
+  - HWP 3.x(합성 1·암호 걸린 실 문서 1)·HWPML(합성 2) 읽기 성립, 두 플랫폼 출력 바이트 동일. 실 HWP 3.x 문서는 4.17 부터 목차 쪽 번호가
+    더 나온다(+15자, 4.15.7 기준 재현율 0.9994). 암호 문서는 「암호로 보호된 HWP3 문서입니다」로 실패 — `--password` 안내를 넣었다.
+  - 그림이 `images/<출력 이름>/` 에 놓인다(4.16.0) — 같은 폴더의 두 문서가 그림을 덮어쓰던 4.15.7 동작이 사라졌다. 안내에 그 폴더를 적었다.
+  - 첫 설치: 로컬 6.1초·837MB(4.15.7 7.0초·834MB) · Docker linux/x64 NuGet 차단 9.1초·407MB(4.15.7 405MB). Cowork 수치(4.15.x 실측)는 다음 라이브 회차에 갱신한다.
+  - 선택 의존 우회(`ONNXRUNTIME_NODE_INSTALL=skip`)는 **빈 캐시 폴더**에서만 듣는다 — 한 번 실행한 뒤에는 환경변수만 붙여도 sharp 가 깔리지 않는다(Docker 재현).
+    kordoc 오류 문구는 `kordoc@^4` 를 권하지만 고정판을 쓰라고 적었다.
+
+### Added (개발 도구 — 배포 제외 `reader/evals/`)
+
+- **벤치 기준판 고정** — `bench_revisions.py` 가 기준 출력을 `kordoc@^4` 대신 상수 `KORDOC_VERSION`(4.18.3)으로 받고, 받은 폴더에 판·코퍼스 서명
+  (`_baseline.json`)을, 하한 파일에 하한을 잡은 판(`baseline.kordoc`)을 적는다. 판이 다르거나 모르면 recall 을 비교하지 않고 **MISMATCH(exit 4)** 로
+  끝낸다(통과가 아니다 — 다른 지표 회귀는 FAIL 이 먼저). 재기준은 고정판의 기준 출력만 받고, recall 하한이 있는데 기준선 없이 재기준하면 거부한다.
+  지금 하한은 4.15.7(추정) 기준이라 recall 은 재기준 전까지 MISMATCH 다 — 코퍼스가 사라져 재기준은 다시 모은 뒤에 한다.
+- **코퍼스 지속 위치·매니페스트** — 묶음과 기준 출력을 `~/.cache/itda-skills/bench/hwpx/`(`ITDA_HWPX_BENCH_HOME`)에 둔다(`--corpus` 생략 시 기본).
+  `corpus_manifest.py write|check` 가 파일 이름·sha256·크기·형식·출처 공고 URL(funding `survey.jsonl` 의 첨부 해시로 맞춤)을 `corpus_manifest.json` 에
+  남기고 대조한다(원문 없음). 지금은 79건 유실 기록만 있다. 벤치 docstring 의 수집 절차를 itda-hyve 경유 `plan`→`batch`→`collect` 로 고쳤다.
+- 테스트 19건(기준판 게이트 11 · 매니페스트 6 · SKILL.md 고정판 2, 커밋된 하한 파일 검사에 기준판 단언 추가) · 저장소 버전 확인 스크립트
+  (`scripts/check_tool_versions.py`, `just check-tool-versions`) 테스트 6건. 뮤테이션 28종 전건 RED(첫 회차 BLIND 2 — 판 불일치 표본이
+  "뒤처짐" 과 겹친 것은 표본을 고쳤고, 빈 매니페스트 분기는 원래 DIFF 로 끝나는 중복이라 지웠다).
+
 ## [1.4.3] — 2026-09-30 (itda-work/skills#47)
 
 ### Fixed

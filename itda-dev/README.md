@@ -24,7 +24,7 @@
 /plugin install itda-dev@itda-skills-pub
 ```
 
-스킬별 사전 준비(API 키·환경변수·Python 패키지)는 각 `SKILL.md` 의 Prerequisites 절에 있습니다.
+스킬별 사전 준비(API 키·Python 패키지)는 각 `SKILL.md` 의 Prerequisites 절에 있습니다.
 
 ## 개발
 

@@ -1,5 +1,12 @@
 # Changelog — itda-work/human-tone
 
+## [2.1.4] — 2026-10-06 (itda-work/skills#46 W17)
+
+### Changed
+
+- 형제 지목에서 `itda-doc:blog-seo` 를 뺐다 — 그 스킬이 itda-hyve 검색광고 서명 기능(itda-work/itda-hyve#34)까지 배포 보류라 공개 사용자는 설치할 수 없다(itda-work/skills#46 W17, 사용자 결정 2026-10-06). 보류가 풀리면 되돌린다. 권장 체인 한 줄(SKILL·GUIDE)과 관련 스킬 한 줄을 지웠다.
+- (W17 리뷰 m6) `HANDOFF.md` 의 blog-seo 지목 3곳(테스트 패턴 예·트리거 회귀 주석·참고 컨벤션 경로)도 뺐다.
+
 ## [2.1.3] — 2026-09-30 (itda-work/skills#47)
 
 ### Fixed

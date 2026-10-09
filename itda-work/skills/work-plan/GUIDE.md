@@ -205,4 +205,4 @@ Stage 4  컨펌 게이트 — 저장 / 수정 / 다시 / 보류
 - work-find SKILL.md — 자매 스킬, 아이디어 발굴 단계
 - references/skill-catalog.md — itda-* 전체 스킬 목록
 - references/mirror-back-patterns.md — Stage 2 상세 패턴
-- references/ground-check-rules.md — 스킬명·환경변수 검증 규칙
+- references/ground-check-rules.md — 스킬명·키 이름 검증 규칙

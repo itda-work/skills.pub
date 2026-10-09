@@ -11,11 +11,11 @@ allowed-tools: Read, Write, Bash, mcp__workspace__bash
 argument-hint: "[요구사항 또는 메모 첨부]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "0.14.1"
+  version: "0.14.3"
   category: "productivity"
   status: "experimental"
   created_at: "2026-05-21"
-  updated_at: "2026-09-30"
+  updated_at: "2026-10-09"
   aliases: "계획세우기, 실행계획, 구현계획"
   tags: "Cowork, work-plan, plan work, action-plan"
 ---
@@ -43,7 +43,7 @@ work-find를 마치고 나면 후보 메모 한 장이 생긴다. 그런데 "그
 ## 핵심 원칙
 
 1. **Mirror-back 필수**: 요구사항을 먼저 내 언어로 다시 정리하고 맞는지 확인한다. 사용자가 매우 상세히 적었어도 생략하지 않는다.
-2. **Ground-check**: 메모에 쓰는 스킬 이름과 환경변수는 실제로 존재하는 것만 쓴다. 없는 것은 "⚠️ 확인 필요" 표시를 한다.
+2. **Ground-check**: 메모에 쓰는 스킬 이름과 키 이름(itda-hyve 시크릿 이름)은 실제로 존재하는 것만 쓴다. 없는 것은 "⚠️ 확인 필요" 표시를 한다.
 3. **선행 자료 안내**: 자동화를 시작하기 전에 사용자가 준비해야 할 것을 자료명·설명·형식·보관 위치 네 가지로 안내한다.
 4. **컨펌 게이트**: 메모 저장 전 반드시 사용자의 명시적 확인을 받는다.
 
@@ -83,12 +83,12 @@ work-find 메모 첨부 시: 트랙(A/B/혼합), 문제 정의 한 줄, 관련 �
 1. `references/skill-catalog.md`(자동 생성 카탈로그 — 공개 팩 스킬만 싣는다, 수기 편집 금지)에서 요구사항에 맞는 itda-* 스킬을 찾는다. 카탈로그에 없는 스킬은 추천하지 않는다.
 2. mirror-back 결과를 단계별로 쪼개 각 단계마다 어떤 스킬이 수행하는지 매핑한다.
 3. 각 단계에서 사용자가 미리 준비해야 하는 자료를 식별한다 (자료명 / 내용 / 형식 / 보관 위치).
-4. 필요한 API 키·환경변수를 식별하고 발급 방법을 한 줄로 안내한다.
-5. 계획에 메일·캘린더 계정을 쓰는 스킬(email·calendar·morning-brief·time-audit)이 있으면 "필요한 키·접근 권한" 에 **환경변수가 아니라 itda-hyve 계정 등록** 한 줄을 적는다(`ground_check.account_notice` 문구 — 설정 창 "계정" 화면 → 제공자·이메일·앱 비밀번호 → 연결 테스트 → 저장). 등록 여부는 스크립트가 판단하지 못하므로 안내만 하고, 확인은 실행 첫 단계에서 그 스킬이 한다. 메일 계정 이메일·앱 비밀번호를 환경변수 이름으로 적지 않는다.
+4. 필요한 API 키(키 이름)를 식별하고 발급 방법을 한 줄로 안내한다. 등록처는 **itda-hyve 앱의 시크릿 탭** 하나다 — 환경변수·Claude Code 설정 `env`·`.env` 에 넣으라고 적지 않는다(스킬이 읽지 않는다, itda-work/skills#46).
+5. 계획에 메일·캘린더 계정을 쓰는 스킬(email·calendar·morning-brief·time-audit)이 있으면 "필요한 키·접근 권한" 에 **환경변수가 아니라 itda-hyve 계정 등록** 한 줄을 적는다(`ground_check.account_notice` 문구 — 설정 창 "계정" 화면 → 제공자·이메일·앱 비밀번호 → 연결 테스트 → 저장). 등록 여부는 스크립트가 판단하지 못하므로 안내만 하고, 확인은 실행 첫 단계에서 그 스킬이 한다. 메일 계정 이메일·앱 비밀번호를 키 이름으로 적지 않는다.
 
 [HARD] Ground-check 두 가지:
 - 메모에 쓰는 모든 itda-* 스킬 이름이 `references/skill-catalog.md`에 실제로 존재해야 한다.
-- 메모에 쓰는 모든 환경변수가 `references/ground-check-rules.md`의 알려진 목록에 있어야 한다.
+- 메모에 쓰는 모든 키 이름이 `references/ground-check-rules.md`의 알려진 목록에 있어야 한다.
 
 Ground-check 실패 시 → abort 아닌 downgrade: 해당 항목에 `⚠️ 확인 필요` 마커 + 메모 상단에 경고 박스 추가.
 
@@ -145,7 +145,7 @@ Human-tone 정제:
 [자료 이름 / 자료 설명 / 자료 형식 (엑셀 파일·텍스트 메모 등) / 보관 위치 (GUI 수준 안내)]
 
 ## 필요한 키·접근 권한
-[환경변수명: 발급 방법 한 줄 + 어디에 등록하는지 자연어 안내. 메일·캘린더 계정은 환경변수가 아니라 itda-hyve 계정 화면 등록 한 줄]
+[키 이름: 발급 방법 한 줄 + "itda-hyve 앱의 시크릿 탭에 이 이름으로 등록". 메일·캘린더 계정은 itda-hyve 계정 화면 등록 한 줄]
 
 ## 다음 세션에서 시작하기
 [Claude를 켰을 때 바로 따라 칠 수 있는 자연어 발화 예시 2~3개]
@@ -167,5 +167,5 @@ Human-tone 정제:
 
 - `references/skill-catalog.md` — 공개 팩의 itda-* 스킬 목록 (이름 / 요약 / 필요 키 / 트리거 예시)
 - `references/mirror-back-patterns.md` — Stage 2 mirror-back 템플릿 + 반복 종료 패턴
-- `references/ground-check-rules.md` — 스킬명·환경변수 검증 규칙 + 알려진 환경변수 목록
+- `references/ground-check-rules.md` — 스킬명·키 이름 검증 규칙 + 알려진 키 이름 목록
 - `GUIDE.md` — 사용자 활용 가이드 (스킬 호출 시 로드 안 됨)

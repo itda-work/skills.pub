@@ -14,9 +14,9 @@ argument-hint: "[plan | audit | config STATE.json] · 이후 cloudflared 런북"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "ops"
-  version: "0.2.0"
+  version: "0.3.0"
   created_at: "2026-06-21"
-  updated_at: "2026-09-30"
+  updated_at: "2026-10-03"
   tags: "cloudflare, tunnel, cloudflared, zero-trust, access, rdp, ssh, remote-access, ops"
 ---
 
@@ -73,7 +73,7 @@ $env:SKILL_DIR = $c[0]
 4. **Cloudflare API 토큰** — DNS/Access 구성용. **Global API Key 금지**, 최소 스코프로 발급:
    - `Zone.DNS:Edit` (해당 zone)
    - (Access 앱을 API로 만들 경우) Account 의 `Access: Apps and Policies:Edit`
-   - 보관: OS 보안 저장소(Keychain / Windows 자격 증명 관리자 / secret-service) 권장. 폴백은 **셸 환경변수** `CLOUDFLARE_API_TOKEN`(Claude Code 는 `claude config set env.CLOUDFLARE_API_TOKEN "토큰"` 도 가능, 등록 뒤 세션 재시작). 토큰을 `.env` 파일에 두라고 안내하지 않는다(itda-work/skills#45). **토큰·자격증명은 절대 저장소에 커밋하지 않습니다.**
+   - 보관: **OS 보안 저장소(Keychain / Windows 자격 증명 관리자 / secret-service) 한 곳뿐**이다. 셸 환경변수·Claude Code 설정의 `env`·`.env` 파일에 두라고 안내하지 않는다(itda-work/skills#46 W17 — 키를 프로세스 환경변수로 받는 경로를 모두 없앴다). 토큰 값을 대화로 받지 않는다. 이 스킬의 스크립트(`tunnel_policy.py`)는 토큰을 읽지 않는다 — DNS 라우트는 `cloudflared tunnel login` 의 인증서로, Access 앱은 Zero Trust 대시보드로 만드는 것이 기본 경로이고 토큰은 Access 앱을 API 로 만들 때만 쓴다. **토큰·자격증명은 절대 저장소에 커밋하지 않습니다.**
 
 ## desired-state (선언형 구성)
 
@@ -145,12 +145,14 @@ cloudflared service install     # Windows=서비스, macOS=launchd, Linux=system
 
 서버측 ingress(`rdp://localhost:3389`) + Access 보호 후, 클라이언트에서 로컬 프록시로 접속합니다. 자세한 단계는 [references/rdp-recipe.md](references/rdp-recipe.md) 참고.
 
-## 환경 변수
+## 자격증명
 
-| 변수 | 용도 | 비고 |
+| 항목 | 용도 | 보관 |
 |------|------|------|
-| `CLOUDFLARE_API_TOKEN` | DNS/Access 구성 | OS 보안 저장소 권장, 폴백은 셸 환경변수. `.env` 파일 안내 금지. 커밋 금지 |
-| `CLOUDFLARE_ACCOUNT_ID` | Access 앱 API 생성 시 | Zero Trust 대시보드로 만들면 불필요 |
+| Cloudflare API 토큰 | Access 앱을 API 로 만들 때만 | OS 보안 저장소 한 곳. 환경변수·설정 파일 `env`·`.env` 안내 금지. 커밋 금지 |
+| Cloudflare 계정 ID | Access 앱 API 생성 시 | 비밀 아님 — 대시보드에서 확인. Zero Trust 대시보드로 만들면 불필요 |
+
+스크립트는 어느 것도 환경변수로 읽지 않는다. `cloudflared tunnel login`(브라우저 인증) + 대시보드 경로는 토큰 없이 끝난다.
 
 ## 트리거 키워드
 

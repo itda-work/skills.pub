@@ -186,11 +186,15 @@ def category_yoy_from_basket(basket_yoys) -> float | None:
 # ---------------------------------------------------------------------------
 # floor / 미디어 (REQ-014 / REQ-016)
 # ---------------------------------------------------------------------------
-def magnitude_floor_pass(monthly_vol: float, base_mean: float) -> bool:
+def magnitude_floor_pass(monthly_vol: float | None, base_mean: float) -> bool:
     """절대 검색량 ≥ VOL_FLOOR AND baseline 평균 ≥ BASELINE_FLOOR.
 
     전레인 필수(REQ-014). 신규 레인도 이 floor를 먼저 통과해야 한다(§8.11 PoC#5).
+    ``monthly_vol`` 이 None(월검색량을 받지 못함 — 검색광고 API 는 itda-hyve 서명 기능 대기)이면
+    baseline floor 만 본다. 결과에 ``level_known=False`` 가 실려 소비자가 그 사실을 알린다(조용히 통과로 접지 않는다).
     """
+    if monthly_vol is None:
+        return base_mean >= BASELINE_FLOOR
     return monthly_vol >= VOL_FLOOR and base_mean >= BASELINE_FLOOR
 
 
@@ -207,7 +211,7 @@ def classify(
     keyword: str,
     series,
     *,
-    monthly_vol: float,
+    monthly_vol: float | None,
     category_yoy: float | None,
     media_tokens=None,
 ) -> dict:
@@ -216,7 +220,7 @@ def classify(
     Args:
         keyword: 후보 키워드(미디어 토큰 판정에 사용).
         series: 데이터랩 data([{period, ratio}]) 또는 [ratio].
-        monthly_vol: SearchAd 절대 월검색량(레벨).
+        monthly_vol: SearchAd 절대 월검색량(레벨). None 이면 받지 못한 것 — floor 는 baseline 만 본다.
         category_yoy: 지역 카테고리 macro YoY(바스켓 중앙값). 상대YoY 분모.
 
     Returns:
@@ -248,15 +252,21 @@ def classify(
         "floor_passed": floor_passed,
         "momentum_ok": momentum_ok,
         "is_media": media,
+        "level_known": monthly_vol is not None,
         "reason": "",
     }
 
     # 0) magnitude floor 전레인 선통과 (REQ-014 / §8.11 PoC#5)
     if not floor_passed:
-        result["reason"] = (
-            f"magnitude floor 미달(월검색량 {int(monthly_vol)}<{VOL_FLOOR} "
-            f"또는 baseline {b_mean:.1f}<{BASELINE_FLOOR}) → 계절성/노이즈 의심, 격리"
-        )
+        if monthly_vol is None:
+            result["reason"] = (
+                f"magnitude floor 미달(baseline {b_mean:.1f}<{BASELINE_FLOOR}, 월검색량 미확인) → 노이즈 의심, 격리"
+            )
+        else:
+            result["reason"] = (
+                f"magnitude floor 미달(월검색량 {int(monthly_vol)}<{VOL_FLOOR} "
+                f"또는 baseline {b_mean:.1f}<{BASELINE_FLOOR}) → 계절성/노이즈 의심, 격리"
+            )
         return result
 
     elevated = (

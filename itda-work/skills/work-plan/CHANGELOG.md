@@ -1,5 +1,18 @@
 # Changelog — work-plan
 
+## [0.14.3] — 2026-10-09 (itda-work/itda-hyve#33)
+
+### Changed
+
+- 스킬 카탈로그(`references/skill-catalog.md`, 생성물)를 다시 만들었다 — 배포 보류가 풀린 `itda-web:web-reader` 가 돌아왔다(72 → 73개).
+
+## [0.14.2] — 2026-10-03 (itda-work/skills#46 W17)
+
+### Changed
+
+- 계획의 "필요한 키·접근 권한" 에 키 등록처를 **itda-hyve 시크릿 탭 하나**로 적게 했다 — 스킬이 키를 환경변수·Claude Code 설정 `env`·`.env` 로 읽지 않게 됐다(사용자 결정 2026-10-03). `references/ground-check-rules.md` 의 네이버 검색광고 키 두 줄에 "지금은 쓸 수 없다(itda-hyve 서명 기능 대기)" 를 달았다. 스킬 카탈로그(생성물)도 다시 만들었다(train-srt 행 삭제 등).
+- (W17 리뷰 m7) 키를 "환경변수" 로 부르던 틀을 **키 이름(itda-hyve 시크릿 이름)** 으로 바꿨다 — 검증 규칙 절 제목·기본 표 머리·경고 문구(`'FOO_API_KEY' 키 이름이 알려진 목록에 없습니다(itda-hyve 시크릿 이름)`)·SKILL·GUIDE. 함수 이름(`check_env_var` 등)은 그대로. 기본 표의 검색광고 행에서 배포 보류된 blog-seo 를 뺐다.
+
 ## [0.14.1] — 2026-09-30 (itda-work/skills#45·#46)
 
 ### Changed

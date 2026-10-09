@@ -1,5 +1,12 @@
 # Changelog — itda-work/draft-post
 
+## [1.2.9] — 2026-10-06 (itda-work/skills#46 W17)
+
+### Changed
+
+- 형제 지목에서 `itda-doc:blog-seo` 를 뺐다 — 그 스킬이 itda-hyve 검색광고 서명 기능(itda-work/itda-hyve#34)까지 배포 보류라 공개 사용자는 설치할 수 없다(itda-work/skills#46 W17, 사용자 결정 2026-10-06). 보류가 풀리면 되돌린다. 「이 스킬을 쓰지 않을 때」 표 한 줄과 권장 체인의 맨 앞을 지웠다.
+- (W17 리뷰 m6) `references/product-brief.md` 도입 사례 예시 문장의 「itda-blog-seo로 블루키워드를 분석한 뒤」 를 스킬 이름 없는 문장으로 바꿨다.
+
 ## [1.2.8] — 2026-09-27
 
 ### Changed

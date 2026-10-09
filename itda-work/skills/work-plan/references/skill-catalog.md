@@ -8,7 +8,7 @@
 DP-1 Hybrid: 정적 생성 목록 + 호출 시 sanity check
 (`ground_check.skill_dir_exists` 가 아래 경로 매핑으로 실존 확인).
 
-총 75개 스킬 / 9개 팩.
+총 73개 스킬 / 9개 팩.
 
 | 스킬명 | 한 줄 요약 | 필요한 키 | 트리거 예시 | 팩 | 책임 경계 |
 |--------|-----------|-----------|------------|----|-----------|
@@ -26,13 +26,12 @@ DP-1 Hybrid: 정적 생성 목록 + 호출 시 sanity check
 | xlsx-recalc | openpyxl 등으로 만든 xlsx 는 수식만 있고 계산값이 비어 미리보기·pandas·다른 스킬에서 빈칸으로 보입니다. | 없음 | "엑셀 수식 값 채워줘", "xlsx 재계산해줘", "openpyxl 로 만든 파일 합계가 빈칸이야" | itda-data | 본 스킬은 수식 캐시값 재계산 전담 — itda-data:data-audit 는 수식 오류 감사, itda-data:data-verify 는 값 검산. |
 | changelog | Orca(onorca.dev)·Claude Code·Codex CLI·herdr 의 최근 릴리즈를 모아 버전별 한국어 요약으로 만들고 Orca 내장 브라우저 탭… | 없음 | "orca 업데이트 뭐 바뀌었어", "claude code 새 버전 뭐가 달라졌나", "codex cli 최근 릴리즈 요약" | itda-dev | — |
 | claude-usage | 이 머신에 로그인된 Claude Code 계정의 사용량(5시간·7일 창 사용률, 모델별 주간 한도, 리셋 시각, 플랜)을 저장된 OAuth 자격증명으로 직접 조… | 없음 | "claude 사용량 얼마나 남았어", "클로드 코드 한도 확인해줘", "5시간 창 리셋 언제야" | itda-dev | 본 스킬은 Claude Code 구독 사용량 전담 — itda-dev:codex-usage 는 Codex CLI 사용량. |
-| cloudflare-tunnel | 포트포워딩 없이 Cloudflare Tunnel로 내 서비스(원격 데스크톱·SSH·웹)를 안전하게 노출/접근하도록 셋업하는 스킬입니다. | CLOUDFLARE_API_TOKEN | "집 윈도우에 RDP 터널 깔아줘", "cloudflare tunnel로 ssh 열어줘", "터널 라우트에 access 걸어줘" | itda-dev | — |
+| cloudflare-tunnel | 포트포워딩 없이 Cloudflare Tunnel로 내 서비스(원격 데스크톱·SSH·웹)를 안전하게 노출/접근하도록 셋업하는 스킬입니다. | 없음 | "집 윈도우에 RDP 터널 깔아줘", "cloudflare tunnel로 ssh 열어줘", "터널 라우트에 access 걸어줘" | itda-dev | — |
 | codex-usage | 이 머신에 로그인된 Codex CLI(ChatGPT 계정)의 사용량(5시간·주간 창 사용률, 리셋 시각, 플랜)을 ~/.codex/auth.json 토큰으로 직… | 없음 | "codex 사용량 얼마나 남았어", "코덱스 한도 확인해줘", "codex 리셋 언제야" | itda-dev | 본 스킬은 Codex CLI 구독 사용량 전담 — itda-dev:claude-usage 는 Claude Code 사용량. |
 | harness | 하네스를 구성합니다. | 없음 | "하네스 구성해줘", "하네스 구축해줘", "하네스 설계 도와줘" | itda-dev | — |
 | orca-coach | Orca(온오르카) 기능 활용 코치. | 없음 | "orca로 뭘 할 수 있어?", "이 작업에 orca 기능 뭐 쓰면 좋을까?", "orca 활용 아이디어 줘" | itda-dev | — |
 | windows-parallels-lab | macOS Parallels Desktop 의 자동화 전용 Windows 11 클론(win11-parlab)을 제어해 Windows 실런타임(COM/Office… | 없음 | "윈도우에서 실행해서 확인해줘", "hwpx 가 한글에서 안 깨지는지 봐줘", "게스트 화면 캡처해줘" | itda-dev | 되돌릴 수 있는 클론 전담 — itda-dev:windows-remote-lab 은 SSH 로 붙는 실머신. |
 | windows-remote-lab | macOS 에서 로컬 네트워크의 Windows 11 실머신(Surface Book 2)을 `ssh surface` 로 원격 조작해 Windows 실런타임 검증·… | 없음 | "윈도우 실기에서 돌려봐줘", "실제 Excel COM 으로 계산해줘", "이 파일 윈도우로 보내줘" | itda-dev | SSH 실머신 전담 — itda-dev:windows-parallels-lab 은 Parallels 클론. |
-| blog-seo | 네이버 SearchAd API로 블로그 SEO용 블루키워드를 발굴하는 스킬입니다. | NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, NAVER_SEARCHAD_ACCESS_KEY, NAVER_SEARCHAD_CUSTOMER_ID, NAVER_SEARCHAD_SECRET_KEY | "블루키워드 찾아줘", "경쟁 적은 키워드 분석해줘", "블로그 키워드 포화지수 확인해줘" | itda-doc | — |
 | draft-post | 블로그·보고서·기획서·보도자료·뉴스레터를 도메인 맞춤 인터뷰로 초안 작성하는 스킬입니다. | 없음 | "블로그 글 써줘", "보고서 초안 작성해줘", "기획서 만들어줘" | itda-doc | 본 스킬은 초안 생성 전담(AI 흔적 사전의 정본: itda-doc:human-tone) — 이미 작성된 글의 AI 흔적 제거·문체 후처리는 itda-doc:human-tone 이 맡고, 본 스킬은 발행·송부를 하지 않습니다. |
 | html-report | 마크다운 보고서·분석 결과·회의 정리를 연차보고서 수준의 단일 파일 HTML 문서로 렌더링하는 스킬입니다. | 없음 | "이 보고서 HTML 파일로 만들어줘", "컨설팅 보고서 스타일로 전략 검토 문서 만들어줘", "공공기관 제출용 개조식 보고서 HTML로" | itda-doc | 본 스킬은 보고서형 HTML 렌더 전담 — 아침 브리핑 페이지는 itda-work:morning-brief. |
 | human-tone | 이미 작성된 한국어 사무 글(보고서·메일·기획서·공지)에서 AI 흔적을 걷어내는 후처리 스킬입니다. | 없음 | "이 보고서 AI 같아", "메일 너무 딱딱해", "사람이 쓴 것처럼 고쳐줘" | itda-doc | 본 스킬은 완성된 글의 후처리 검수 전담(AI 흔적 사전 가드 정본) — itda-doc:draft-post 는 처음부터 초안을 쓰는 생성 단계이며, 같은 글에 두 스킬을 겹쳐 적용하지 않습니다. |
@@ -66,11 +65,10 @@ DP-1 Hybrid: 정적 생성 목록 + 호출 시 sanity check
 | investigate | 경쟁 가설과 반증 실험으로 근본 원인을 체계적으로 조사하는 스킬입니다. | 없음 | "왜 이렇게 느리지?", "이 에러 원인이 뭐야?", "원인 분석해줘" | itda-research | — |
 | market-scan | 외부 시장·산업 자료를 찾아 의사결정용으로 구조화하는 시장조사 스킬입니다. | DART_API_KEY, ECOS_API_KEY, EXA_API_KEY, KOSIS_API_KEY, KO_DATA_API_KEY, NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, SERPER_API_KEY, TAVILY_API_KEY | "OO 시장 조사해줘", "시장 규모랑 경쟁사 알려줘", "신사업 진입할 만한지 분석해줘" | itda-research | — |
 | meeting-reliability | 회의 녹취·기록에서 "확인 / 확인 필요 / 예외"를 근거와 함께 정확히 가르는 신뢰성 검수 스킬입니다. | 없음 | "확인 / 확인 필요 / 예외", "이 녹취 결정사항 표로 정리해줘", "회의록 신뢰성 검수해줘" | itda-research | — |
-| eatery-trend | 여행지·동네의 '지금 뜨는' 맛집과 음식 트렌드를 검색량 surge로 탐지하는 스킬입니다. | NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, NAVER_SEARCHAD_ACCESS_KEY, NAVER_SEARCHAD_CUSTOMER_ID, NAVER_SEARCHAD_SECRET_KEY | "제주 요즘 뜨는 맛집", "성수에서 트렌디한 국밥", "지금 핫한 디저트 뭐야" | itda-travel | — |
+| eatery-trend | 여행지·동네의 '지금 뜨는' 맛집과 음식 트렌드를 검색량 surge로 탐지하는 스킬입니다. | NAVER_CLIENT_ID, NAVER_CLIENT_SECRET | "제주 요즘 뜨는 맛집", "성수에서 트렌디한 국밥", "지금 핫한 디저트 뭐야" | itda-travel | — |
 | hotel-search | 같은 호텔의 여러 예약 사이트(Booking·Agoda·Trip.com·Klook·공식사이트) 실시간 요금을 한 번에 비교해 최저가와 각 사이트 예약 링크를 찾… | 없음 | "신라호텔 서울 8월 1일부터 2박 최저가 비교해줘", "이 호텔 부킹이랑 아고다 중 어디가 싸? 예약 링크도 줘", "제주 그랜드하얏트 이번 주말 가격이랑 싼 날짜 알려줘" | itda-travel | — |
-| train-ktx | KTX 고속열차를 검색하고 예약하는 스킬입니다. | KORAIL_PASSWORD, KORAIL_USER_ID | "다음 주 금요일 서울에서 부산 KTX 찾아줘", "수서에서 부산 가는 표 있어?", "오후 2시 이후 동대구 가는 표 있어?" | itda-travel | 본 스킬은 KTX·옛 SRT 전 고속열차 예매 전담 — itda-travel:train-srt 는 통합 안내 스텁이며 기능을 갖지 않습니다. |
-| train-srt | SRT는 2026-09-01부터 KTX로 통합되어 이 스킬은 기능을 갖지 않습니다. | SRT_PASSWORD, SRT_USER_ID | "수서에서 부산 SRT 찾아줘", "SRT 예약해줘", "SRT 계정 확인해줘" | itda-travel | 본 스킬은 통합 안내 전용 스텁 — 실제 검색·예약은 itda-travel:train-ktx 가 전담합니다. |
 | aside-browser-mcp | Aside(사용자의 로그인 세션·쿠키·메모리를 쥔 AI 브라우저)를 MCP 도구 exec·repl·memory_search 로 다루는 규율 정본입니다. | 없음 | "슬랙 확인해줘", "지메일에서 찾아줘", "지금 열려 있는 탭 봐줘" | itda-web | 본 스킬은 Aside MCP 커넥터 전담 — 로그인 불요 정적 페이지는 itda-web:web-reader. |
+| web-reader | WebFetch가 못 다루는 한국 웹페이지(EUC-KR/CP949 등 정적 페이지)를 마크다운·JSON·목록 레코드로 가져오는 폴백 스킬입니다. | 없음 | "이 한국 사이트 읽어줘", "EUC-KR 페이지 가져와줘", "이 목록 페이지 항목만 뽑아줘" | itda-web | 본 스킬은 정적 페이지 단건 페치·추출 전담 — 키워드 검색은 itda-web:web-search, JS 렌더·로그인·봇 차단·robots 불허 페이지는 브라우저 경로(itda-web:aside-browser-mcp). |
 | web-search | 여러 검색엔진으로 웹을 한 번에 검색해 정규화된 결과 목록(제목·URL·발췌)을 돌려주는 스킬입니다. | EXA_API_KEY, NAVER_CLIENT_ID, NAVER_CLIENT_SECRET, SERPER_API_KEY, TAVILY_API_KEY | "파이썬 입문 자료 검색해줘", "AI 규제 관련 최신 기사 찾아줘", "경쟁사 가격 정책 정보 모아줘" | itda-web | 본 스킬은 검색엔진 결과 목록(제목·URL·발췌) 수집 전담 — 찾은 URL 의 본문 추출은 itda-web:web-reader 이며, 시장조사 보고서·팩트체크는 다루지 않습니다. |
 | calendar | itda-hyve 에 등록한 네이버·아이클라우드·직접 입력(CalDAV 주소) 계정의 캘린더에서 일정을 조회·검색·추가·수정·삭제하고 빈 시간을 찾아주는 스킬입… | 없음 | "내일 3시 회의 추가해줘", "이번 주 일정 보여줘", "다음 주에 1시간 빈 시간 찾아줘" | itda-work | 본 스킬은 일정 조회·추가·수정·삭제·빈 시간 탐색 전담 — 아침 브리핑 페이지(오늘 일정+미회신 메일 한 장)는 itda-work:morning-brief, 메일 읽기·발송은 itda-work:email. |
 | email | itda-hyve 에 등록한 네이버·Gmail·다음/카카오·아이클라우드·회사 메일 계정으로 메일을 찾고 읽고 보내는 스킬입니다. | 없음 | "메일 보내줘", "받은편지함 확인해줘", "naver 메일 읽어줘" | itda-work | 본 스킬은 메일 찾기·읽기·발송 전담 — 아침 브리핑 페이지(오늘 일정+미회신 요청 한 장)는 itda-work:morning-brief, 일정 조회·추가는 itda-work:calendar. |
@@ -113,7 +111,6 @@ harness               → itda-dev/skills/harness/
 orca-coach            → itda-dev/skills/orca-coach/
 windows-parallels-lab → itda-dev/skills/windows-parallels-lab/
 windows-remote-lab    → itda-dev/skills/windows-remote-lab/
-blog-seo              → itda-doc/skills/blog-seo/
 draft-post            → itda-doc/skills/draft-post/
 html-report           → itda-doc/skills/html-report/
 human-tone            → itda-doc/skills/human-tone/
@@ -149,9 +146,8 @@ market-scan           → itda-research/skills/market-scan/
 meeting-reliability   → itda-research/skills/meeting-reliability/
 eatery-trend          → itda-travel/skills/eatery-trend/
 hotel-search          → itda-travel/skills/hotel-search/
-train-ktx             → itda-travel/skills/train-ktx/
-train-srt             → itda-travel/skills/train-srt/
 aside-browser-mcp     → itda-web/skills/aside-browser-mcp/
+web-reader            → itda-web/skills/web-reader/
 web-search            → itda-web/skills/web-search/
 calendar              → itda-work/skills/calendar/
 email                 → itda-work/skills/email/

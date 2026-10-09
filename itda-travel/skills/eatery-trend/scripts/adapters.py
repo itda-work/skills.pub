@@ -1,189 +1,143 @@
-"""adapters.py — 네이버 5개 공식/비공식 API 래퍼 (REQ-002/003/004/008/011).
+"""adapters.py — 네이버 Open API 요청 모양과 응답 판독 (네트워크 없음).
 
-§5 검증된 호출 패턴(2026-06-01 라이브 통과)을 fail-loud 계약으로 래핑한다.
-모든 HTTP는 표준 라이브러리 urllib로 자체 수행한다 (WebFetch 금지).
+요청은 itda-hyve 가 보낸다(규칙 ``cowork-network-via-hyve``, itda-work/skills#46 W17). 이 모듈은
+``http_request`` 인자(요청 모양)를 만들고, itda-hyve 가 ``save_as`` 로 저장한 본문을 판독한다.
+키는 itda-hyve 시크릿에만 있다 — 헤더에 ``{{secret:NAVER_CLIENT_ID}}``·``{{secret:NAVER_CLIENT_SECRET}}``
+자리표시만 싣는다(web-search 와 같은 이름).
 
-각 어댑터는 ``(ok, data, reason)`` 튜플을 반환한다:
-    ok=True  → data: 도메인 데이터, reason: ""
-    ok=False → data: 빈값(빈 리스트/None), reason: 한국어 실패 사유
+| 소스 | 지금 |
+|---|---|
+| 데이터랩 검색어트렌드(POST) | itda-hyve ``http_request`` 하나씩(batch 는 GET 만) |
+| 지역검색(GET) | itda-hyve ``batch`` ``plan_file`` |
+| 검색광고 키워드도구 | **쓰지 않는다** — 요청마다 HMAC 서명이 필요해 itda-hyve 서명 기능(itda-work/itda-hyve#34)을 기다린다 |
+| 블로그 검색 total | **부르지 않는다** — 거품 비율(블로그/월검색량)의 분모가 검색광고라 그것과 함께 돌아온다 |
+| 자동완성(ac.search.naver.com) | **부르지 않는다** — robots ``User-agent: *`` 전면 불허(2026-10-06 확인) |
 
-이 계약이 REQ-008(fail-loud)의 토대다 — API 차단·빈 응답·HMAC 실패·
-자격증명 부재를 절대 성공으로 위장하지 않고 호출부로 표면화한다. 예외는
-호출부로 전파하지 않으므로 상위 파이프라인이 소스별 도달 실패를 합성할 수 있다.
-
-자동완성만 비공식·무인증 엔드포인트라 권위가 아닌 *힌트*로만 쓴다(REQ-011/OQ-8).
+판독 함수는 ``(ok, data, reason)`` 을 돌려준다(REQ-008 fail-loud — 실패를 성공으로 위장하지 않는다).
 """
 from __future__ import annotations
 
-import base64
-import hashlib
-import hmac
 import json
-import socket
-import time
-import urllib.error
-import urllib.parse
-import urllib.request
 from typing import Any
 
-from env_loader import MissingAPIKeyError, resolve_api_key
+DATALAB_URL = "https://openapi.naver.com/v1/datalab/search"
+LOCAL_URL = "https://openapi.naver.com/v1/search/local.json"
 
-# ---------------------------------------------------------------------------
-# 상수
-# ---------------------------------------------------------------------------
-# 외부로 나가는 UA 에 우리 신원(제품·조직·저장소 URL)을 싣지 않는다 — 범용 토큰만(outbound-identity-leak).
-_UA = "Mozilla/5.0"
+LOCAL_DISPLAY_CAP = 5  # 지역검색 쿼리당 최대 5건(§10 라이브 확인)
+TIMEOUT_SEC = 50       # Cowork 는 도구 호출 하나를 60초에서 끊는다
 
-_AC_URL = "https://ac.search.naver.com/nx/ac"
-_DATALAB_URL = "https://openapi.naver.com/v1/datalab/search"
-_SEARCHAD_BASE = "https://api.searchad.naver.com"
-_SEARCHAD_URI = "/keywordstool"
-_LOCAL_URL = "https://openapi.naver.com/v1/search/local.json"
-_BLOG_URL = "https://openapi.naver.com/v1/search/blog.json"
+NAVER_HEADERS = {
+    "X-Naver-Client-Id": "{{secret:NAVER_CLIENT_ID}}",
+    "X-Naver-Client-Secret": "{{secret:NAVER_CLIENT_SECRET}}",
+}
 
-_LOCAL_DISPLAY_CAP = 5  # 지역검색 쿼리당 최대 5건(§10 라이브 확인)
-
-_OPEN_GUIDE = (
-    "{var}가 설정되지 않았습니다.\n"
-    "네이버 개발자센터(https://developers.naver.com)에서 애플리케이션을 등록하고\n"
-    "검색·데이터랩 API 사용 신청 후 Client ID/Secret(NAVER_CLIENT_ID·NAVER_CLIENT_SECRET)을 발급받으세요.\n"
-)
-_SEARCHAD_GUIDE = (
-    "{var}가 설정되지 않았습니다.\n"
-    "네이버 검색광고(https://searchad.naver.com) > 도구 > API 관리자에서\n"
-    "액세스 라이선스/비밀키/Customer ID(NAVER_SEARCHAD_ACCESS_KEY·NAVER_SEARCHAD_SECRET_KEY·"
-    "NAVER_SEARCHAD_CUSTOMER_ID)를 발급받으세요.\n"
+SEARCHAD_UNAVAILABLE = (
+    "사용 안 함 — 네이버 검색광고 API 는 요청마다 서명이 필요해 itda-hyve 서명 기능"
+    "(itda-work/itda-hyve#34)을 기다린다. 월검색량(레벨)·연관 키워드가 빠진다"
 )
 
-
-# ---------------------------------------------------------------------------
-# HTTP 경계 (테스트 mock seam)
-# ---------------------------------------------------------------------------
-def _classify_http_error(exc: Exception) -> str:
-    """urllib 예외를 한국어 사유 문자열로 분류한다."""
-    if isinstance(exc, urllib.error.HTTPError):
-        return f"HTTP 오류 {exc.code}: {exc.reason}"
-    if isinstance(exc, urllib.error.URLError):
-        return f"네트워크 연결 오류: {exc.reason}"
-    if isinstance(exc, socket.timeout):
-        return "요청 시간 초과(timeout)"
-    if isinstance(exc, json.JSONDecodeError):
-        return f"JSON 파싱 오류: {exc.msg}"
-    return f"알 수 없는 오류: {exc}"
-
-
-def _http_get_json(
-    url: str, headers: dict[str, str], timeout: int = 15
-) -> tuple[bool, Any | None, str]:
-    """GET 요청 → JSON 파싱. (ok, data, reason) 반환, 예외 비전파."""
-    req = urllib.request.Request(url, headers=headers)
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            raw = resp.read()
-        return True, json.loads(raw), ""
-    except Exception as exc:  # noqa: BLE001  (graceful fail-loud)
-        return False, None, _classify_http_error(exc)
-
-
-def _http_post_json(
-    url: str, body: bytes, headers: dict[str, str], timeout: int = 20
-) -> tuple[bool, Any | None, str]:
-    """POST(JSON body) 요청 → JSON 파싱. (ok, data, reason) 반환, 예외 비전파."""
-    req = urllib.request.Request(url, data=body, headers=headers)
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            raw = resp.read()
-        return True, json.loads(raw), ""
-    except Exception as exc:  # noqa: BLE001
-        return False, None, _classify_http_error(exc)
+# 네이버 Open API 오류 본문의 errorCode 중 키·앱 설정 문제(다시 보내도 같다 — 사용자가 고칠 것).
+AUTH_ERROR_CODES = {
+    "024": "Client ID 나 Secret 이 맞지 않는다 — itda-hyve 시크릿 탭의 NAVER_CLIENT_ID·NAVER_CLIENT_SECRET 을 확인",
+    "028": "등록되지 않은 애플리케이션이다 — 네이버 개발자센터 애플리케이션을 확인",
+    "010": "API 사용 신청이 안 돼 있다 — 애플리케이션 사용 API 에 검색·데이터랩(검색어트렌드)을 넣는다",
+}
 
 
 # ---------------------------------------------------------------------------
-# 자격증명
+# 요청 모양 (itda-hyve http_request 인자 — save_as·save_dir 는 호출부가 붙인다)
 # ---------------------------------------------------------------------------
-def _open_creds() -> tuple[str, str]:
-    """네이버 OpenAPI(데이터랩·검색·블로그) Client ID/Secret. 부재 시 MissingAPIKeyError."""
-    cid = resolve_api_key("NAVER_CLIENT_ID", guide_msg=_OPEN_GUIDE.format(var="NAVER_CLIENT_ID"))
-    sec = resolve_api_key("NAVER_CLIENT_SECRET", guide_msg=_OPEN_GUIDE.format(var="NAVER_CLIENT_SECRET"))
-    return cid, sec
+def datalab_args(keywords: list[str], start: str, end: str, unit: str = "week") -> dict[str, Any]:
+    """데이터랩 검색어트렌드 POST. 키워드 그룹 최대 5(그룹마다 키워드 1개). 조회 전용이라 ``retry_unsafe``."""
+    body = {
+        "startDate": start,
+        "endDate": end,
+        "timeUnit": unit,
+        "keywordGroups": [{"groupName": k, "keywords": [k]} for k in keywords],
+    }
+    return {
+        "url": DATALAB_URL,
+        "method": "POST",
+        "headers": {**NAVER_HEADERS, "Content-Type": "application/json"},
+        "body": json.dumps(body, ensure_ascii=False, separators=(",", ":")),
+        "retry_unsafe": True,
+        "follow_redirects": False,
+        "timeout_sec": TIMEOUT_SEC,
+    }
 
 
-def _searchad_creds() -> tuple[str, str, str]:
-    """네이버 검색광고 API(HMAC) 액세스키/비밀키/Customer ID. 부재 시 MissingAPIKeyError."""
-    acc = resolve_api_key(
-        "NAVER_SEARCHAD_ACCESS_KEY", guide_msg=_SEARCHAD_GUIDE.format(var="NAVER_SEARCHAD_ACCESS_KEY")
-    )
-    sec = resolve_api_key(
-        "NAVER_SEARCHAD_SECRET_KEY", guide_msg=_SEARCHAD_GUIDE.format(var="NAVER_SEARCHAD_SECRET_KEY")
-    )
-    cust = resolve_api_key(
-        "NAVER_SEARCHAD_CUSTOMER_ID", guide_msg=_SEARCHAD_GUIDE.format(var="NAVER_SEARCHAD_CUSTOMER_ID")
-    )
-    return acc, sec, cust
+def local_args(q: str, display: int = LOCAL_DISPLAY_CAP) -> dict[str, Any]:
+    """지역검색 GET. display 는 5로 cap(§10)."""
+    capped = min(max(int(display), 1), LOCAL_DISPLAY_CAP)
+    return {
+        "url": LOCAL_URL,
+        "params": {"query": q, "display": str(capped)},
+        "headers": dict(NAVER_HEADERS),
+        "follow_redirects": False,
+        "timeout_sec": TIMEOUT_SEC,
+    }
 
 
-def _sign(secret: str, ts: str, method: str, uri: str) -> str:
-    """검색광고 API X-Signature 생성.
+# ---------------------------------------------------------------------------
+# 응답 판독
+# ---------------------------------------------------------------------------
+class NaverAPIError(Exception):
+    """네이버 Open API 가 본문에 오류를 돌려줬다(``errorCode``·``errorMessage``)."""
 
-    base64( HMAC-SHA256(secret, '{ts}.{method}.{uri}') ).
+    def __init__(self, code: str, message: str):
+        super().__init__(f"{message} (errorCode {code})")
+        self.code = code
+        self.auth = code in AUTH_ERROR_CODES
+
+
+def naver_error(obj: Any) -> NaverAPIError | None:
+    """``{"errorMessage": "…", "errorCode": "024"}`` 꼴이면 그 오류."""
+    if isinstance(obj, dict) and (obj.get("errorCode") or obj.get("errorMessage")):
+        code = str(obj.get("errorCode") or "?")
+        msg = str(obj.get("errorMessage") or "")
+        hint = AUTH_ERROR_CODES.get(code)
+        return NaverAPIError(code, f"{msg} — {hint}" if hint else msg)
+    return None
+
+
+def parse_datalab(obj: Any, keywords: list[str], *, start: str | None = None, end: str | None = None,
+                  unit: str | None = None) -> tuple[bool, dict | None, str]:
+    """데이터랩 응답 → (ok, payload, reason). 요청한 그룹이 전부 실려 있어야 성공이다(빠짐 = 실패).
+
+    응답이 되비치는 조회 조건(``startDate``·``endDate``·``timeUnit``, 그룹별 ``keywords``)이 요청과 다르면 실패다 —
+    저장 이름만 지키고 본문을 고쳐 보낸 응답이 성공으로 들어오지 않게(W17 리뷰 m4). 실패는 같은 요청을 다시 받는다.
     """
-    msg = f"{ts}.{method}.{uri}".encode()
-    return base64.b64encode(hmac.new(secret.encode(), msg, hashlib.sha256).digest()).decode()
+    err = naver_error(obj)
+    if err is not None:
+        raise err
+    if not isinstance(obj, dict) or not isinstance(obj.get("results"), list):
+        return False, None, "데이터랩 응답 형식 오류(results 없음)"
+    for field, want in (("startDate", start), ("endDate", end), ("timeUnit", unit)):
+        if want is not None and obj.get(field) != want:
+            return False, None, f"데이터랩 응답의 {field}={obj.get(field)!r} 가 요청({want!r})과 다르다 — 요청 본문을 고치지 않고 다시 받는다"
+    groups = {r.get("title"): r for r in obj["results"] if isinstance(r, dict)}
+    missing = [k for k in keywords if k not in groups]
+    if missing:
+        return False, None, f"데이터랩 응답에 요청한 그룹이 빠졌다: {', '.join(missing)}"
+    for k in keywords:
+        got = groups[k].get("keywords")
+        if got is not None and list(got) != [k]:
+            return False, None, f"데이터랩 그룹 {k!r} 의 keywords={got!r} 가 요청([{k!r}])과 다르다"
+    return True, obj, ""
 
 
-# ---------------------------------------------------------------------------
-# 1) 자동완성 (REQ-011) — 조기경보·신상 발굴, 비공식·무인증
-# ---------------------------------------------------------------------------
-def autocomplete(q: str, *, timeout: int = 10) -> tuple[bool, list[str], str]:
-    """네이버 자동완성 후보를 반환한다.
-
-    비공식 엔드포인트이므로 권위가 아닌 *힌트*로만 사용한다(REQ-011). 실패는
-    예외가 아니라 (False, [], 사유)로 graceful 처리한다(OQ-8).
-    """
-    url = _AC_URL + "?" + urllib.parse.urlencode(
-        {"q": q, "con": "0", "frm": "nv", "ans": "2",
-         "r_format": "json", "r_enc": "UTF-8", "st": "100"}
-    )
-    ok, data, reason = _http_get_json(
-        url, {"User-Agent": _UA, "Referer": "https://www.naver.com/"}, timeout
-    )
-    if not ok or not isinstance(data, dict):
-        return False, [], reason or "자동완성 응답 형식 오류"
-    items: list[str] = []
-    for grp in data.get("items", []) or []:
-        for row in grp or []:
-            if row and isinstance(row, list) and row[0]:
-                items.append(row[0])
-    return True, items, ""
-
-
-# ---------------------------------------------------------------------------
-# 2) SearchAd 키워드도구 (REQ-002) — 연관 breadth + 절대 월검색량
-# ---------------------------------------------------------------------------
-def keywordstool(hints: list[str], *, timeout: int = 15) -> tuple[bool, list[dict], str]:
-    """연관키워드 목록을 반환한다. hintKeywords는 공백 제거 후 콤마 결합(최대 5).
-
-    keywordList[].{relKeyword, monthlyPcQcCnt, monthlyMobileQcCnt, compIdx}.
-    """
-    try:
-        acc, sec, cust = _searchad_creds()
-    except MissingAPIKeyError as exc:
-        return False, [], str(exc)
-
-    ts = str(int(time.time() * 1000))
-    sig = _sign(sec, ts, "GET", _SEARCHAD_URI)
-    url = _SEARCHAD_BASE + _SEARCHAD_URI + "?" + urllib.parse.urlencode(
-        {"hintKeywords": ",".join(h.replace(" ", "") for h in hints), "showDetail": "1"}
-    )
-    headers = {"X-Timestamp": ts, "X-API-KEY": acc, "X-Customer": cust, "X-Signature": sig}
-    ok, data, reason = _http_get_json(url, headers, timeout)
-    if not ok or not isinstance(data, dict):
-        return False, [], reason or "SearchAd 응답 형식 오류"
-    return True, data.get("keywordList", []) or [], ""
+def parse_local(obj: Any) -> tuple[bool, list[dict], str]:
+    """지역검색 응답 → (ok, items, reason). items[].{title(<b>포함), category, roadAddress, address, mapx, mapy}."""
+    err = naver_error(obj)
+    if err is not None:
+        raise err
+    if not isinstance(obj, dict) or not isinstance(obj.get("items"), list):
+        return False, [], "지역검색 응답 형식 오류(items 없음)"
+    return True, obj["items"], ""
 
 
 def monthly_volume(row: dict) -> int:
-    """월검색량(PC+모바일) 정수화. '< 10'·None은 0, 콤마 제거(§5 vol)."""
+    """월검색량(PC+모바일) 정수화. '< 10'·None은 0, 콤마 제거(§5 vol). 검색광고가 돌아오면 쓴다."""
     def _n(v: Any) -> int:
         if v in ("< 10", None):
             return 0
@@ -192,88 +146,3 @@ def monthly_volume(row: dict) -> int:
         except (ValueError, TypeError):
             return 0
     return _n(row.get("monthlyPcQcCnt")) + _n(row.get("monthlyMobileQcCnt"))
-
-
-# ---------------------------------------------------------------------------
-# 3) 데이터랩 검색트렌드 (REQ-003) — velocity/YoY
-# ---------------------------------------------------------------------------
-def datalab(
-    keywords: list[str],
-    start: str,
-    end: str,
-    unit: str = "week",
-    *,
-    timeout: int = 20,
-) -> tuple[bool, dict | None, str]:
-    """키워드그룹 시계열을 반환한다(최대 5그룹). results[].data[].{period, ratio}.
-
-    ratio는 그룹별 max=100 정규화값. 데이터랩은 검색량 0인 주를 생략하므로
-    짧은 시리즈 = 신상 출현 신호로 해석한다(§8.6).
-    """
-    try:
-        cid, sec = _open_creds()
-    except MissingAPIKeyError as exc:
-        return False, None, str(exc)
-
-    body = {
-        "startDate": start,
-        "endDate": end,
-        "timeUnit": unit,
-        "keywordGroups": [{"groupName": k, "keywords": [k]} for k in keywords],
-    }
-    headers = {
-        "X-Naver-Client-Id": cid,
-        "X-Naver-Client-Secret": sec,
-        "Content-Type": "application/json",
-    }
-    ok, data, reason = _http_post_json(_DATALAB_URL, json.dumps(body).encode(), headers, timeout)
-    if not ok or not isinstance(data, dict):
-        return False, None, reason or "데이터랩 응답 형식 오류"
-    return True, data, ""
-
-
-# ---------------------------------------------------------------------------
-# 4) 지역검색 (REQ-004) — 가게 좌표·카테고리·주소
-# ---------------------------------------------------------------------------
-def local_search(q: str, display: int = 5, *, timeout: int = 15) -> tuple[bool, list[dict], str]:
-    """지역검색 결과를 반환한다. display는 5로 cap(§10).
-
-    items[].{title(<b>포함), category, roadAddress, address, mapx, mapy}.
-    title의 <b> 태그 제거·카테고리 음식 필터는 places.py 책임.
-    """
-    try:
-        cid, sec = _open_creds()
-    except MissingAPIKeyError as exc:
-        return False, [], str(exc)
-
-    capped = min(max(int(display), 1), _LOCAL_DISPLAY_CAP)
-    url = _LOCAL_URL + "?" + urllib.parse.urlencode({"query": q, "display": capped})
-    headers = {"X-Naver-Client-Id": cid, "X-Naver-Client-Secret": sec}
-    ok, data, reason = _http_get_json(url, headers, timeout)
-    if not ok or not isinstance(data, dict):
-        return False, [], reason or "지역검색 응답 형식 오류"
-    return True, data.get("items", []) or [], ""
-
-
-# ---------------------------------------------------------------------------
-# 5) 블로그 total (REQ-007) — 협찬 거품 비율 분자
-# ---------------------------------------------------------------------------
-def blog_total(q: str, *, timeout: int = 15) -> tuple[bool, int | None, str]:
-    """블로그 검색 결과 총건수(total)를 반환한다. 거품 비율(blog/검색)의 분자."""
-    try:
-        cid, sec = _open_creds()
-    except MissingAPIKeyError as exc:
-        return False, None, str(exc)
-
-    url = _BLOG_URL + "?" + urllib.parse.urlencode({"query": q, "display": 1, "sort": "sim"})
-    headers = {"X-Naver-Client-Id": cid, "X-Naver-Client-Secret": sec}
-    ok, data, reason = _http_get_json(url, headers, timeout)
-    if not ok or not isinstance(data, dict):
-        return False, None, reason or "블로그검색 응답 형식 오류"
-    total = data.get("total")
-    if not isinstance(total, int):
-        try:
-            total = int(total)
-        except (ValueError, TypeError):
-            return False, None, "블로그 total 파싱 실패"
-    return True, total, ""

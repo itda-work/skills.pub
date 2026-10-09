@@ -12,10 +12,10 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash, mcp__workspace__bash
 argument-hint: "<topic> [--style <style>] [--save <path>] [--analyze <file>] [--list-styles]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "1.2.8"
+  version: "1.2.9"
   category: "writing"
   created_at: "2026-03-28"
-  updated_at: "2026-09-27"
+  updated_at: "2026-10-06"
   tags: "blog, report, draft, writing, official, government, press-release, proposal, briefing, newsletter, meeting-minutes"
 ---
 
@@ -197,7 +197,6 @@ metadata:
 | 상황 | 대신 쓸 스킬 |
 |---|---|
 | 이미 작성된 글의 AI 흔적 제거·문체 다듬기 | itda-doc:human-tone |
-| 네이버 블로그 키워드 선정(초안 앞 단계) | itda-doc:blog-seo |
 | 주장·수치의 출처 검증 | itda-research:ground-check |
 | 완성 문서를 한글(hwpx)·HTML 보고서로 조판 | itda-doc:hwpx · itda-doc:html-report |
 | 메일 발송 | itda-work:email |
@@ -205,7 +204,7 @@ metadata:
 ## 권장 체인
 
 ```
-blog-seo → draft-post → human-tone    (키워드 → 초안 → 송부 직전 검수)
+draft-post → human-tone    (초안 → 송부 직전 검수)
 ```
 
 `human-tone` 과 같은 글에 겹쳐 적용하지 않는다 — 본 스킬은 생성 단계 사전 가드, `human-tone` 은 후처리 검수(가드 정본).

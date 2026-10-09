@@ -12,10 +12,10 @@ allowed-tools: Read, Write, Edit, Bash, mcp__workspace__bash
 argument-hint: "<text-or-file> [--scene report|email|proposal|notice] [--register formal|semi|casual] [--strict] [--diff]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "2.1.3"
+  version: "2.1.4"
   category: "writing"
   created_at: "2026-05-11"
-  updated_at: "2026-09-30"
+  updated_at: "2026-10-06"
   tags: "ai slop, humanize, human tone, post-processing, deslop, naturalize, korean writing, translationese, post-editese"
 ---
 
@@ -226,7 +226,6 @@ python3 "$SKILL_DIR/scripts/verify_gates.py" --before <input.txt> --after _works
 ```
 draft-post → human-tone               (사내 초안 → 송부 직전 검수)
 [외부 AI 초안] → human-tone           (Cowork·ChatGPT 결과물 후처리)
-blog-seo → draft-post → human-tone    (네이버 블로그 발행 풀체인)
 ```
 
 `draft-post`와 같은 글에 겹쳐 적용하지 않습니다 — 생성 단계 가드(draft-post)와 후처리 검수(본 스킬, 가드 정본)의 역할 분담이며, 두 번 돌리면 의도된 직장인 화법(예: 결재 표현)이 과도하게 평준화됩니다.
@@ -234,7 +233,6 @@ blog-seo → draft-post → human-tone    (네이버 블로그 발행 풀체인)
 ## 관련 스킬
 
 - `itda-doc:draft-post` — 초안 생성 단계 가드(사전 정본은 본 스킬)
-- `itda-doc:blog-seo` — 키워드 → 초안 → 검수 풀체인의 맨 앞
 - `itda-work:email` — 검수된 메일을 SMTP로 송부
 
 ## 차기 확장

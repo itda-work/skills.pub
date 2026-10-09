@@ -17,17 +17,13 @@
 3. **마이페이지 → 오픈API → 활용신청 현황**에서 발급 키 확인
 4. **Decoding 키(일반 인증키)**를 복사합니다
 
-## 3. 키 ↔ 환경변수 매핑
+## 3. 키 ↔ 시크릿 이름 매핑
 
-| 발급 화면 명칭 | 환경변수 |
+| 발급 화면 명칭 | itda-hyve 시크릿 이름 |
 |---|---|
 | 일반 인증키 (**Decoding**) | `KO_DATA_API_KEY` |
 
-키는 Claude Code 설정 파일(`~/.claude/settings.json`)의 `env` 에 넣습니다(설정을 바꾼 뒤 Claude Code 를 다시 시작). 스킬이 itda-hyve 경로를 지원하면 itda-hyve 앱의 **시크릿** 탭에 같은 이름으로 등록해도 됩니다 — 어느 경로가 되는지는 각 스킬 GUIDE 에 적혀 있습니다. `.env` 같은 파일은 스킬이 읽지 않습니다(itda-work/skills#45).
-
-```json
-{ "env": { "KO_DATA_API_KEY": "발급받은_Decoding_키" } }
-```
+키는 itda-hyve 앱의 **시크릿** 탭에 위 이름 그대로 등록합니다. 값은 itda-hyve 에만 저장되고 스크립트·대화에는 나오지 않습니다. 스킬은 키를 환경변수(셸·Claude Code 설정 파일의 `env`)나 `.env` 같은 파일로 읽지 않습니다(itda-work/skills#45·#46) — 그런 곳에 넣어 둔 키는 지워도 됩니다. 아직 itda-hyve 로 옮기지 않은 스킬은 이 키를 쓸 수 없습니다 — 각 스킬 GUIDE 에 적혀 있습니다.
 
 ## 4. 한도·주의사항
 

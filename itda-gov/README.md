@@ -9,9 +9,9 @@
 
 ## 시작 전: API 키/OC 먼저 발급하세요
 
-itda-gov 의 API 계열 스킬은 **사전 API 키(또는 OC) 발급이 필요**합니다. 먼저 아래 발급처에서 키를 받습니다. 스킬은 `.env` 같은 파일을 읽지 않습니다(itda-work/skills#45). `dart`·`ecos`·`g2b`·`kosis`·`realty-deals`·`realty-jeonse-gap`·`realty-price-stats`·`realty-supply`·`fuel-price` 는 itda-hyve 시크릿 탭에 등록한 키만 씁니다(스크립트는 네트워크를 쓰지 않고 `--input` 가공만 — itda-work/skills#46). `funding` 은 키가 필요 없습니다(3.0.0 — 공개 공고 페이지를 itda-hyve 로 받습니다).
+itda-gov 의 API 계열 스킬은 **사전 API 키(또는 OC) 발급이 필요**합니다. 먼저 아래 발급처에서 키를 받습니다. 스킬은 키를 환경변수나 `.env` 같은 파일로 읽지 않습니다(itda-work/skills#45·#46). `dart`·`ecos`·`g2b`·`kosis`·`realty-deals`·`realty-jeonse-gap`·`realty-price-stats`·`realty-supply`·`fuel-price` 는 itda-hyve 시크릿 탭에 등록한 키만 씁니다(스크립트는 네트워크를 쓰지 않고 `--input` 가공만 — itda-work/skills#46). `funding` 은 키가 필요 없습니다(3.0.0 — 공개 공고 페이지를 itda-hyve 로 받습니다).
 
-| 환경변수 | 발급처 | 용도 |
+| 키 이름(시크릿 탭) | 발급처 | 용도 |
 |---------|-------|------|
 | `DART_API_KEY` | https://opendart.fss.or.kr | 기업 재무/직원(dart — itda-hyve 시크릿 탭) |
 | `KOSIS_API_KEY` | https://kosis.kr/openapi/ | 국가 통계(kosis·realty-supply — itda-hyve 시크릿 탭) |

@@ -17,10 +17,10 @@ argument-hint: "<hwp/hwpx 파일 경로 또는 보고서 마크다운 경로>"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   tags: "hwp, hwpx, document, convert, markdown, html, template, fill, report, government, profile"
-  version: "1.4.3"
+  version: "1.4.4"
   category: "document"
   created_at: "2026-07-28"
-  updated_at: "2026-09-30"
+  updated_at: "2026-10-02"
   status: "experimental"
   recommended: true
 ---
@@ -123,18 +123,22 @@ HWP 3.x·HWPML 은 다음 순서로 안내한다.
 
 1. **한글(한컴오피스)에서 열어 HWPX 로 저장**해 달라고 한다 — 가장 정확하고 외부 도구가 필요 없다.
 2. 한글이 없으면 **kordoc**(npm, MIT, github.com/chrisryugj/kordoc)으로 읽는다. 외부 패키지를 내려받아 실행하므로 **사용자에게 먼저 묻고**,
-   버전을 고정한다:
+   버전을 고정한다(범위 `^4`·`latest` 로 부르지 않는다 — 실측한 판만 권한다):
 
    ```bash
-   npx -y kordoc@4.15.7 .itda-skills/<파일> -o .itda-skills/<파일>.md
+   npx -y kordoc@4.18.3 .itda-skills/<파일> -o .itda-skills/<파일>.md
    ```
 
-   - 요건: Node.js 20+ · npm 레지스트리 접속. 첫 실행은 약 450MB·25초(Cowork 실측 2026-09-28), 이후 캐시로 1초대.
+   - 요건: Node.js 20+ · npm 레지스트리 접속. 첫 실행은 내려받기가 크다 — 로컬 약 840MB·6초(macOS 실측 2026-10-02),
+     Cowork 약 450MB·25초(2026-09-28 에 4.15.x 로 잰 값 — 같은 조건을 재현한 Docker linux/x64 에서 4.18.3 은 407MB 로 2MB 차이, 다음 라이브 회차에 갱신). 이후 캐시로 1초대.
      Cowork 는 대화마다 캐시가 사라질 수 있어 매번 첫 실행 비용이 든다.
-   - HWP 3.x(한글 97 등)·HWPML 읽기를 실측으로 확인했다. 결과 마크다운은 kordoc 형식이다(병합 표는 HTML) — 이 스킬의
-     품질 게이트 밖이므로 그 사실을 사용자에게 말한다.
+   - HWP 3.x(한글 97 등)·HWPML 읽기를 실측으로 확인했다(4.18.3, 2026-10-02). 결과 마크다운은 kordoc 형식이다(병합 표는 HTML) — 이 스킬의
+     품질 게이트 밖이므로 그 사실을 사용자에게 말한다. 암호 걸린 HWP 3.x 는 「암호로 보호된 HWP3 문서입니다」로 실패한다 — 사용자가 암호를 주면 `--password <암호>` 를 붙인다.
+   - 그림이 있는 문서는 결과 옆 `.itda-skills/images/<파일>/`(출력 이름에서 `.md` 를 뺀 폴더)에 그림이 저장되고 마크다운이 그 상대경로를 가리킨다.
+     결과를 다른 곳으로 옮길 때는 그 폴더도 함께 옮긴다. 글만 필요하면 `--no-images` 를 붙인다.
    - Cowork(x86_64)에서는 kordoc 의 선택 의존 설치가 NuGet 차단으로 실패해 **이미지 OCR·PNG 렌더가 안 된다** — 이 스킬의 대체 경로(HWP 3.x·HWPML 읽기)에는
-     필요 없다. 그 기능까지 써야 하면 `ONNXRUNTIME_NODE_INSTALL=skip npx -y kordoc@4.15.7 …` 로 설치한다(원인·우회 실측: 능력 지도 §3.8).
+     필요 없다. 그 기능까지 써야 하면 **빈 캐시 폴더로 처음부터** `npm_config_cache=<빈 폴더> ONNXRUNTIME_NODE_INSTALL=skip npx -y kordoc@4.18.3 …` 로 설치한다 —
+     한 번 실행한 뒤에는 npx 가 받아 둔 설치본을 다시 써서 환경변수만 붙여서는 깔리지 않는다. kordoc 의 오류 문구는 `kordoc@^4` 를 권하지만 여기 고정판을 쓴다(원인·우회 실측: 능력 지도 §3.8).
    - npm 에 닿지 않으면 그 오류를 그대로 전하고 1번으로 돌아간다 — 다른 경로로 우회하지 않는다.
 
 ## 채우기 — 양식 서식 유지 + placeholder·빈 칸 채움

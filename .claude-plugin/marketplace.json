@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "대한민국 직장인·공공업무·투자자를 위한 Claude Code 스킬 마켓플레이스",
-    "version": "14.0.0",
+    "version": "14.1.0",
     "language": "ko"
   },
   "plugins": [
@@ -43,12 +43,12 @@
     {
       "name": "itda-web",
       "source": "./itda-web",
-      "description": "웹에서 찾고 가져온다 — 다중 엔진 검색, Aside 브라우저 MCP(로그인·JS 페이지). 가장 싼 경로부터."
+      "description": "웹에서 찾고 가져온다 — 다중 엔진 검색, EUC-KR 정적 페이지 추출(robots 준수), Aside 브라우저 MCP. 가장 싼 경로부터."
     },
     {
       "name": "itda-travel",
       "source": "./itda-travel",
-      "description": "여행을 계획한다 — 고속열차 검색·예약(2026-09-01 SRT의 KTX 통합 반영), 숙소 요금 비교, 여행지 유행 맛집 탐지."
+      "description": "여행을 계획한다 — 숙소 요금 비교, 여행지 유행 맛집 탐지."
     },
     {
       "name": "itda-org-mmaa",

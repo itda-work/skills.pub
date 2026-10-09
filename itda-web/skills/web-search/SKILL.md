@@ -15,9 +15,9 @@ argument-hint: "[질의어] [--engine auto|tavily|naver|serper|exa] [--count 5] 
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "search"
-  version: "0.3.0"
+  version: "0.3.2"
   created_at: "2026-06-09"
-  updated_at: "2026-10-01"
+  updated_at: "2026-10-06"
   tags: "search, web search, query, multi engine, tavily, serper, naver, exa"
 ---
 
@@ -56,7 +56,7 @@ API 키는 사용자가 itda-hyve GUI **시크릿 탭**에 등록해 둔 것을 
 - **`--engine auto`(기본)는 자동 과금이 없는 엔진 3종**(tavily·naver·serper)만 고른다. 💰 유료 엔진(exa)은 `--engines`/`--engine` 으로 지목했을 때만 부른다(비용 가드 — 키가 있으면 호출이 곧 과금이다).
 - **유료 엔진 확인 규칙(하나로 정한다)**: 사용자가 **이름으로 지목**했으면("Exa 로 찾아줘") 과금된다는 것을 한 줄 알리고 그대로 보낸다 — 다시 묻지 않는다. **Claude 가 유료 엔진을 쓰자고 제안**할 때만 먼저 묻고 동의를 받는다.
 - 키 등록 안내는 한 가지다: "itda-hyve GUI 시크릿 탭에 `<이름>` 으로 등록". **무료로 시작**: `TAVILY_API_KEY` + `NAVER_CLIENT_ID`·`NAVER_CLIENT_SECRET`.
-  네이버 키 이름은 blog-seo·eatery-trend 와 같지만, 그 두 스킬이 itda-hyve 로 옮기기 전까지는 **저장소가 다르다** — 이 스킬은 시크릿 탭만 읽으므로 설정 파일 `env` 에만 넣어 둔 네이버 키는 여기서 보이지 않는다. 시크릿 탭에 따로 등록한다.
+  환경변수·Claude Code 설정 `env` 에 넣어 둔 네이버 키는 어느 스킬도 읽지 않는다(itda-work/skills#46) — 시크릿 탭에 등록한다. 같은 이름의 키를 eatery-trend 도 쓴다(시크릿 탭에 한 번 등록하면 함께 쓰인다).
 - **⚠️ Naver 이관 고지 (2026-07 약관 변경)**: 개발자센터 검색 API는 네이버클라우드(NCP) **NAVER API HUB**로 이관된다. 2026-07-30 이후 개발자센터 신규 이용 신청 불가 — 신규 사용자는 NAVER API HUB에서 발급하도록 안내한다. 기존 키는 **2027-06-30까지** 현행대로 동작한다.
 - 요금·한도는 변동되므로 각 공식 페이지를 정본으로 본다(위 수치는 2026-06 기준).
 - **⚠️ Serper(회색지대 — 보조용)**: Serper는 Google 공식 API가 아니라 공개 SERP를 스크래핑하는 제3자다. Google이 **동종 SerpApi를 DMCA 제소(2025-12-19)** 하고 **SearchGuard(2025-01)로 스크래퍼를 기술 차단** 중이라 카테고리 전반에 **중단·품질저하 가능성**이 있다. 견고성이 필요하면 자체 인덱스(Tavily·Exa)·공식 API(Naver)를 우선하고, Serper는 보조로 쓴다(키가 없으면 `secret_missing` 으로 빠진다).
@@ -287,7 +287,6 @@ Serper `{"message":…,"statusCode":403}` · Exa **402** `{"error":"Payment requ
 | 1차 소스 강제 **팩트체크**·교차검증 | ground-check |
 | 이미 아는 **URL의 본문** 추출 | web-reader |
 | 네이버 블로그 목록·댓글 | aside-browser-mcp(브라우저 — 네이버 robots 가 자동 수집을 막는다) |
-| 블로그 SEO 블루키워드 발굴 | blog-seo |
 | 근본원인 규명("왜 느리지") | investigate |
 
 "경쟁사 동향 **검색**해줘"(URL 목록)는 web-search, "경쟁사 동향 **정리·분석**해줘"(보고서)는

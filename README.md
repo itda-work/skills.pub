@@ -18,6 +18,9 @@ Claude Code · Claude Cowork에서 대한민국 직장인·공공업무·투자�
 (ecos 는 Cowork 처럼 네트워크가 막힌 환경에서만). 계정·API 키도 itda-hyve 에 등록합니다.
 [내려받기·설치 안내](https://itda.work/hyve/)
 
+Claude 설정의 「외부 네트워크 접속 허용」은 도메인 허용 목록을 **「패키지 매니저만」** 으로 두어도 됩니다 — 「모든 도메인」은 필요 없습니다.
+스킬이 외부로 보내는 요청은 PC 의 itda-hyve 가 보내므로 이 설정의 영향을 받지 않고, 샌드박스 안에서는 스킬 의존성(PyPI)만 설치합니다.
+
 공개 팩 9종(2026-09 재편 #1703 — 팩을 대상 명사 한 단어로 갈랐다): itda-doc · itda-data · itda-gov · itda-work · itda-research · itda-dev · itda-web · itda-travel · itda-org-mmaa. 정본은 `release-skills.yml` 의 `PLUGINS`(워크플로 파일이 진실 소스). 구 두 토막 이름(itda-content-create·itda-gov-collect·itda-work-coach 등)은 폐기됐고 별칭이 없다 — 스킬.잇다 웹은 구 팩 URL 을 301 로 넘긴다(website #199).
 
 ## 개발 저장소

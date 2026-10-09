@@ -1,5 +1,13 @@
 # Changelog — itda-web-collect
 
+## [3.1.0] - 2026-10-09
+
+> 요구: **itda-hyve 0.12.0 이상**(web-reader). itda-hyve 0.12.0 을 먼저 설치·업데이트한 뒤 이 판을 설치한다 — 0.11.x 이하는 사설·로컬 목적지를 막지 못하고 저장 메타(`save_meta`)가 없어 web-reader 가 `hyve_outdated` 로 멈춘다.
+
+### Added
+
+- **`web-reader` 8.1.0 배포 보류 해제** (itda-work/itda-hyve#33) — itda-hyve 0.12.0 이 `http_request` 의 사설·로컬 목적지를 연결 직전 IP 로 기본 거부해, 스크립트의 문자열 검사로는 못 막던 경우(공개 이름이 사설 IP 로 풀림·DNS 리바인딩)가 닫혔다. 상태·Location·Content-Type 은 저장 메타 파일에서 읽는다(모델이 옮겨 적지 않는다). 팩 description 에 정적 페이지 추출 구절을 되돌렸다.
+
 ## [3.0.0] - 2026-10-01
 
 > 요구: **itda-hyve 0.10.4 이상**(web-search). itda-hyve 0.10.4 를 먼저 설치·업데이트한 뒤 이 판을 설치한다 — 0.10.3 이하는 응답 `final_url` 등에 시크릿이 되비치고 기본 User-Agent 에 제품명이 실린다.

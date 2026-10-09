@@ -12,7 +12,7 @@ user-invocable: true
 argument-hint: "[케이스: blog-hero|slide-visual|icon-logo|character-illust|video-illust|figurine|photoreal-portrait|product-catalog|poster] <주제> [장수]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "1.0.3"
+  version: "1.0.4"
   category: "media"
   status: "experimental"
   created_at: "2026-05-30"

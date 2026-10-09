@@ -22,9 +22,9 @@
   캐시를 쓰지 않는다). #5는 전체 세션을 glob하지 않고 cwd·$HOME에서 유도한
   현재 세션만 본다(수백 세션 순회 방지).
 
-자격증명 파일은 다루지 않는다 (itda-work/skills#45): 스킬은 `.env` 류 파일을
-  읽지 않는다. 키는 프로세스 환경변수(os.environ) 또는 itda-hyve 시크릿으로만
-  받는다(env_loader 참조). 이 모듈은 데이터·캐시 경로만 정한다.
+자격증명은 다루지 않는다 (itda-work/skills#45·#46): 스킬은 `.env` 류 파일도
+  프로세스 환경변수도 키로 읽지 않는다. 키는 itda-hyve 시크릿에만 있다.
+  이 모듈은 데이터·캐시 경로만 정한다.
 
 데이터 경로 패턴:
   <root>/.itda-skills/<skill_name>/[subdir]

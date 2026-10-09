@@ -2,6 +2,19 @@
 
 이 스킬의 주요 변경 이력입니다. (Keep a Changelog 형식)
 
+## [0.3.2] — 2026-10-06 (itda-work/skills#46 W17)
+
+### Changed
+
+- 「맞는 스킬」 표에서 `blog-seo` 행을 뺐다 — itda-hyve 검색광고 서명 기능(itda-work/itda-hyve#34)까지 배포 보류라 공개 사용자는 설치할 수 없다(사용자 결정 2026-10-06, 보류가 풀리면 되돌린다).
+- 네이버 키 문장: eatery-trend 가 itda-hyve 로 옮겨 같은 시크릿(`NAVER_CLIENT_ID`·`NAVER_CLIENT_SECRET`)을 함께 쓴다고 적었다. 동작 변화 없음.
+
+## [0.3.1] — 2026-10-03 (itda-work/skills#46 W17)
+
+### Changed
+
+- 네이버 키 안내 문장을 고쳤다 — 키를 프로세스 환경변수로 받는 경로가 어느 스킬에도 없어졌으므로(사용자 결정 2026-10-03) "blog-seo·eatery-trend 와 저장소가 다르다" 대신 "환경변수·설정 `env` 의 키는 어느 스킬도 읽지 않는다, 그 두 스킬은 아직 이 키를 쓰지 못한다" 로 적었다. 동작 변화 없음.
+
 ## [0.3.0] — 2026-09-30 (itda-work/skills#45·#46)
 
 > ⚠️ **배포 차단** — 둘 다 충족한 뒤에 배포한다. ① itda-hyve 0.10.4(itda-work/itda-hyve#31 — `final_url`·저장 경로에 키가 평문으로 남던 결함 수정)
