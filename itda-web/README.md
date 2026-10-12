@@ -1,6 +1,6 @@
 # itda-web
 
-웹 수집 스킬팩 — 다중 엔진 검색 → 정적 페이지 추출(EUC-KR, robots 준수) → 브라우저(Aside) 순 사다리로, 가장 싼 경로부터 웹 정보를 가져온다.
+웹 수집 스킬팩 — 다중 엔진 검색 → 정적 페이지 추출(EUC-KR, itda-hyve web_read) → 브라우저(Aside) 순 사다리로, 가장 싼 경로부터 웹 정보를 가져온다.
 
 > 2026-09-05 재정비(#1648)로 구 `itda-work` 의 web-search·web-reader·web-scout·blog-reader 가 이 팩으로 왔습니다(2026-10-01 web-scout 제외 — 여러 사이트를 훑는 정찰이 사이트별 robots 판정·호출 최소화 원칙과 부딪친다. blog-reader 제거 — 네이버 블로그 robots 가 목록·댓글·전체 검색을 막는다, 네이버 블로그는 Aside 브라우저 `itda-web:aside-browser-mcp` 로 연다). `itda-research`(ground-check·market-scan)가 이 팩의 web-reader·web-search 를 폴백·수집 엔진으로 쓰므로 함께 설치하는 것을 권합니다.
 >
@@ -10,7 +10,7 @@
 
 | 스킬 | 기능 |
 |---|---|
-| [`web-reader`](skills/web-reader/SKILL.md) | WebFetch가 못 다루는 한국 웹페이지(EUC-KR/CP949 등 정적 페이지)를 마크다운·JSON·목록 레코드로 가져오는 폴백 스킬입니다. |
+| [`web-reader`](skills/web-reader/SKILL.md) | WebFetch가 못 다루는 한국 웹페이지(EUC-KR/CP949 등 정적 페이지)의 본문을 출처가 붙은 마크다운으로, 목록 페이지·RSS 는 항목 레코드로 가져오는 폴백 스킬입니다. |
 | [`web-search`](skills/web-search/SKILL.md) | 여러 검색엔진으로 웹을 한 번에 검색해 정규화된 결과 목록(제목·URL·발췌)을 돌려주는 스킬입니다. |
 
 ## 설치

@@ -1,8 +1,30 @@
 # web-reader 마이그레이션 안내 (개발자·기존 사용자용)
 
-> 이 문서는 v2.x ~ v8.x 마이그레이션이 필요한 기존 사용자·외부 호출자용 내부 문서입니다. 일반 사용자는 `../GUIDE.md`만 보면 됩니다. 스킬 호출 시 자동 로드되지 않습니다.
+> 이 문서는 v2.x ~ v9.x 마이그레이션이 필요한 기존 사용자·외부 호출자용 내부 문서입니다. 일반 사용자는 `../GUIDE.md`만 보면 됩니다. 스킬 호출 시 자동 로드되지 않습니다.
 
 ---
+
+## v8.1 → v9.0 (스크립트 없음 — itda-hyve web_read)
+
+8.x 는 스크립트(`plan.py`)가 리다이렉트를 한 홉씩 따라가며 itda-hyve 가 실제로 보낼 URL 을 밖에서 흉내 냈다. 그 자리에서 리뷰 결함이 계속 나와
+(robots 우회 3건·한글 경로 오인 1건), 받기·추출을 요청을 보내는 쪽인 itda-hyve 로 옮겼다(itda-work/itda-hyve#72). Cowork 사용자는 설치한 스킬을
+오래 쓰므로 자주 고칠 로직은 itda-hyve 에 두고 스킬은 호출 안내만 남긴다.
+
+| v8.1 | v9.0 |
+|---|---|
+| `plan.py start` → `http_request(call)` → `plan.py next` 되풀이 → `done` | `web_read {"url": U}` 한 번(리다이렉트는 itda-hyve 가 홉마다 목적지를 검사하며 따라간다) |
+| `extract_content.py <file> … --format markdown` | `web_read` 응답 `content`(또는 `save_as` 파일 — 출처 YAML 머리말 + `# 제목` + 본문) |
+| `extract_content.py --format json` 의 `provenance` | 응답 `requested_url`·`final_url`·`hops`·`status`·`content_type`·`charset`·`fetched_at`·`content_hash`·`extractor`, `save_meta` 파일 |
+| `extract_content.py --selector CSS` | `web_read` 의 `selector` (문법 오류 `invalid_input`, 0건 `not_found`) |
+| `extract_content.py --format html`·`clean_html.py` | 없음. 원문 바이트가 필요하면 `save_as` + `save_source`(`<save_as>.source.html`) |
+| `extract_records.py <file> … --format json\|csv` | `web_read {"url": U, "records": true}`(기능 이름 `web_read_records`, itda-hyve#72 2단계). 행 필드·봉투·`stats` 같음. 응답에 다 안 실리면(`records_truncated`) `save_as` `.json`·`.csv`. 한 페이지 1,000행 상한 — 넘으면(`records_stats.truncated`) 저장 파일도 부분본이다 — HTML 은 쪽·`selector` 로 나눠 받고, RSS·Atom 은 `selector` 가 적용되지 않아 사이트가 주는 쪽·기간별 피드 주소가 있을 때만 나눈다(없으면 전량 불가). `--js-link`·`--js-link-template` → `js_link`·`js_link_template`. 그 기능이 없는 판에서는 항목 레코드를 내지 않는다 |
+| robots.txt 판정(`robots_disallowed`·`robots_unreadable`·`robots_unreachable`) | 없음 — `web_read` 는 robots.txt 를 보지 않는다(itda-hyve 결정 2026-10-10) |
+| `url_rejected`(스크립트 문자열 검사) | itda-hyve 의 `invalid_input`(스킴·`user:pass@`)·`private_destination`(연결 직전 IP 검사, 홉마다) |
+| `blocked_or_auth`·챌린지 exit 4 · JS 셸 exit 4 · `script_redirect` · `empty_content` | `blocked` · `js_rendered` · `extract_failed`(message 에 옮겨 갈 주소) |
+| 비HTML exit 3 | `not_html` |
+| `not_found`·`rate_limited`·`server_error`·`http`(HTTP 상태) | `http_status` |
+| `hyve_outdated`(메타 파일 없음) · `call_modified` · `path_reencoded` · `call_limit` · `redirect_loop` | 판 확인은 `accounts_list` 의 `server_features` 에 `web_read` 가 있는가. 나머지는 생길 자리가 없다 |
+| 의존성(`beautifulsoup4`·`markdownify`)·`install_skill_deps.py` | 없음 |
 
 ## v8.0 → v8.1 (상태·Location 은 저장 메타 파일로, itda-hyve 0.12.0 필요)
 

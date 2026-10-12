@@ -10,10 +10,10 @@ allowed-tools: WebSearch, WebFetch, Skill, Read, Write, mcp__workspace__web_fetc
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "research"
-  version: "0.11.1"
+  version: "0.11.2"
   status: "active"
   created_at: "2026-05-12"
-  updated_at: "2026-09-01"
+  updated_at: "2026-10-11"
   tags: "ground-check, source-check, fact-check, primary-source, citation, verification, cowork, hedge-detection"
 ---
 
@@ -240,7 +240,7 @@ PASS된 산출물의 **핵심 항목별로 실사용 예시 1개씩** 작성. �
 | Cowork 절차 (명시 디스패치 정본) | Claude Code SDK 등가 표기 |
 |---------------------|----------------------|
 | Task 2 검증 지침 블록 → ground-verifier 디스패치 | `Agent(subagent_type: "itda-research:ground-verifier", prompt: "<검증 지침 블록 + 입력 계약>")` — tools 상속(에이전트 정의가 소유). 에이전트 부재 환경은 `Agent(subagent_type: "general-purpose", prompt: "<검증 지침 블록>", allowed_tools: ["WebSearch", "WebFetch", "Skill", "Read"])` 또는 새 세션 handoff 로 degraded 폴백 |
-| "web-reader 스킬로 가져와줘" 발화 | `Skill("itda-web:web-reader")` 도구 호출 또는 직접 스크립트 실행(미설치면 위 규칙대로 실패 보고) |
+| "web-reader 스킬로 가져와줘" 발화 | `Skill("itda-web:web-reader")` 도구 호출 — web-reader 9.0.0 은 스크립트 없이 itda-hyve `web_read` 를 부른다(미설치면 위 규칙대로 실패 보고) |
 | FAIL 라운드 재발화 | 신규 `Agent(...)` spawn (라운드별 컨텍스트 격리) |
 | 검색어 다양화 발화 | prompt 본문에 "검색어 재구성 금지" 명시 |
 

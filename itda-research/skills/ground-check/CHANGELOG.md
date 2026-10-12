@@ -2,6 +2,12 @@
 
 본 스킬의 변경 이력. [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/) 형식을 따른다.
 
+## [0.11.2] — 2026-10-11 (itda-work/itda-hyve#72)
+
+### Changed
+
+- 부록 SDK 매핑의 web-reader 폴백에서 "직접 스크립트 실행" 을 뺐다 — web-reader 9.0.0 은 스크립트가 없고 itda-hyve `web_read` 를 부른다.
+
 ## [0.11.1] — 2026-09-01 (이슈 #1621)
 
 ### Changed

@@ -41,7 +41,7 @@
 | **웹 검색·원문** | WebSearch/WebFetch (막히면 `itda-web:web-reader`) | WebSearch/WebFetch 는 없음. web-reader 폴백은 **`itda-web` 팩 설치** | 미설치면 폴백 없이 "itda-web 미설치" 로 기록하고 그 URL 은 미확인 |
 | **다중엔진 웹 검색** | `itda-web:web-search`(Tavily·네이버·Serper, 원하면 유료 Exa) | `itda-web` 팩 설치 + itda-hyve 앱 + 검색 키(web-search 가이드) | 내장 웹 검색만으로 진행 |
 | **국내 공공데이터** | `itda-gov:*` 공식 API | itda-hyve 앱 + **API 키**(아래 표) | 공식 사이트를 직접 읽어 대체 |
-| **무거운 1차 자료(PDF)** | 원문 링크를 `itda-web:web-reader`로 본문 추출 | `itda-web` 팩 설치 | 핵심 내용을 직접 붙여넣어 대체 |
+| **무거운 1차 자료(PDF)** | 내려받은 PDF 를 `itda-doc:pdf-context-refinery` 로 본문 추출(web-reader 는 웹 페이지 전용이라 PDF 를 읽지 않는다) | `itda-doc` 팩 설치 | 핵심 내용을 직접 붙여넣어 대체 |
 | **주제별 전문 스킬** | 부동산·주식·외식 등(아래) | 해당 스킬 키/설치 | 웹으로 대체 |
 
 ### 공공데이터 API 키 (있으면 더 정확, 없어도 동작)

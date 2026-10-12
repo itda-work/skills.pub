@@ -1,5 +1,0 @@
-# itda-web-reader requirements (8.0.0 — 네트워크 없음: 요청은 itda-hyve, 스크립트는 저장 파일 가공만)
-beautifulsoup4>=4.12
-markdownify>=0.13
-
-# JavaScript-rendered pages, bot challenges, login pages: use a browser route (itda-web:aside-browser-mcp).

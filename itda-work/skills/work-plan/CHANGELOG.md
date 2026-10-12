@@ -1,5 +1,11 @@
 # Changelog — work-plan
 
+## [0.14.4] — 2026-10-11 (itda-work/itda-hyve#72)
+
+### Changed
+
+- 스킬 카탈로그(`references/skill-catalog.md`, 생성물)를 다시 만들었다 — `itda-web:web-reader` 9.0.0 의 description(robots 구절 삭제, itda-hyve `web_read`)을 따른다.
+
 ## [0.14.3] — 2026-10-09 (itda-work/itda-hyve#33)
 
 ### Changed

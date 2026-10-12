@@ -2,6 +2,13 @@
 
 본 스킬의 변경 이력. [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/) 형식을 따른다.
 
+## [0.4.1] — 2026-10-11 (itda-work/itda-hyve#72)
+
+### Fixed
+
+- PDF 1차 자료를 web-reader 로 본문 추출한다는 안내를 고쳤다 — web-reader 는 웹 페이지 전용이라 PDF 는 `not_html` 로 거절한다(8.x 도 같았다).
+  내려받은 PDF 는 `itda-doc:pdf-context-refinery`, 아니면 핵심 내용 붙여넣기.
+
 ## [0.4.0] — 2026-09-30 (itda-work/skills#45·#46)
 
 > ⚠️ **배포 차단** — itda-hyve 0.10.4(itda-work/itda-hyve#31 — `final_url`·저장 경로에 키가 평문으로 남던 결함 수정) 공개 **뒤에**,

@@ -14,12 +14,12 @@ allowed-tools: Read, Write, Edit, Bash, WebSearch, WebFetch, AskUserQuestion, Sk
 argument-hint: "[시장·주제]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "0.4.0"
+  version: "0.4.1"
   category: "research"
   status: "experimental"
   recommended: true
   created_at: "2026-06-08"
-  updated_at: "2026-10-01"
+  updated_at: "2026-10-11"
   aliases: "시장조사, 시장분석, 경쟁분석, market research"
   tags: "market-research, competitive-analysis, market-sizing, source-verification, interview, cowork, research"
 ---
@@ -136,7 +136,7 @@ API 키는 itda-hyve(사용자 PC 의 로컬 MCP 서버) **시크릿 탭**에만
   - **한 번 빠진 엔진은 이 조사에서 다시 부르지 않는다**: 첫 검색에서 `SECRET_MISSING` 이 난 엔진은 다음 질의부터 `--engines` 에서 뺀다(질의마다 헛호출·실패 자리 쓰기가 붙는다).
   - **질의 수**: web-search 한 질의는 도구 호출 `plan` 1 + 엔진 수 + `collect` 1 이다. 한 조사에서 다중엔진 질의는 **10개 이내**로 하고, 넘길 것 같으면 "질의 N개 × 엔진 M개 = 호출 약 K회" 를 먼저 알리고 진행한다.
   - **비용 가드**: `web-search auto` 는 무료 엔진(tavily·naver·serper)만 부른다. **Exa 는 요청당 과금**이라 기본은 무료 엔진(`--engines tavily,naver`)으로 돌린다. Exa 는 시장 규모·점유율 같은 **핵심 수치 교차검증이 꼭 필요할 때만** 제안하고, 과금을 알리고 동의를 받은 뒤 `--engines tavily,naver,exa` 처럼 지목해 넓힌다(Claude 가 제안하는 경우라 반드시 묻는다).
-- **무거운 1차 자료(PDF·증권사 리포트·산업백서) 시**: 해당 자료의 URL을 WebFetch로 본문을 끌어온다. 본문이 비거나 막히면 `itda-web:web-reader` 스킬로 폴백한다(별도 팩 — 미설치면 폴백 없이 "itda-web 미설치" 로 기록하고 그 자료는 미확인으로 둔다). 검색에 안 잡히는 비공개·유료 자료는 사용자가 원문 링크를 주거나 핵심 내용을 붙여넣으면 그대로 근거로 반영한다.
+- **무거운 1차 자료(PDF·증권사 리포트·산업백서) 시**: 해당 자료의 URL을 WebFetch로 본문을 끌어온다. 웹 페이지 본문이 비거나 막히면 `itda-web:web-reader` 스킬로 폴백한다(별도 팩 — 미설치면 폴백 없이 "itda-web 미설치" 로 기록하고 그 자료는 미확인으로 둔다). PDF 파일은 web-reader 도 읽지 않는다(웹 페이지 전용 — `not_html`) — 사용자가 내려받아 `itda-doc:pdf-context-refinery` 로 넘기거나 핵심 내용을 붙여넣게 한다. 검색에 안 잡히는 비공개·유료 자료는 사용자가 원문 링크를 주거나 핵심 내용을 붙여넣으면 그대로 근거로 반영한다.
 - **공공 API 선택 시**: 아래 라우팅 표대로 `itda-gov:*` 호출.
 - **항상**: 핵심 수치는 원문 확인(스니펫 금지), 발행일·링크·등급 병기.
 

@@ -1,7 +1,7 @@
 {
   "name": "itda-web",
-  "description": "웹에서 찾고 가져온다 — 다중 엔진 검색, EUC-KR 정적 페이지 추출(robots 준수), Aside 브라우저 MCP. 가장 싼 경로부터.",
-  "version": "14.1.0",
+  "description": "웹에서 찾고 가져온다 — 다중 엔진 검색, EUC-KR 정적 페이지 추출(itda-hyve web_read), Aside 브라우저 MCP. 가장 싼 경로부터.",
+  "version": "15.0.0",
   "author": {
     "name": "스킬.잇다",
     "url": "https://github.com/itda-work"

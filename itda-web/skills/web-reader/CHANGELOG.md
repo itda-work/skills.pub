@@ -1,5 +1,41 @@
 # Changelog — itda-web-reader
 
+## [9.0.0] — 2026-10-11 (itda-work/itda-hyve#72)
+
+> ⚠️ **배포 차단** — `web_read` 가 든 itda-hyve 설치본이 공개된 **뒤에** 배포한다(공개 최신 0.13.0 에는 없다). 이 판은 판 번호가 아니라
+> `accounts_list` 의 `server_features` 에 `web_read` 가 있는지로 가르고, 없으면 업데이트를 안내하고 멈춘다 — 설치본이 없는데 배포하면
+> 모든 사용자가 멈춘다. 목록 레코드는 itda-hyve#72 2단계(`web_read` 의 `records: true`, 기능 이름 `web_read_records`)를 쓴다 —
+> 그 기능이 든 판도 공개된 뒤에 배포한다(없는 판에서는 레코드 대신 업데이트를 안내한다).
+
+### BREAKING
+
+- **받기·추출을 itda-hyve `web_read` 로 옮겼다** — 스킬에는 스크립트가 없다. 8.x 는 `plan.py` 가 리다이렉트를 한 홉씩 따라가며 itda-hyve 가
+  실제로 보낼 URL 을 Go 직렬화로 흉내 냈고, 8.1.0 리뷰 5회에서 그 자리에서만 결함 4건(robots 우회 3·한글 경로 오인 1)이 나왔다. 요청을 보내는
+  쪽(itda-hyve)이 리다이렉트를 홉마다 목적지 검사하며 따라가면 그 계열이 생길 자리가 없다. Cowork 사용자는 설치한 스킬을 오래 쓰므로 자주 고칠
+  로직은 itda-hyve 에 두고 스킬은 호출 안내만 남긴다(2026-10-10 사용자 판단).
+- **robots.txt 를 보지 않는다** — itda-hyve 결정(2026-10-10). description·SKILL·GUIDE 의 "robots.txt 가 막는 경로는 받지 않는다" 약속을 지웠다.
+- 판 확인을 `http_request` 의 `save_meta` 인자 유무에서 `server_features` 의 `web_read` 이름으로 바꿨다.
+- 실패 코드를 `web_read` 코드(`blocked`·`js_rendered`·`extract_failed`·`not_html`·`http_status`·`not_found` + 송신 코드)로 맞췄다.
+  `extract_failed` 의 message 에 실린 주소(네이버 블로그 데스크톱 → `PostView.naver`)로 한 번 더 읽는다.
+- 저장: 기존 파일 보호는 `save_dir` 를 줬을 때만이다(itda-hyve 기본 저장 폴더는 `overwrite: false` 여도 같은 이름을 덮어쓴다) — 저장 예시는 늘
+  `save_dir` 를 주고, Claude Code 도 작업 폴더 절대 경로를 넣게 했다(리뷰 R1-1). 단 그 폴더가 `save_dir` 허용 범위(정본 `references/netbridge.md`
+  — 홈 아래, 숨김·`AppData`·`~/Library`·홈 자체 아님) 안일 때만이고, 밖이면(`/tmp`·`~/.claude/…` 등) 사용자에게 저장 폴더를 묻는다(리뷰 R2-1).
+- 목록 레코드: `record_count` 는 이 호출이 뽑은 행 수(최대 1,000)다. `records_truncated`(응답에 일부 — `save_as` 로 풀림)와
+  `records_stats.truncated`(한 페이지 1,000행 상한 — 저장 파일도 부분본)를 가른다(리뷰 R1-2). 나눠 받기는 HTML 목록만 쪽·`selector` 로 하고,
+  RSS·Atom 은 `selector` 가 적용되지 않아 사이트가 주는 쪽·기간별 피드 주소가 있을 때만 나눈다(리뷰 R2-2).
+
+### Removed
+
+- 스크립트 전부: `plan.py`·`robots.py`·`url_validator.py`(→ itda-hyve 리다이렉트·`private_destination`·`invalid_input`, robots 는 결정으로 제외),
+  `extract_content.py`·`scorer.py`·`web_selectors.py`·`standardize.py`·`md_convert.py`·`metadata.py`·`challenge_validators.py`·`exceptions.py`
+  (→ itda-hyve `internal/webread`, web-reader 8.1.0 = Defuddle v0.13.0 이식), `clean_html.py`(대체 없음 — 원문은 `save_source`),
+  `extract_records.py`·`page_input.py`·`provenance.py`(→ `web_read` 의 `records: true` — 같은 행 필드·봉투·`stats`, 저장은 `.json`·`.csv`, `js_link`·`js_link_template`),
+  `install_skill_deps.py`·`requirements*.txt`·`deps.json`(런타임 의존성 없음).
+- 시험 23개 파일·픽스처: 추출 시험은 itda-hyve `internal/webread`(`extract_test`·`markdown_test`·`selector_test`·`units_test` — 같은 픽스처
+  article·empty_meta·js_shell·네이버 뉴스 2·kiri 목록·smbs EUC-KR)와 `httptool/webread_test.go`(리다이렉트 홉·EUC-KR·실패 코드·저장)가 맡는다.
+  robots·URL 직렬화 시험(`test_plan`·`test_robots`·`test_url_validator`)은 대상 기능이 없어졌다. 레코드 시험·`records/` 픽스처는 2단계 이식의
+  원본으로 origin/main 이력에 남는다. 남은 시험: 홈 격리 + SKILL 문서 계약(`test_skill_contract.py`).
+
 ## [8.1.0] — 2026-10-09 (itda-work/itda-hyve#33)
 
 > **요구 판 itda-hyve 0.12.0** — 8.0.0 의 배포 차단 1(사설 목적지 기본 거부)이 그 판에 들어왔다. 8.0.0 은 공개된 적이 없고(배포 보류)

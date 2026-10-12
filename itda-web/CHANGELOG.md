@@ -1,5 +1,13 @@
 # Changelog — itda-web-collect
 
+## [4.0.0] - 2026-10-11
+
+> 요구: **itda-hyve 의 `web_read`**(web-reader) — `accounts_list` 의 `server_features` 에 `web_read` 가 있는 판. 그 설치본이 공개된 **뒤에** 이 판을 배포한다(공개 최신 0.13.0 에는 없다).
+
+### BREAKING
+
+- **`web-reader` 9.0.0 — 받기·추출은 itda-hyve `web_read`** (itda-work/itda-hyve#72). 스킬에는 스크립트가 없다(`plan.py`·`extract_content.py`·`extract_records.py`·`clean_html.py` 삭제). 리다이렉트·문자셋·본문 마크다운·출처는 itda-hyve 가 한다. robots.txt 는 보지 않는다(itda-hyve 결정 2026-10-10) — 팩 description 의 「robots 준수」 구절을 뺐다. 목록 레코드는 `web_read` 의 `records: true`(itda-hyve#72 2단계, 기능 이름 `web_read_records`)를 쓴다 — 그 기능이 없는 판에서는 레코드 대신 업데이트를 안내한다.
+
 ## [3.1.0] - 2026-10-09
 
 > 요구: **itda-hyve 0.12.0 이상**(web-reader). itda-hyve 0.12.0 을 먼저 설치·업데이트한 뒤 이 판을 설치한다 — 0.11.x 이하는 사설·로컬 목적지를 막지 못하고 저장 메타(`save_meta`)가 없어 web-reader 가 `hyve_outdated` 로 멈춘다.
