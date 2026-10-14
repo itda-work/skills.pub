@@ -2,6 +2,13 @@
 
 이 스킬의 주요 변경 이력입니다. (Keep a Changelog 형식)
 
+## [0.3.3] — 2026-10-14
+
+### Changed
+
+- 「쓰지 않을 때」·범위 밖·핸드오프 표에서 `itda-research:market-scan`·`ground-check`·`investigate` 지목을 지웠다 — 세 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화). 보고서·팩트체크는 "Claude 에게 바로 요청" 으로 안내한다.
+- market-scan ↔ web-search 핸드오프 계약 시험(`tests/test_handoff_market_scan.py`)과 market-scan 문장 계약 시험을 지웠다 — 상대 스킬이 없다.
+
 ## [0.3.2] — 2026-10-06 (itda-work/skills#46 W17)
 
 ### Changed

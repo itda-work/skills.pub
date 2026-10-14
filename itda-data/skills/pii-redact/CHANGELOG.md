@@ -1,5 +1,11 @@
 # Changelog — pii-redact
 
+## [0.2.2] — 2026-10-14
+
+### Changed
+
+- CS 분석 입구 안내에서 `aspect-sentiment`·`cs-intent` 지목을 지웠다(SKILL·GUIDE) — 두 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화).
+
 ## [0.2.1] — 2026-09-30 (itda-work/skills#47)
 
 ### Fixed

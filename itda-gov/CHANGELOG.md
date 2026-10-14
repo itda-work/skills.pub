@@ -1,5 +1,22 @@
 # Changelog — itda-gov
 
+## [10.0.0] - 2026-10-14
+
+### BREAKING
+
+- **스킬 5종 제거 — 15 → 10종**(사용자 결정 2026-10-14 — 스킬 최소화): `realty-meta`(부동산 팩 안내·키 발급) · `realty-jeonse-gap`(전세가율·갭) · `realty-supply`(미분양·인허가·청약 공급 지표) ·
+  `customs-notice`(관세청 공지) · `fss-docs`(금융감독원 공통업무자료). **대체 경로는 "Claude 에게 바로 요청"** 이다(공식 통계·게시판은 원 사이트에서 확인). 코드는 git 이력에 남아 있다.
+- 팩 description 에서 「공급·전세가율」 광고를 뺐다(marketplace 포함). 남은 스킬: court-auction·dart·ecos·fuel-price·funding·g2b·kosis·realty-deals·realty-price-stats·taxlaw.
+
+### Removed
+
+- 소비자 0 이던 공용 패키지 `shared/code_mapper`(와 그 테스트)를 지웠다 — 어떤 스킬도 import 하지 않았다.
+
+### Changed
+
+- `funding` 3.0.1 — PDF 첨부를 Claude 기본 PDF 읽기로 읽는다. `itda-doc:pdf-context-refinery` 를 저장소에서 지웠다. 크로스플러그인 미설치 계약은 `itda-doc:hwpx` 만 남았다.
+- 지운 형제 지목 정리: `realty-deals` 0.13.2(실측 픽스처를 지운 realty-jeonse-gap 에서 이 스킬 `tests/fixtures/` 로 옮김) · `realty-price-stats` 0.12.2 · `court-auction` 0.2.1 · `taxlaw` 0.2.1(3차 — `itda-research:ground-check` 행 삭제). README 키 표·스킬 표를 남은 스킬 기준으로 고쳤다.
+
 ## [9.0.0] - 2026-10-01
 
 > 요구: **itda-hyve 0.10.4 이상**(옮긴 스킬 전부). itda-hyve 0.10.4 를 먼저 설치·업데이트한 뒤 이 판을 설치한다 — 0.10.3 이하는 응답 `final_url` 등에 시크릿이 되비치고 기본 User-Agent 에 제품명이 실린다.

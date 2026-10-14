@@ -32,4 +32,3 @@
 ## 5. 이 키를 쓰는 스킬
 
 - `itda-gov/ecos` — 한국은행 경제통계(금리·환율·GDP·CPI 등)
-- `itda-research/market-scan` — 거시지표 보강 (없어도 웹 대체로 동작)

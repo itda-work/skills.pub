@@ -3,6 +3,19 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/ko/1.1.0/) 형식을 따르며,
 [Semantic Versioning](https://semver.org/lang/ko/)을 준수합니다.
 
+## [8.0.0] - 2026-10-14
+
+### BREAKING
+
+- **스킬 5종 제거 — 9 → 4종**(사용자 결정 2026-10-14 — 스킬 최소화): `draft-post`(초안 작성) · `html-report`(마크다운 → HTML 보고서) · `pdf-context-refinery`(PDF 정제) · `blog-seo`(네이버 블로그 키워드, 2026-10-06 부터 배포 보류였다) · `imagekit`(이미지 조회·리사이즈·크롭·포맷 변환 — 같은 날 3차 제거).
+  지금 Claude 가 이 일을 기본 기능으로 충분히 잘한다. **대체 경로는 Claude 기본 기능**이다 — 초안·HTML 문서는 Claude 에게 바로 요청하고,
+  PDF 는 Claude 의 기본 PDF 읽기(`Read` 도구·공식 `pdf` 스킬)로 읽고, 이미지 크기·포맷 조정도 Claude 에게 바로 요청한다. 코드는 git 이력에 남아 있다.
+- 팩 description·keywords 에서 HTML 렌더·초안 작성·PDF 정제·이미지 가공 광고를 뺐다(marketplace 포함). 남은 스킬: human-tone·hwpx·imagegen·pptx-shrink.
+
+### Changed
+
+- 형제 지목 정리: `human-tone` 2.1.5([책임 경계]·쓰지 않을 때 표·권장 체인·가드 정본 문단·GUIDE·HANDOFF·트리거 회귀 주석) · `hwpx` 1.4.5(reader GUIDE 의 PDF 안내) · `imagegen` 1.0.5(`cases/blog-hero.md`, imagekit 지목 — [책임 경계]·입력 크기·비율 안내·케이스 2종) · `pptx-shrink` 0.2.4([책임 경계]·쓰지 않을 때 표의 imagekit). `hwpx` 리더와 `biz-redact` 에 같은 사본으로 두던 `safe_archive.py` 머리말을 세 곳 → 두 곳으로 고쳤다(synthetic-data 제거).
+
 ## [7.0.0] - 2026-10-01
 
 ### BREAKING

@@ -1,5 +1,11 @@
 # Changelog — itda-hwpx
 
+## [1.4.5] — 2026-10-14
+
+### Changed
+
+- `reader/GUIDE.md` 의 "기타 포맷 미지원" 안내에서 `pdf-context-refinery` 지목을 빼고 PDF 는 Claude 기본 PDF 읽기로 안내한다 — 그 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화).
+
 ## [1.4.4] — 2026-10-02 (itda-work/skills#49)
 
 ### Changed

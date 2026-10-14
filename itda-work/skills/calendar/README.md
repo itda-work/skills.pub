@@ -40,5 +40,5 @@ Cowork 샌드박스는 외부 네트워크가 막혀 있어 스킬이 CalDAV 서
 ## 스크립트·의존성이 없다
 
 0.7.0(itda-work/skills#19)에서 옛 `scripts/`(Python `caldav` 직접 접속 CLI)·`requirements.txt`(caldav·icalendar)·`deps.json`·`tests/` 를 지웠다.
-마지막 사용처였던 `itda-work:morning-brief`(0.3.0, #18)·`itda-work:time-audit`(0.2.0, #19)이 itda-hyve `calendar_events` 로 옮겨 갔다.
+마지막 사용처였던 `itda-work:morning-brief`(0.3.0, #18)·time-audit(0.2.0, #19 — 2026-10-14 저장소에서 제거)이 itda-hyve `calendar_events` 로 옮겨 갔다.
 이 스킬은 SKILL.md 절차와 itda-hyve 도구만으로 동작하며 설치할 파이썬 패키지가 없다.

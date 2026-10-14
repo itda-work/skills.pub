@@ -1,19 +1,22 @@
 # itda-research
 
-검증 스킬팩 — 남의 주장·원인·시장 자료·회의 기록을 믿기 전에 근거로 검증한다: 1차 출처 강제(ground-check)·경쟁 가설 반증(investigate)·시장조사(market-scan)·회의 신뢰성 검수(meeting-reliability).
+검증·업무DB 스킬팩 — 회의 기록을 믿기 전에 근거로 검수하고(meeting-reliability), 사내 비정형 문서 무더기를 업무DB(뇌)로 쌓고 검수한다(brain-*).
 
-> 2026-09-05 재정비(#1648)로 구 `itda-audit`(meeting-reliability) 에 구 `itda-work` 의 ground-check·investigate·market-scan 이 합류했습니다. 목적은 하나 — **믿기 전에 근거로 검증한다**. ground-check·market-scan 은 웹 수집 엔진·폴백으로 `itda-web`(web-search·web-reader) 를 쓰므로 함께 설치를 권합니다(미설치면 WebFetch 만으로 진행하고 그 사실을 보고합니다).
+> **제거(2026-10-14, 사용자 결정 — 스킬 최소화)**: `ground-check`(1차 출처 강제 검증)·`investigate`(원인 조사)·`market-scan`(시장조사)과
+> 에이전트 `ground-verifier`·`deep-researcher` 는 저장소에서 지웠습니다(git 이력에는 남아 있음). 출처 검증·조사·시장조사는 Claude 에게 바로 요청하세요.
 
 ## 포함 스킬
 
 | 스킬 | 기능 |
 |---|---|
-| [`ground-check`](skills/ground-check/SKILL.md) | 1차 출처 강제 인용과 독립 검증으로 환각·hedge 표현을 절차로 차단하는 리서치 스킬입니다. |
-| [`investigate`](skills/investigate/SKILL.md) | 경쟁 가설과 반증 실험으로 근본 원인을 체계적으로 조사하는 스킬입니다. |
-| [`market-scan`](skills/market-scan/SKILL.md) | 외부 시장·산업 자료를 찾아 의사결정용으로 구조화하는 시장조사 스킬입니다. |
+| [`brain-build`](skills/brain-build/SKILL.md) | 사내 비정형 문서 무더기로 업무DB(뇌)를 구축한다. |
+| [`brain-ingest`](skills/brain-ingest/SKILL.md) | 업무DB 에 새 문서를 증분 적재한다. |
+| [`brain-audit`](skills/brain-audit/SKILL.md) | 업무DB 를 원본과 대조해 다시 검수한다. |
+| [`brain-scribe`](skills/brain-scribe/SKILL.md) | 업무DB 를 근거로 문서를 쓴다. |
+| [`brain-fixture`](skills/brain-fixture/SKILL.md) | 업무DB 시험용 결정론 가상 문서 묶음을 만든다. |
 | [`meeting-reliability`](skills/meeting-reliability/SKILL.md) | 회의 녹취·기록에서 "확인 / 확인 필요 / 예외"를 근거와 함께 정확히 가르는 신뢰성 검수 스킬입니다. |
 
-에이전트: `deep-researcher`(investigate·market-scan 팬아웃) · `ground-verifier`(ground-check 독립 검증 라운드) · `meeting-reliability-worker`.
+에이전트: `brain-auditor`(업무DB 검수) · `meeting-reliability-worker`.
 
 ## 설치
 

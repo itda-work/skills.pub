@@ -14,8 +14,8 @@
 - 엔트리 이름: NUL·`..`·절대경로·드라이브 문자를 거부한다.
 
 상한은 환경변수로 조절한다: `ITDA_MAX_UNZIP_MB`(기본 256, 1~8192) · `ITDA_MAX_ZIP_ENTRIES`(기본 500, 1~65535).
-같은 파일이 세 곳에 있다 — itda-doc `hwpx/reader/hwpx_native/` · itda-data `biz-redact/scripts/` ·
-`synthetic-data/scripts/`. 고치면 셋을 함께 고친다(스킬별로 배포되고 hwpx 리더는 패키지라 shared 평면 주입이 닿지 않는다).
+같은 파일이 두 곳에 있다 — itda-doc `hwpx/reader/hwpx_native/` · itda-data `biz-redact/scripts/`.
+고치면 둘을 함께 고친다(스킬별로 배포되고 hwpx 리더는 패키지라 shared 평면 주입이 닿지 않는다).
 """
 from __future__ import annotations
 

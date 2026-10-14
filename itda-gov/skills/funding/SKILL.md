@@ -17,7 +17,7 @@ metadata:
   category: "domain"
   status: "active"
   recommended: true
-  version: "3.0.0"
+  version: "3.0.1"
   created_at: "2026-03-29"
   updated_at: "2026-09-30"
   tags: "government funding, startup support, subsidy, survey, crawler, diff"
@@ -331,13 +331,14 @@ HWP 등 OLE 는 FAT 가 쓰는 마지막 섹터까지 있는지·JPEG/PNG/GIF �
 위치는 `local_path`)를 `<회차>/attachments-md/<공고ID>/` 로 변환한다:
 
 - **HWP/HWPX** → `Skill` 도구로 `itda-doc:hwpx` 를 호출해 마크다운 변환(표 플래튼 포함)
-- **PDF** → `Skill` 도구로 `itda-doc:pdf-context-refinery` 를 호출해 본문 추출. 그 스킬이 전 페이지 텍스트층을 판정해 스캔 쪽은 비전으로 읽고,
-  그래도 못 읽은 쪽을 **"미검증 쪽: p.N, …"** 으로 돌려준다 — 그 목록을 공고별로 보고서 한계 고지에 옮긴다(앞은 텍스트·뒤 신청자격 표만 스캔인 공고가 실재한다).
+- **PDF** → Claude 기본 PDF 읽기(`Read` 도구, 있으면 공식 `pdf` 스킬)로 본문을 추출한다. 쪽마다 텍스트층을 보고 글자가 거의 안 나오는 쪽(스캔)은
+  이미지로 읽으며, 그래도 못 읽은 쪽은 **"미검증 쪽: p.N, …"** 으로 적어 공고별로 보고서 한계 고지에 옮긴다(앞은 텍스트·뒤 신청자격 표만 스캔인 공고가 실재한다).
 
-> **크로스플러그인 미설치 계약 (조용한 생략 금지)**: 이 두 스킬은 **itda-doc** 플러그인(hwpx·pdf-context-refinery) 소속이고
+> **크로스플러그인 미설치 계약 (조용한 생략 금지)**: `hwpx` 는 **itda-doc** 플러그인 소속이고
 > funding 은 **itda-gov** 소속이라 함께 설치돼 있지 않을 수 있다. 호출이 실패하거나 스킬이 없으면
-> **변환을 조용히 건너뛰지 않는다** — 해당 공고를 "첨부 원문 미변환" 으로 표시하고, 보고서 한계 고지에
-> **"HWP/PDF 첨부 N건 미변환 — itda-doc 플러그인을 설치하면 본문까지 검증할 수 있습니다"** 를 명시한다.
+> **HWP 변환을 조용히 건너뛰지 않는다** — 해당 공고를 "첨부 원문 미변환" 으로 표시하고, 보고서 한계 고지에
+> **"HWP 첨부 N건 미변환 — itda-doc 플러그인을 설치하면 본문까지 검증할 수 있습니다"** 를 명시한다.
+> PDF 를 읽지 못한 경우도 같은 방식으로 "PDF 첨부 N건 미변환" 을 적는다(PDF 는 다른 플러그인이 필요 없다).
 
 각 건에서 확인할 것(없으면 **'불명'**):
 

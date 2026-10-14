@@ -4,7 +4,7 @@ description: >
   오늘 일정 전체·일정별 관련 메일·일정과 무관한 미회신 메일(요약)을 모아 아침 브리핑 HTML 한 장을 그리는 스킬입니다(itda-hyve).
   "아침 브리핑 만들어줘", "/morning-brief"처럼 말하면 됩니다. 기본은 시간축 모양, "보고서 형식으로"·"표로"·"인쇄용으로" 하면 그 모양.
   날씨 절이 기본(Sections: 환율 추가·none 제외), 정확 문구 "액션 버튼 포함"일 때만 버튼. 형식만 보려면 "샘플 브리핑 보여줘". 일정 질문·메일 확인엔 쓰지 않습니다.
-  [책임 경계] 본 스킬은 아침 브리핑 페이지 전담 — itda-work:calendar 는 일정, itda-work:email 은 메일, itda-doc:html-report 는 보고서 HTML.
+  [책임 경계] 본 스킬은 아침 브리핑 페이지 전담 — itda-work:calendar 는 일정, itda-work:email 은 메일.
 license: Apache-2.0
 compatibility: "Claude Cowork·Claude Code. itda-hyve 0.10.4 이상(로컬 MCP 서버) 필요 — batch 한 번이 스크립트가 쓴 계획 파일(plan_file)을 읽어 계정·위치·모든 계정의 일정(참석자)·메일(본문 앞부분 포함)을 한꺼번에 받아 연결 폴더에 저장한다. 미리보기는 Cowork 파일 공유(present_files), 그것이 안 되면 itda-hyve 의 open_file 로 시스템 브라우저에서 연다(선택). Python 3.10+, 외부 의존 없음(stdlib only)."
 user-invocable: true
@@ -15,7 +15,7 @@ metadata:
   category: "document"
   status: "beta"
   recommended: false
-  version: "0.12.4"
+  version: "0.12.5"
   created_at: "2026-09-03"
   updated_at: "2026-10-01"
   tags: "morning, brief, daily, digest, calendar, email, html, single-file, dashboard, schedule, inbox, unreplied, cowork, itda-hyve"
@@ -464,9 +464,7 @@ Sections: 날씨          # 기본값이라 생략해도 된다. 빼려면 none
 |---|---|
 | "오늘 일정 뭐 있어?", 일정 추가·수정·삭제, 빈 시간 찾기 | `itda-work:calendar` |
 | "메일 읽어줘", 받은편지함 정리, 회신·발송 | `itda-work:email` |
-| 보고서·분석 결과를 HTML 문서로 | `itda-doc:html-report` |
 | 날씨만 / 환율만 알고 싶을 때 | `itda-work:weather-here` · `itda-work:exchange-rate` |
-| 오늘 할 일을 정리해 작업 지시서로 | `itda-work:task-brief` |
 
 하루에 대한 질문은 그 자체로 브리핑 요청이 아니다. 물어본 것에 바로 답한다.
 

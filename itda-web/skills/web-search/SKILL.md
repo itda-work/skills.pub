@@ -15,7 +15,7 @@ argument-hint: "[질의어] [--engine auto|tavily|naver|serper|exa] [--count 5] 
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "search"
-  version: "0.3.2"
+  version: "0.3.3"
   created_at: "2026-06-09"
   updated_at: "2026-10-06"
   tags: "search, web search, query, multi engine, tavily, serper, naver, exa"
@@ -275,22 +275,19 @@ Serper `{"message":…,"statusCode":403}` · Exa **402** `{"error":"Payment requ
 |---|---|
 | 찾은 URL 의 본문을 마크다운으로 추출 | itda-web:web-reader |
 | 네이버 블로그 글 목록·댓글(robots 불허) | 브라우저 경로 — itda-web:aside-browser-mcp |
-| 시장조사 보고서·경쟁 분석 | itda-research:market-scan |
-| 주장·수치의 출처 검증 | itda-research:ground-check |
+| 시장조사 보고서·경쟁 분석·출처 검증 | Claude 에게 바로 요청(검색 결과를 근거로) |
 | 로그인·JS 렌더가 필요한 사이트 | itda-web:aside-browser-mcp |
 
 ## 범위 밖 (다른 스킬로 위임)
 
 | 상황 | 맞는 스킬 |
 |------|-----------|
-| 의사결정용 시장조사·경쟁분석 **보고서** ("정리·분석해줘") | market-scan |
-| 1차 소스 강제 **팩트체크**·교차검증 | ground-check |
+| 의사결정용 시장조사·경쟁분석 **보고서** ("정리·분석해줘")·**팩트체크** | Claude 에게 바로 요청 |
 | 이미 아는 **URL의 본문** 추출 | web-reader |
 | 네이버 블로그 목록·댓글 | aside-browser-mcp(브라우저 — 네이버 robots 가 자동 수집을 막는다) |
-| 근본원인 규명("왜 느리지") | investigate |
 
 "경쟁사 동향 **검색**해줘"(URL 목록)는 web-search, "경쟁사 동향 **정리·분석**해줘"(보고서)는
-market-scan으로 구분한다.
+Claude 가 검색 결과를 근거로 바로 쓴다.
 
 ## 인접 스킬 핸드오프
 
@@ -299,8 +296,7 @@ market-scan으로 구분한다.
 | 다음 단계 | 스킬 |
 |-----------|------|
 | 결과 URL의 **본문**이 필요할 때 | web-reader |
-| 결과를 **1차 소스로 팩트체크** | ground-check |
-| 수집을 **의사결정용 보고서로** | market-scan |
+| 결과를 **팩트체크**하거나 **보고서로** 정리 | Claude 에게 바로 요청 |
 
 네이버 블로그 검색은 본 스킬(`--engine naver --naver-type blog`, 공식 OpenAPI)이 맡는다. 찾은 글을 읽어야 하면
 사용자가 브라우저로 연다(aside-browser-mcp) — 키 없이 블로그를 훑던 blog-reader 는 2026-10-01 제거했다(네이버 robots 가

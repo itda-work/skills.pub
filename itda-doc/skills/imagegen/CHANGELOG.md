@@ -2,6 +2,11 @@
 
 > 2026-06-16: `itda-egg/codex-image` → `itda-media/imagegen` 졸업 마이그레이션(SPEC-IMAGEGEN-002 P2). 이하 0.7.1까지는 codex-image 시절 이력.
 
+## 1.0.5 (2026-10-14)
+
+- `cases/blog-hero.md` 의 `draft-post` 산출물 연계 문구를 "이미 쓴 글(초안)과 연계" 로 바꿨다 — 그 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화).
+- [책임 경계]·입력 크기 안내·비율 안내와 `cases/character-illust.md`·`cases/poster.md` 의 `itda-doc:imagekit` 지목을 지웠다 — 같은 날 imagekit 도 지웠다(3차).
+
 ## 1.0.4 (2026-10-06) — itda-work/skills#46 W17 리뷰
 
 - `cases/blog-hero.md` 의 「blog-seo·draft-post 산출물과 연계」 에서 배포 보류된 blog-seo 를 뺐다(itda-hyve 검색광고 서명 #34 대기 — 공개 사용자는 설치할 수 없다). 보류가 풀리면 되돌린다.

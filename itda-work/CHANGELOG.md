@@ -2,6 +2,20 @@
 
 이 플러그인의 주요 변경 사항을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/), 버전은 [SemVer](https://semver.org/)를 따릅니다.
 
+## [5.0.0] - 2026-10-14
+
+### BREAKING
+
+- **업무 코칭 스킬 10종 제거 — 15 → 5종**(사용자 결정 2026-10-14 — 스킬 최소화): `work-find` · `work-redesign` · `time-audit` · `stakeholder-map` · `work-plan` · `hour-slice` ·
+  `miniskill-forge` · `task-brief` · `work-proposal` · `work-pilot`. 지금 Claude 가 업무 찾기·구조화·계획·제안서 같은 일을 기본 기능으로 충분히 잘한다.
+  **대체 경로는 "Claude 에게 바로 요청"** 이다. 코드는 git 이력에 남아 있다. 남은 스킬: calendar·email·exchange-rate·morning-brief·weather-here.
+- 팩 description·keywords 에서 「업무 구조화」·「코칭 여정」 광고와 `코칭`·`업무재설계` 키워드를 뺐다(marketplace 포함). README·GUIDE 를 남은 다섯 스킬 기준으로 다시 썼다.
+- work-plan 의 스킬 카탈로그(`references/skill-catalog.md`)와 그 생성·drift 게이트가 함께 없어졌다 — 저장소 도구 `scripts/gen_skill_catalog.py` 는 `[책임 경계]` 점검만 남긴 `scripts/check_skill_boundary.py` 가 됐다.
+
+### Changed
+
+- 지운 스킬 지목 정리 — `email` 0.38.4(첨부 PDF 는 Claude 기본 PDF 읽기, `itda-doc:html-report` 행 삭제) · `calendar` 0.7.4(`itda-doc:html-report`·`time-audit` 행 삭제) · `morning-brief` 0.12.5(`itda-doc:html-report`·`task-brief` 지목 삭제).
+
 ## [4.0.0] - 2026-10-01
 
 > 요구: **itda-hyve 0.10.4 이상**(exchange-rate·weather-here·morning-brief). itda-hyve 0.10.4 를 먼저 설치·업데이트한 뒤 이 판을 설치한다 — 0.10.3 이하는 응답 `final_url` 등에 시크릿이 되비치고 기본 User-Agent 에 제품명이 실린다.

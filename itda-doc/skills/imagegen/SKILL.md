@@ -4,7 +4,7 @@ description: >
   발표자료·블로그·문서용 이미지와 삽화를 품질 하한과 함께 만드는 스킬입니다. 사용자의 ChatGPT 구독(codex)으로 그립니다.
   "블로그 히어로 이미지 만들어줘", "슬라이드 배경 비주얼", "쇼츠용 세로 삽화", "제품 컷", "이 사진처럼 한 장 더"처럼 말하면 됩니다.
   실측으로 검증한 케이스 카드(cases/, 9종)로 프롬프트를 짜고, 생성은 itda-hyve 가 사용자 PC 에 설치한 codex 로 합니다. 여러 장은 한꺼번에 병렬로 만듭니다.
-  [책임 경계] 본 스킬은 이미지 새로 생성 전담 — 이미 있는 이미지의 크기·여백·포맷 가공은 itda-doc:imagekit.
+  [책임 경계] 본 스킬은 이미지 새로 생성 전담 — 이미 있는 이미지의 크기·여백·포맷 가공은 다루지 않습니다.
 license: MIT
 compatibility: "Claude Code & Cowork. itda-hyve 0.10.1 이상(로컬 MCP 서버) + itda-hyve 에이전트 탭에서 설치·로그인한 codex 계정(ChatGPT 구독) 필요. macOS(Apple Silicon)."
 allowed-tools: "mcp__remote-devices__itda-hyve__accounts_list, mcp__remote-devices__itda-hyve__agent_run, mcp__remote-devices__itda-hyve__job_status, Read"
@@ -12,7 +12,7 @@ user-invocable: true
 argument-hint: "[케이스: blog-hero|slide-visual|icon-logo|character-illust|video-illust|figurine|photoreal-portrait|product-catalog|poster] <주제> [장수]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "1.0.4"
+  version: "1.0.5"
   category: "media"
   status: "experimental"
   created_at: "2026-05-30"
@@ -124,7 +124,7 @@ metadata:
 
 ## 핵심 패턴 3 — 참조 이미지로 만들기
 
-"이 사진처럼", "이 제품 사진으로 팩샷" 처럼 사용자 파일을 바탕으로 할 때는 `inputs` 에 `save_dir` 기준 상대 경로를 넣는다(png·jpg·webp, 최대 4개, 각 20MB 이하 — 넘으면 `too_large`. `itda-doc:imagekit` 으로 줄여서 넣는다).
+"이 사진처럼", "이 제품 사진으로 팩샷" 처럼 사용자 파일을 바탕으로 할 때는 `inputs` 에 `save_dir` 기준 상대 경로를 넣는다(png·jpg·webp, 최대 4개, 각 20MB 이하 — 넘으면 `too_large`. 사용자에게 줄여서 다시 달라고 한다).
 파일이 에이전트를 거쳐 외부(OpenAI)로 나가므로 **반드시 확인 단계**가 붙는다.
 
 ```json
@@ -175,7 +175,7 @@ metadata:
 - **세부묘사는 절(clause) 단위** — 슬롯을 한 단어로 채우지 않는다.
 - **구도** — 주제 배치(좌/우 1/3), 텍스트를 올릴 여백, 단순한 배경.
 - **글자** — 원치 않으면 `no text, no letters, no watermark`. 필요하면 따옴표 문구 + `perfectly spelled, crisp legible lettering`(한글 4줄·영문 3줄까지 철자 정확 실측, `poster.md`).
-- **비율** — 프롬프트에 `Landscape 1536x1024`·`Portrait 1024x1536`·`Square 1024x1024` 를 적는다. codex 가 정확히 맞추지 않을 수 있다(정사각이 1254로 나온 실측) — 정확한 크기가 필요하면 만든 뒤 `itda-doc:imagekit` 으로 자른다.
+- **비율** — 프롬프트에 `Landscape 1536x1024`·`Portrait 1024x1536`·`Square 1024x1024` 를 적는다. codex 가 정확히 맞추지 않을 수 있다(정사각이 1254로 나온 실측) — 정확한 크기가 필요하면 만든 뒤 따로 자른다(Pillow 등).
 
 ## 비용·플랜
 

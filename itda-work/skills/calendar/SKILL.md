@@ -12,7 +12,7 @@ metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
   recommended: true
-  version: "0.7.3"
+  version: "0.7.4"
   created_at: "2026-06-01"
   updated_at: "2026-10-01"
   tags: "calendar, caldav, icloud, apple, naver, event, schedule, recurrence, rrule, alarm, reminder, timezone, etag, itda-hyve, multi-account, free-slots, availability, search, delete-confirmation"
@@ -331,8 +331,6 @@ itda-hyve 가 돌려준 오류는 `code`·`message`·`hint` 를 그대로 전한
 |---|---|
 | "아침 브리핑 보여줘", 하루의 모양과 미회신 요청을 한 장 HTML 로 | itda-work:morning-brief |
 | 메일 읽기·발송·회신 초안 | itda-work:email |
-| 지난 몇 주 시간을 어디에 썼는지 분석 | itda-work:time-audit |
-| 마크다운 보고서를 HTML 문서로 | itda-doc:html-report |
 
 ## Trigger Keywords
 

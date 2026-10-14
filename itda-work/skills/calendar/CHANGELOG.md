@@ -3,6 +3,12 @@
 All notable changes to the `calendar` skill are documented here.
 This skill follows the itda-skills SPEC workflow (SPEC-CALENDAR-001).
 
+## [0.7.4] — 2026-10-14
+
+### Changed
+
+- 「쓰지 않을 때」 표에서 `itda-doc:html-report`·`itda-work:time-audit` 행을 지웠다 — 두 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화). README 의 time-audit 지목도 기록 서술로 바꿨다.
+
 ## [0.7.3] — 2026-10-01 (itda-work/skills#46)
 
 ### Changed

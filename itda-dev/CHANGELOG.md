@@ -2,6 +2,14 @@
 
 이 플러그인의 주요 변경 사항을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/), 버전은 [SemVer](https://semver.org/)를 따릅니다.
 
+## [3.0.0] - 2026-10-14
+
+### BREAKING
+
+- **스킬 2종 제거 — 8 → 6종**(사용자 결정 2026-10-14 — 스킬 최소화): `harness`(에이전트·스킬 하네스 설계) · `orca-coach`(Orca 활용 코칭). **대체 경로는 "Claude 에게 바로 요청"** 이다. 코드는 git 이력에 남아 있다.
+  남은 스킬: changelog·claude-usage·cloudflare-tunnel·codex-usage·windows-parallels-lab·windows-remote-lab.
+- 팩 description·keywords 에서 「하네스 설계·Orca 활용 코칭」 광고와 `harness`·`orca` 키워드를 뺐다(marketplace 포함).
+
 ## [2.1.0] - 2026-10-01
 
 ### Added

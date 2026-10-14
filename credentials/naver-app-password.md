@@ -41,4 +41,3 @@
 - `itda-work/email` — 네이버 메일 읽기·발송 (IMAP 켜기 필요)
 - `itda-work/calendar` — 네이버 캘린더 (CalDAV)
 - `itda-work/morning-brief` — 오늘 일정·미회신 메일 아침 브리핑
-- `itda-work/time-audit` — 캘린더 실적 기반 업무 시간 감사

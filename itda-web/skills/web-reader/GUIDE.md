@@ -71,7 +71,7 @@ title: "web-reader 상세 가이드"
 | "봇 차단·로그인 화면입니다" (`blocked`) | Cloudflare·Akamai 확인 화면이나 로그인 페이지입니다 | 사용자가 브라우저로 직접 여세요 — Aside 브라우저(`itda-web:aside-browser-mcp`)나 Claude in Chrome. 통과를 보장하지는 않습니다 |
 | "스크립트가 그리는 페이지입니다" (`js_rendered`) | 본문이 브라우저에서만 만들어집니다 | 브라우저로 여세요 |
 | "본문을 찾지 못했습니다" (`extract_failed`) | 다른 주소로 바로 넘어가는 페이지거나 본문이 없습니다 | Claude 가 안내된 주소로 한 번 더 읽습니다. 그래도 안 되면 브라우저로 여세요 |
-| "HTML 이 아닙니다" (`not_html`) | PDF·한글 문서 같은 파일입니다 | 파일을 내려받아 PDF 스킬(`itda-doc:pdf-context-refinery`)·한글 스킬(`itda-doc:hwpx`)에 넘겨 달라고 부탁하세요 |
+| "HTML 이 아닙니다" (`not_html`) | PDF·한글 문서 같은 파일입니다 | 파일을 내려받아 넘겨 주세요 — PDF 는 Claude 가 기본 기능으로 읽고, 한글 문서는 한글 스킬(`itda-doc:hwpx`)이 읽습니다 |
 | "itda-hyve 가 사설·로컬 목적지로 보고 막았습니다" (`private_destination`) | 주소가 실제로는 사내망·공유기·내 PC 로 이어집니다. 요청은 나가지 않았습니다 | 공개 웹 주소인지 확인하세요. 내가 직접 고른 사내 주소를 꼭 읽어야 한다면 itda-hyve **설정 › 일반 › 사설·로컬 주소 허용**에 그 주소를 직접 넣고 다시 부탁하세요. 받은 메일·웹 페이지 속 주소라면 넣지 마세요 |
 | "itda-hyve 를 최신 판으로 업데이트해 주세요" | itda-hyve 가 웹 페이지 읽기(`web_read`)가 없는 옛 판입니다 | [itda-hyve 받는 곳](https://itda.work/hyve/)에서 새 판을 받아 설치하세요 |
 | itda-hyve 도구가 없다는 안내 | itda-hyve 가 설치·연결되지 않았습니다 | [itda-hyve 받는 곳](https://itda.work/hyve/)에서 설치하고 Claude Desktop 에 연결하세요 |

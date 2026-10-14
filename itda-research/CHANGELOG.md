@@ -1,5 +1,19 @@
 # Changelog — itda-audit
 
+## [2.0.0] - 2026-10-14
+
+### BREAKING
+
+- **스킬 3종 제거 — 9 → 6종**(사용자 결정 2026-10-14 — 스킬 최소화): `ground-check`(1차 출처 강제 검증) · `investigate`(경쟁 가설 원인 조사) · `market-scan`(시장조사 보고서).
+  딸린 에이전트 `ground-verifier`(ground-check 검증 라운드 전용)·`deep-researcher`(investigate·market-scan 조사 팬아웃 전용)도 함께 지웠다.
+  **대체 경로는 "Claude 에게 바로 요청"** 이다(웹 검색·열람으로 근거를 붙여 달라고 하면 된다). 코드는 git 이력에 남아 있다.
+  남은 스킬: brain-audit·brain-build·brain-fixture·brain-ingest·brain-scribe·meeting-reliability, 에이전트: brain-auditor·meeting-reliability-worker.
+- 팩 description·keywords 에서 「1차 출처 강제 인용·경쟁 가설 반증·시장조사」 광고를 뺐다(marketplace 포함).
+
+### Changed
+
+- `meeting-reliability` 0.1.6 — 서술형 정리는 `itda-doc:draft-post` 대신 Claude 에게 바로 작성 요청(1차 제거).
+
 ## [1.1.0] - 2026-10-01
 
 > `market-scan` 의 다중 엔진 수집(`itda-web:web-search` 선택 시)은 **itda-hyve 0.10.4 이상**이 필요하다. 내장 WebSearch 만 쓰는 흐름은 그대로다.

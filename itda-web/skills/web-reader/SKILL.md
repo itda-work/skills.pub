@@ -11,7 +11,7 @@ allowed-tools: "mcp__remote-devices__itda-hyve__accounts_list, mcp__remote-devic
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
-  version: "9.0.0"
+  version: "9.0.1"
   created_at: "2026-03-18"
   updated_at: "2026-10-11"
   tags: "web, http, html, extraction, korean, fetch, markdown, encoding, euc-kr, cp949, static, records, rss, keyless"
@@ -137,7 +137,7 @@ Aside(`itda-web:aside-browser-mcp`, macOS), 없으면 Claude in Chrome 등 연�
 | `blocked` | 로그인·봇 차단·챌린지 화면(401·403·407 포함) | 브라우저 경로를 안내한다. 사이트를 "도달 불가" 로 단정하지 않는다 |
 | `js_rendered` | 스크립트가 그리는 빈 셸 | 브라우저 경로 |
 | `extract_failed` | 본문이 없다(스크립트로 곧바로 이동·frame 셸·0단어). message 에 옮겨 갈 주소가 있을 수 있다 | message 에 주소(괄호 안 `https://…`)가 있으면 **그 주소 그대로 한 번** `web_read`(실측: 네이버 블로그 데스크톱 주소 → message 의 `PostView.naver?…` 에서 본문 662단어). 없거나 또 실패하면 브라우저 경로, 또는 사용자에게 본문 영역을 물어 `selector` |
-| `not_html` | PDF·이미지·JSON·오피스 파일 | 웹 페이지가 아니다. PDF 는 `itda-doc:pdf-context-refinery`, 한글 문서는 `itda-doc:hwpx` 로 — 파일은 사용자가 내려받아 넘긴다 |
+| `not_html` | PDF·이미지·JSON·오피스 파일 | 웹 페이지가 아니다. PDF 는 Claude 기본 PDF 읽기(`Read` 도구·공식 `pdf` 스킬), 한글 문서는 `itda-doc:hwpx` 로 — 파일은 사용자가 내려받아 넘긴다 |
 | `not_found` | `selector` 에 맞는 요소가 없다 | selector 를 빼고 다시, 또는 사용자에게 확인 |
 | `http_status` | 2xx 아님(404·410·429·5xx 등) | 404·410 은 URL 확인, 429·5xx 는 잠시 뒤 |
 | `private_destination` | 사설·루프백·링크로컬 목적지 — 요청은 나가지 않았다 | 아래 "사설 목적지로 막혔을 때" |
@@ -165,4 +165,4 @@ Aside(`itda-web:aside-browser-mcp`, macOS), 없으면 Claude in Chrome 등 연�
 |---|---|
 | 키워드로 URL 찾기 | itda-web:web-search |
 | JavaScript 렌더·로그인 세션·봇 차단 페이지 | 실제 브라우저 경로 — itda-web:aside-browser-mcp(Aside), 없으면 Claude in Chrome 등 |
-| PDF·한글 문서 파일 | itda-doc:pdf-context-refinery · itda-doc:hwpx |
+| PDF·한글 문서 파일 | PDF 는 Claude 기본 PDF 읽기 · 한글 문서는 itda-doc:hwpx |

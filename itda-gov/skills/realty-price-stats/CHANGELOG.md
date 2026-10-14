@@ -1,5 +1,11 @@
 # Changelog — itda-realty/realty-price-stats
 
+## [0.12.2] — 2026-10-14
+
+### Changed
+
+- [책임 경계]·「쓰지 않을 때」 표에서 `itda-gov:realty-supply`·`realty-jeonse-gap`·`realty-meta` 지목을 지웠다 — 세 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화). 공급·청약·전세가율은 "Claude 에게 바로 요청" 으로 안내한다.
+
 ## [0.12.1] — 2026-10-01 (itda-work/skills#46)
 
 ### Changed

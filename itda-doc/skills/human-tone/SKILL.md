@@ -4,7 +4,7 @@ description: >
   이미 작성된 한국어 사무 글(보고서·메일·기획서·공지)에서 AI 흔적을 걷어내는 후처리 스킬입니다.
   "이 보고서 AI 같아", "메일 너무 딱딱해", "사람이 쓴 것처럼 고쳐줘"처럼 말하면 됩니다.
   숫자·고유명사·서명은 잠금 가드로 보존합니다.
-  [책임 경계] 본 스킬은 완성된 글의 후처리 검수 전담(AI 흔적 사전 가드 정본) — itda-doc:draft-post 는 처음부터 초안을 쓰는 생성 단계이며, 같은 글에 두 스킬을 겹쳐 적용하지 않습니다.
+  [책임 경계] 본 스킬은 완성된 글의 후처리 검수 전담(AI 흔적 사전 가드 정본) — 처음부터 쓰는 초안은 Claude 에게 바로 요청합니다.
 license: Apache-2.0
 compatibility: "Claude Code & Cowork"
 user-invocable: true
@@ -12,7 +12,7 @@ allowed-tools: Read, Write, Edit, Bash, mcp__workspace__bash
 argument-hint: "<text-or-file> [--scene report|email|proposal|notice] [--register formal|semi|casual] [--strict] [--diff]"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "2.1.4"
+  version: "2.1.5"
   category: "writing"
   created_at: "2026-05-11"
   updated_at: "2026-10-06"
@@ -51,13 +51,13 @@ ref-im-not-ai에서 차용. 직장인 도메인은 오히려 더 엄격하게 �
 
 | 상황 | 대신 쓸 스킬 |
 |---|---|
-| 처음부터 글을 써야 할 때 | itda-doc:draft-post |
-| 제품 카피·브랜드 슬로건(의도된 기교) | itda-doc:draft-post `--style copy` |
+| 처음부터 글을 써야 할 때 | Claude 에게 바로 작성 요청 |
+| 제품 카피·브랜드 슬로건(의도된 기교) | Claude 에게 바로 작성 요청 |
 | 코드·JSON/CSV·로그·표·통계 | 적용 제외 — 아래 Do-NOT List |
-| 주장·수치의 출처가 맞는지 검증 | itda-research:ground-check |
+| 주장·수치의 출처가 맞는지 검증 | Claude 에게 바로 요청 |
 | 영업기밀·개인정보 마스킹 | itda-data:biz-redact |
 
-**가드 정본**: AI 흔적 사전은 본 스킬 `references/ai-tell-taxonomy.md` 가 정본이다(상류 G² 반증 반영, #1619). `draft-post` 의 `references/_anti-ai-korean.md` 는 이를 따르는 생성 단계 사전 가드 — 정본이 바뀌면 그쪽을 맞춘다(#1620).
+**가드 정본**: AI 흔적 사전은 본 스킬 `references/ai-tell-taxonomy.md` 가 정본이다(상류 G² 반증 반영, #1619).
 
 ## Arguments
 
@@ -218,21 +218,20 @@ python3 "$SKILL_DIR/scripts/verify_gates.py" --before <input.txt> --after _works
 - 코드 (프로그래밍 언어 소스)
 - JSON/YAML/CSV 데이터, 로그
 - 차트·표·통계 (시각화 자료)
-- 제품 카피·브랜드 슬로건 (의도된 기교를 AI 패턴으로 오인할 위험 — `itda-draft-post --style copy` 사용)
+- 제품 카피·브랜드 슬로건 (의도된 기교를 AI 패턴으로 오인할 위험)
 - 시·소설·창작물
 
 ## 권장 체인
 
 ```
-draft-post → human-tone               (사내 초안 → 송부 직전 검수)
+[Claude 초안] → human-tone            (사내 초안 → 송부 직전 검수)
 [외부 AI 초안] → human-tone           (Cowork·ChatGPT 결과물 후처리)
 ```
 
-`draft-post`와 같은 글에 겹쳐 적용하지 않습니다 — 생성 단계 가드(draft-post)와 후처리 검수(본 스킬, 가드 정본)의 역할 분담이며, 두 번 돌리면 의도된 직장인 화법(예: 결재 표현)이 과도하게 평준화됩니다.
+같은 글에 본 스킬을 두 번 돌리지 않습니다 — 의도된 직장인 화법(예: 결재 표현)이 과도하게 평준화됩니다.
 
 ## 관련 스킬
 
-- `itda-doc:draft-post` — 초안 생성 단계 가드(사전 정본은 본 스킬)
 - `itda-work:email` — 검수된 메일을 SMTP로 송부
 
 ## 차기 확장

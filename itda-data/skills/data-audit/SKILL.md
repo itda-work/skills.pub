@@ -11,7 +11,7 @@ allowed-tools: Read, Bash, Glob, Grep, mcp__workspace__bash
 argument-hint: "[xlsx 경로 또는 감사 요청]"
 metadata:
   author: "Chinseok"
-  version: "0.4.1"
+  version: "0.4.2"
   category: "data-tidy"
   status: "experimental"
   recommended: false
@@ -26,7 +26,7 @@ metadata:
 복붙하다 수식이 값으로 뭉개진 곳을 눈으로는 못 찾는다. 보내기 직전 합계가 미묘하게 안 맞는데
 어디서 틀어졌는지 몰라 처음부터 다시 훑는 — 그 반복을 없애는 "수식 양심" 스킬.
 
-itda-data 데이터 양심 vertical(정리 `data-prep` · 질문 `data-ask` · 감사 `data-audit`)의 감사 담당.
+itda-data 데이터 양심 vertical(수식감사 `data-audit` · 수치검수 `data-verify`)의 감사 담당.
 (#952, Claude for Excel `audit-xls` 이식 — 수식·데이터 레벨. 재무모델 무결성은 범위 외.)
 
 ---

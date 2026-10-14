@@ -1,5 +1,12 @@
 # Changelog — itda-realty/realty-deals
 
+## [0.13.2] — 2026-10-14
+
+### Changed
+
+- [책임 경계]·「쓰지 않을 때」 표에서 `itda-gov:realty-supply`·`realty-jeonse-gap` 지목을 지웠다 — 두 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화).
+- 시험이 `realty-jeonse-gap/tests/fixtures/` 의 실측 픽스처(`live_apt_trade_11680_202608_p1.xml`, 강남구 2026-08 매매 95건)를 빌려 쓰고 있어 이 스킬의 `tests/fixtures/` 로 옮겼다(바이트 그대로).
+
 ## [0.13.1] — 2026-10-01 (itda-work/skills#46)
 
 ### Changed

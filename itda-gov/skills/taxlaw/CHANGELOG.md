@@ -1,5 +1,11 @@
 # Changelog — taxlaw
 
+## [0.2.1] — 2026-10-14
+
+### Changed
+
+- 「쓰지 않을 때」 표에서 `itda-research:ground-check` 행을 지웠다 — 그 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화).
+
 ## [0.2.0] — 2026-10-01 (itda-work/skills#46)
 
 > ⚠️ **배포 차단** — itda-hyve 0.10.4(itda-work/itda-hyve#31 — `final_url`·저장 경로에 키가 평문으로 남던 결함 수정) 공개 **뒤에** 배포한다.

@@ -23,16 +23,16 @@ API 키는 itda-hyve 시크릿으로만 들어간다 — 스킬은 키를 프로
 
 | 서비스 | 파일 | 키(시크릿 이름) | 사용 스킬 | Last Verified |
 |---|---|---|---|---|
-| 네이버 오픈API | [naver-openapi.md](naver-openapi.md) | `NAVER_CLIENT_ID` `NAVER_CLIENT_SECRET` | web-search · eatery-trend (blog-seo 는 배포 보류) | 2026-06-10* |
-| 네이버 검색광고 API | [naver-searchad.md](naver-searchad.md) | `NAVER_SEARCHAD_ACCESS_KEY` `NAVER_SEARCHAD_SECRET_KEY` `NAVER_SEARCHAD_CUSTOMER_ID` | 없음 — eatery-trend 월검색량·blog-seo 가 itda-hyve 서명 기능(itda-hyve#34) 대기 | 2026-06-10* |
-| 공공데이터포털 | [data-go-kr.md](data-go-kr.md) | `KO_DATA_API_KEY` | realestate · g2b · realty-jeonse-gap · realty-supply · realty-deals · realty-price-stats · market-scan | 2026-06-10* |
-| 네이버 앱 비밀번호 | [naver-app-password.md](naver-app-password.md) | 시크릿 아님 — itda-hyve 계정 화면에 등록 | email · calendar · morning-brief · time-audit | 2026-06-10* |
-| iCloud 앱 전용 비밀번호 | [icloud-app-password.md](icloud-app-password.md) | 시크릿 아님 — itda-hyve 계정 화면에 등록 | email · calendar · morning-brief · time-audit | 2026-06-10* |
-| KOSIS 국가통계포털 | [kosis.md](kosis.md) | `KOSIS_API_KEY` | kosis · realty-supply · market-scan | 2026-06-10* |
-| 한국은행 ECOS | [ecos.md](ecos.md) | `ECOS_API_KEY` | ecos · market-scan | 2026-06-10* |
-| 금융감독원 DART | [dart.md](dart.md) | `DART_API_KEY` | dart · market-scan | 2026-06-10* |
+| 네이버 오픈API | [naver-openapi.md](naver-openapi.md) | `NAVER_CLIENT_ID` `NAVER_CLIENT_SECRET` | web-search · eatery-trend | 2026-06-10* |
+| 네이버 검색광고 API | [naver-searchad.md](naver-searchad.md) | `NAVER_SEARCHAD_ACCESS_KEY` `NAVER_SEARCHAD_SECRET_KEY` `NAVER_SEARCHAD_CUSTOMER_ID` | 없음 — eatery-trend 월검색량이 itda-hyve 서명 기능(itda-hyve#34) 대기 | 2026-06-10* |
+| 공공데이터포털 | [data-go-kr.md](data-go-kr.md) | `KO_DATA_API_KEY` | realestate · g2b · realty-deals · realty-price-stats | 2026-06-10* |
+| 네이버 앱 비밀번호 | [naver-app-password.md](naver-app-password.md) | 시크릿 아님 — itda-hyve 계정 화면에 등록 | email · calendar · morning-brief | 2026-06-10* |
+| iCloud 앱 전용 비밀번호 | [icloud-app-password.md](icloud-app-password.md) | 시크릿 아님 — itda-hyve 계정 화면에 등록 | email · calendar · morning-brief | 2026-06-10* |
+| KOSIS 국가통계포털 | [kosis.md](kosis.md) | `KOSIS_API_KEY` | kosis | 2026-06-10* |
+| 한국은행 ECOS | [ecos.md](ecos.md) | `ECOS_API_KEY` | ecos | 2026-06-10* |
+| 금융감독원 DART | [dart.md](dart.md) | `DART_API_KEY` | dart | 2026-06-10* |
 
-`*` 기존 운영 문서(blog-seo `references/naver-api.md`, 각 스킬 GUIDE)에서 이전·통합한 시점.
+`*` 기존 운영 문서(옛 blog-seo `references/naver-api.md` — 2026-10-14 스킬 제거, 각 스킬 GUIDE)에서 이전·통합한 시점.
 실제 발급 화면 재검증 시 날짜를 갱신하고 `*`를 제거한다.
 
 ### 3차 후보 (SPEC-CREDENTIALS-GUIDE-001 REQ-006, 보류 가능)

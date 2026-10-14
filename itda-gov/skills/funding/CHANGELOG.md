@@ -1,5 +1,12 @@
 # Changelog — itda-gov/funding
 
+## [3.0.1] — 2026-10-14
+
+### Changed
+
+- PDF 첨부 변환을 `itda-doc:pdf-context-refinery` 대신 Claude 기본 PDF 읽기(`Read` 도구, 있으면 공식 `pdf` 스킬)로 한다 — 그 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화). 스캔 쪽은 이미지로 읽고 못 읽은 쪽을 "미검증 쪽: p.N" 으로 남기는 규칙은 그대로다.
+  크로스플러그인 미설치 계약은 `hwpx`(HWP 첨부)만 남았다. GUIDE 의 "첨부 미변환" 안내도 맞췄다.
+
 ## [3.0.0] — 2026-09-30 (itda-work/skills#45·#46)
 
 > ⚠️ **배포 차단** — itda-hyve 0.10.4(itda-work/itda-hyve#31 — `final_url`·저장 경로에 키가 평문으로 남던 결함 수정) 공개 **뒤에** 배포한다.

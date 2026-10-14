@@ -16,7 +16,7 @@ metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
   status: "active"
-  version: "0.2.0"
+  version: "0.2.1"
   created_at: "2026-09-01"
   updated_at: "2026-10-01"
   tags: "tax law, NTS, statute, tax ruling, precedent, tax tribunal, Korea tax"
@@ -244,7 +244,6 @@ python3 "$SKILL_DIR/scripts/search_taxlaw.py" parse detail --domain precedent --
 | 위하고·홈택스 로그인·장부·분개장 수집 | 세무 포털 자동화는 현재 지원 스킬 없음 |
 | 세법 밖 일반 법령·판례 | 미지원(국세법령정보시스템 범위 밖) |
 | 대량 수집·크롤링 | 미지원 — 조사 목적 조회만 |
-| 답변 근거의 출처 검증 | itda-research:ground-check |
 
 ## 부록: Claude Code 확장 (선택)
 

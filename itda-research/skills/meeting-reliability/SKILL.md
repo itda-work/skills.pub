@@ -11,7 +11,7 @@ allowed-tools: Read, Bash, Write, mcp__workspace__bash
 argument-hint: "[회의 녹취 파일 경로 또는 텍스트]"
 metadata:
   author: "Chinseok"
-  version: "0.1.5"
+  version: "0.1.6"
   category: "audit"
   status: "alpha"
   recommended: false
@@ -32,7 +32,7 @@ metadata:
 
 - "이 녹취/회의록에서 결정사항·담당·기한을 표로" — 단, **신뢰성**(근거·추정 차단)이 필요할 때
 - 자동 받아쓰기(raw)처럼 잡담·과정값·발언자≠담당 혼선이 섞인 입력일수록 가치가 크다
-- 단순 서술 정리·보고서화는 `itda-doc:draft-post`(작성)가 담당 — 본 스킬은 검수
+- 단순 서술 정리·보고서화는 Claude 에게 바로 작성을 요청한다 — 본 스킬은 검수
 
 ## 코어 5규칙 (검수 원칙)
 
@@ -140,7 +140,7 @@ python3 "$SKILL_DIR/scripts/render_html.py" result.json transcript.md meeting_re
 ## 경계 / 비범위
 
 - 음성→텍스트(STT): 범위 밖(받아쓰기 스킬 없음). 입력은 텍스트.
-- 서술형 회의록 작성·보고서화: `itda-doc:draft-post`. 본 스킬은 검수(변환+verify).
+- 서술형 회의록 작성·보고서화: Claude 에게 바로 작성 요청. 본 스킬은 검수(변환+verify).
 - 전표·계약 검수, 통제 테스트, 감사 컨설팅: 후속(SPEC-AUDIT-RELIABILITY-002+). 코어 5규칙은 재사용, 어댑터만 교체.
 
 ## 골든 회귀

@@ -4,7 +4,7 @@ description: >
   기존 PPTX 파일의 용량을 줄이는 스킬입니다. 슬라이드에 붙인 스크린샷·사진 PNG 를 해상도 그대로 JPEG 로 재인코딩하고
   텍스트·발표자 노트·그림 수가 그대로인지 자동 검증합니다(실측 62.7MB→12.2MB). 원본 덮어쓰기 전 백업 여부를 반드시 확인합니다.
   "이 ppt 용량 줄여줘", "발표자료가 커서 메일로 못 보내", "pptx 압축해줘", "이 덱 왜 이렇게 커?"처럼 말하면 됩니다.
-  [책임 경계] 본 스킬은 기존 pptx 용량 축소 전담 — itda-doc:imagekit 은 낱개 이미지.
+  [책임 경계] 본 스킬은 기존 pptx 용량 축소 전담 — 낱개 이미지 파일의 크기 조정은 다루지 않습니다.
 license: Apache-2.0
 compatibility: "Claude Code & Cowork. Python 3.10+ · Pillow. Office 불필요(macOS/Linux/Windows)."
 user-invocable: true
@@ -15,7 +15,7 @@ metadata:
   category: "document"
   status: "beta"
   recommended: true
-  version: "0.2.3"
+  version: "0.2.4"
   created_at: "2026-09-05"
   updated_at: "2026-09-30"
   tags: "pptx, powerpoint, shrink, compress, reduce, size, image, jpeg, png, screenshot, deck, slides, presentation, attachment"
@@ -155,7 +155,7 @@ JSON 의 `before_mb`·`after_mb`·`reduction_pct`·`converted`·`downsampled`·`
 
 | 상황 | 대신 쓸 스킬 |
 |---|---|
-| 낱개 이미지 파일(png·jpg) 용량·크기 조정 | itda-doc:imagekit |
+| 낱개 이미지 파일(png·jpg) 용량·크기 조정 | Claude 에게 바로 요청 |
 | 발표자료를 새로 만들기 | 비지원 — 이 저장소에 해당 스킬이 없다 |
 | 두 버전의 차이를 보기 | 비지원 — 이 저장소에 해당 스킬이 없다 |
 | 슬라이드 내용·서식 편집, 애니메이션·노트 조작 | 비지원 — PowerPoint 에서 직접 편집 |

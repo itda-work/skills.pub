@@ -17,7 +17,7 @@ argument-hint: "<hwp/hwpx 파일 경로 또는 보고서 마크다운 경로>"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   tags: "hwp, hwpx, document, convert, markdown, html, template, fill, report, government, profile"
-  version: "1.4.4"
+  version: "1.4.5"
   category: "document"
   created_at: "2026-07-28"
   updated_at: "2026-10-02"

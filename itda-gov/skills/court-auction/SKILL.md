@@ -14,7 +14,7 @@ argument-hint: "서울중앙지법 오늘 경매 / 2024타경100001 사건 / 강
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
-  version: "0.2.0"
+  version: "0.2.1"
   status: "experimental"
   created_at: "2026-06-05"
   updated_at: "2026-10-01"
@@ -315,5 +315,3 @@ python3 "$SKILL_DIR/scripts/main.py" collect --run-dir "$R" --input "$R/court-au
 |---|---|
 | 아파트·연립 실거래가(경매가 아닌 매매·전월세) | `itda-gov:realty-deals` |
 | 지역 아파트 가격 지수·통계 추이 | `itda-gov:realty-price-stats` |
-| 전세가율·갭 분석 | `itda-gov:realty-jeonse-gap` |
-| 분양·입주 물량 | `itda-gov:realty-supply` |

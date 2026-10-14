@@ -2,7 +2,7 @@
 
 - 공식 사이트: <https://searchad.naver.com> · 관리 시스템 <https://manage.searchad.naver.com>
 - 발급 키: `NAVER_SEARCHAD_ACCESS_KEY` · `NAVER_SEARCHAD_SECRET_KEY` · `NAVER_SEARCHAD_CUSTOMER_ID`
-- Last Verified: 2026-06-10 (blog-seo 운영 문서에서 이전 — 실화면 재검증 시 갱신)
+- Last Verified: 2026-06-10 (옛 blog-seo 운영 문서에서 이전 — 그 스킬은 2026-10-14 제거, 실화면 재검증 시 갱신)
 
 ## 1. 가입 조건
 

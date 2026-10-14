@@ -1,5 +1,20 @@
 # Changelog — itda-data
 
+## [2.0.0] - 2026-10-14
+
+### BREAKING
+
+- **스킬 7종 제거 — 12 → 5종**(사용자 결정 2026-10-14 — 스킬 최소화): `aspect-sentiment`(측면 감정) · `cs-intent`(상담 인텐트) · `iaa-builder`(라벨 일치도) · `data-ask`(데이터 질의) ·
+  `data-compass`(분석 내비게이터) · `data-prep`(정돈) · `synthetic-data`(가상 데이터). 딸린 에이전트 `cs-batch-extractor`(aspect-sentiment·cs-intent 배치 추출)·
+  `data-profiler`(data-compass 프로파일링)도 함께 지웠다. **대체 경로는 "Claude 에게 바로 요청"** 이다. 코드는 git 이력에 남아 있다.
+  남은 스킬: biz-redact·data-audit·data-verify·pii-redact·xlsx-recalc, 에이전트: data-auditor.
+- 팩 description·keywords 에서 「CS 상담 텍스트 분석(감정·인텐트·일치도)」 광고와 `분석`·`absa`·`cs` 키워드를 뺐다(marketplace 포함).
+
+### Changed
+
+- 지운 스킬 지목 정리: `biz-redact` 0.3.5([책임 경계]의 synthetic-data) · `data-audit` 0.4.2 · `data-verify` 0.4.2(vertical 목록의 data-prep·data-ask) · `pii-redact` 0.2.2(CS 분석 입구 안내) ·
+  에이전트 `data-auditor`(감사 대상에서 data-ask·data-prep). `biz-redact` 의 `safe_archive.py` 머리말을 두 곳 사본 기준으로 고쳤다(hwpx 리더와 바이트 동일 유지).
+
 ## [1.2.1] - 2026-10-01
 
 ### Fixed

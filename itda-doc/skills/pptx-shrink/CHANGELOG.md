@@ -1,5 +1,11 @@
 # Changelog — itda-work/pptx-shrink
 
+## [0.2.4] — 2026-10-14
+
+### Changed
+
+- [책임 경계]·「쓰지 않을 때」 표에서 `itda-doc:imagekit` 지목을 지웠다 — 그 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화). 낱개 이미지 조정은 "Claude 에게 바로 요청" 으로 안내한다.
+
 ## [0.2.3] — 2026-09-30 (itda-work/skills#47)
 
 ### Fixed

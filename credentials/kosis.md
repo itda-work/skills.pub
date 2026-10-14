@@ -32,5 +32,3 @@
 ## 5. 이 키를 쓰는 스킬
 
 - `itda-gov/kosis` — 국가통계 조회
-- `itda-gov/realty-supply` — 주택 공급 통계
-- `itda-research/market-scan` — 시장 규모·통계 보강 (없어도 웹 대체로 동작)

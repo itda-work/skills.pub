@@ -11,7 +11,7 @@ allowed-tools: Read, Bash, Write, Glob, Grep, mcp__workspace__bash
 argument-hint: "[비식별화할 텍스트 파일 또는 붙여넣은 CS 로그]"
 metadata:
   author: "Chinseok"
-  version: "0.2.1"
+  version: "0.2.2"
   category: "data-analysis"
   status: "experimental"
   created_at: "2026-06-01"
@@ -22,7 +22,7 @@ metadata:
 # pii-redact
 
 > raw CS 로그를 Claude나 외부에 붙여넣는 순간 개인정보가 유출됩니다. 이 스킬은 "익명화한다"는 **사람 디스플린**을 **코드 강제력**으로 바꿉니다.
-> `aspect-sentiment`·`cs-intent` 등 모든 CS 분석의 **안전 입구 전처리**입니다 — 분석 전에 PII를 먼저 가립니다.
+> CS 로그 분석의 **안전 입구 전처리**입니다 — 분석 전에 PII를 먼저 가립니다.
 
 한국 CS 텍스트의 PII를 **결정론적으로 검출·마스킹**합니다. 마스킹은 `scripts/redact.py`가 정규식/룰로 수행합니다(Claude의 판단이 아니라 실제 룰 연산).
 
@@ -84,7 +84,7 @@ py -3 "$env:SKILL_DIR\scripts\redact.py" <로그.txt>
 - 사용자에게 `by_type`(유형별 건수)·`low_confidence_skipped`(보류 항목)를 해석해 전달한다.
 
 ### B. 다른 CS 스킬의 입구 전처리로 쓴다
-`aspect-sentiment`·`cs-intent`에 raw 로그를 넣기 전 이 스킬을 **먼저** 통과시킨다.
+raw 로그를 분석(Claude 에게 요청하든 다른 도구든)에 넣기 전 이 스킬을 **먼저** 통과시킨다.
 ```bash
 python3 "$SKILL_DIR/scripts/redact.py" raw_log.txt --text-only > redacted.txt
 # 이후 redacted.txt 를 분석 스킬 입력으로 사용

@@ -1,5 +1,12 @@
 # Changelog — itda-web-collect
 
+## [4.0.1] - 2026-10-14
+
+### Changed
+
+- `web-reader` 9.0.1 — PDF 안내를 `itda-doc:pdf-context-refinery` 대신 Claude 기본 PDF 읽기로 바꿨다. 그 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화).
+- `web-search` 0.3.3 — 「쓰지 않을 때」·범위 밖·핸드오프 표에서 `itda-research:market-scan`·`ground-check`·`investigate` 지목을 지웠다(같은 날 3차 제거). market-scan 과의 핸드오프 계약 시험도 지웠다.
+
 ## [4.0.0] - 2026-10-11
 
 > 요구: **itda-hyve 의 `web_read`**(web-reader) — `accounts_list` 의 `server_features` 에 `web_read` 가 있는 판. 그 설치본이 공개된 **뒤에** 이 판을 배포한다(공개 최신 0.13.0 에는 없다).

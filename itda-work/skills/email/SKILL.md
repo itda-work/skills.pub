@@ -12,7 +12,7 @@ metadata:
   author: "스킬.잇다 <dev@itda.work>"
   category: "domain"
   recommended: true
-  version: "0.38.3"
+  version: "0.38.4"
   created_at: "2026-03-18"
   updated_at: "2026-10-01"
   tags: "email, smtp, imap, naver, gmail, google, daum, kakao, icloud, multi-account, itda-hyve, mailbox, search, unread, flagged, attachments, save-attachment, attachment-summary, html, reply, in-reply-to, phishing, send-confirmation"
@@ -186,8 +186,8 @@ itda-hyve 가 강제한다. 1차 호출은 **보내지 않는다.**
 - XLSX·CSV 는 시트·표로, DOCX 는 문서 텍스트로 읽는다. 샌드박스에 해당 라이브러리가 있으면 그것을 쓴다.
 - **HWP·HWPX(한글)** 는 `itda-doc:hwpx` 스킬의 읽기 경로로 마크다운으로 바꿔 읽는다 — 병합·중첩 표와 글상자를 살린다.
   직접 XML 을 긁으면 표가 뭉개지고 `.hwp`(바이너리)는 아예 못 읽는다.
-- **PDF** 는 텍스트층부터 읽되, 글자가 거의 안 나오는 쪽(스캔)이 있으면 `itda-doc:pdf-context-refinery` 의 쪽별 판정으로 그 쪽만 이미지로 읽는다.
-- 그 스킬이 설치돼 있지 않으면 **읽은 척하지 않는다** — "이 첨부는 한글(HWP) 문서라 itda-doc 플러그인이 있어야 내용을 읽을 수 있습니다" 처럼
+- **PDF** 는 Claude 기본 PDF 읽기(`Read` 도구, 있으면 공식 `pdf` 스킬)로 텍스트층부터 읽되, 글자가 거의 안 나오는 쪽(스캔)이 있으면 그 쪽만 이미지로 읽는다.
+- `itda-doc:hwpx` 가 설치돼 있지 않으면 **읽은 척하지 않는다** — "이 첨부는 한글(HWP) 문서라 itda-doc 플러그인이 있어야 내용을 읽을 수 있습니다" 처럼
   무엇을 못 읽었는지 요약에 적는다. 스캔이라 못 읽은 PDF 쪽도 "p.N 은 스캔이라 읽지 못함" 으로 남긴다.
 
 ### 거부·경고를 사용자에게 알린다
@@ -241,7 +241,6 @@ itda-hyve 가 강제한다. 1차 호출은 **보내지 않는다.**
 |---|---|
 | "아침 브리핑 보여줘", 오늘 일정과 미회신 요청을 한 장 HTML 로 | itda-work:morning-brief |
 | 일정 조회·추가·빈 시간 찾기 | itda-work:calendar |
-| 마크다운 보고서를 HTML 문서로 | itda-doc:html-report |
 
 ## Trigger Keywords
 

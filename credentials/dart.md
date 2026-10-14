@@ -33,4 +33,3 @@ DART 조회는 itda-hyve(사용자 PC 에서 도는 도우미 앱)가 대신 받
 ## 5. 이 키를 쓰는 스킬
 
 - `itda-gov/dart` — 기업 공시·재무제표 조회
-- `itda-research/market-scan` — 기업 재무 보강 (없어도 웹 대체로 동작)

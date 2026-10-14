@@ -6,7 +6,7 @@ description: >
   "이 견적서 마스킹해서 검토해줘", "거래처명 가리고 원가절감안 분석해줘",
   "AI가 돌려준 검토서 원래 이름으로 복원해줘", "이 한글(hwpx) 파일 거래처명 가려서 줘"처럼 말하면 됩니다.
   텍스트와 한글(HWPX)을 서식 그대로 가리고, 용어집으로 대상을 통제하며 잔존 0 검증과 감사 기록을 남깁니다.
-  [책임 경계] 본 스킬은 용어집 기반 영업기밀 마스킹·복원 전담 — itda-data:pii-redact 는 정형 PII 마스킹, itda-data:synthetic-data 는 가상 데이터 생성.
+  [책임 경계] 본 스킬은 용어집 기반 영업기밀 마스킹·복원 전담 — itda-data:pii-redact 는 정형 PII 마스킹.
 license: MIT
 compatibility: "Python 3.10+"
 user-invocable: true
@@ -14,7 +14,7 @@ allowed-tools: Read, Bash, Write, Glob, mcp__workspace__bash
 argument-hint: "<마스킹할 문서 파일 경로> [--glossary <용어집.json>]"
 metadata:
   author: "Chinseok"
-  version: "0.3.4"
+  version: "0.3.5"
   category: "data-analysis"
   status: "experimental"
   created_at: "2026-07-16"

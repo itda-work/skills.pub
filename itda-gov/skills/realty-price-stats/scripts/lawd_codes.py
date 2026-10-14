@@ -19,7 +19,7 @@ from __future__ import annotations
 # ---------------------------------------------------------------------------
 
 # @MX:ANCHOR: [AUTO] 지역명 → 법정동코드 변환 계약 -- 전 국토부 엔드포인트 공용.
-# @MX:REASON: fan_in >= 3 (realty-deals, realty-jeonse-gap, realty-price-stats 등);
+# @MX:REASON: fan_in 2 (realty-deals, realty-price-stats — 2026-10-14 realty-jeonse-gap 제거);
 #             키 스키마 변경 시 모든 실거래가 API 호출이 잘못된 지역으로 질의됨.
 LAWD_CD_MAP: dict[str, str] = {
     # === 서울특별시 (25개 자치구) ===
@@ -342,7 +342,7 @@ LAWD_CD_MAP: dict[str, str] = {
 
 
 # @MX:ANCHOR: [AUTO] 지역명 → 법정동코드 변환 진입점 -- 전 국토부 부동산 엔드포인트 공용.
-# @MX:REASON: fan_in >= 3 (realty-deals, realty-jeonse-gap, realty-price-stats 등);
+# @MX:REASON: fan_in 2 (realty-deals, realty-price-stats — 2026-10-14 realty-jeonse-gap 제거);
 #             지역명→코드 변환 계약. 잘못된 코드는 API에서 빈 결과를 반환해 무음 데이터 손실 발생.
 def resolve_lawd_cd(region: str) -> str:
     """한글 지역명으로 법정동코드(LAWD_CD) 5자리를 반환한다.

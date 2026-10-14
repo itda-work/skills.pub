@@ -2,7 +2,7 @@
 
 - 공식 사이트: <https://developers.naver.com> (네이버 개발자센터)
 - 발급 키: `NAVER_CLIENT_ID` · `NAVER_CLIENT_SECRET`
-- Last Verified: 2026-06-10 (blog-seo 운영 문서에서 이전 — 실화면 재검증 시 갱신)
+- Last Verified: 2026-06-10 (옛 blog-seo 운영 문서에서 이전 — 그 스킬은 2026-10-14 제거, 실화면 재검증 시 갱신)
 
 > **⚠️ NAVER API HUB 이관 안내 (약관 시행 2026-07-31)**
 >

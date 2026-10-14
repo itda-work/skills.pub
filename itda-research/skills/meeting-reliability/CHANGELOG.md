@@ -1,5 +1,11 @@
 # Changelog — meeting-reliability
 
+## [0.1.6] — 2026-10-14
+
+### Changed
+
+- 서술형 정리·보고서화 안내를 `itda-doc:draft-post` 에서 "Claude 에게 바로 작성 요청" 으로 바꿨다 — 그 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화)(SKILL·GUIDE).
+
 ## [0.1.5] — 2026-09-30 (itda-work/skills#47)
 
 ### Fixed

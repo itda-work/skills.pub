@@ -2,6 +2,8 @@
 
 > 2026-09-05 재정비(#1648): 구 `itda-gov` 를 개명하고 공공기관 게시판·통계(구 itda-class-igm 의 bai-notice·customs-notice·fss-docs·airport-airline-stats)와 국세법령정보 `taxlaw`(구 itda-tax) 를 편입했습니다.
 
+> **제거(2026-10-14, 사용자 결정 — 스킬 최소화)**: `realty-meta`·`realty-jeonse-gap`·`realty-supply`·`customs-notice`·`fss-docs` 는 저장소에서 지웠습니다(git 이력에는 남아 있음). 공급·청약·전세가율 분석과 기관 게시판 확인은 Claude 에게 바로 요청하세요.
+
 한국 정부 공공데이터 API를 활용한 Claude Cowork 스킬 모음입니다.
 전자공시, 국가통계, 경제지표, 부동산 실거래가, 정부 지원사업, 나라장터 입찰공고를 조회합니다.
 
@@ -9,20 +11,20 @@
 
 ## 시작 전: API 키/OC 먼저 발급하세요
 
-itda-gov 의 API 계열 스킬은 **사전 API 키(또는 OC) 발급이 필요**합니다. 먼저 아래 발급처에서 키를 받습니다. 스킬은 키를 환경변수나 `.env` 같은 파일로 읽지 않습니다(itda-work/skills#45·#46). `dart`·`ecos`·`g2b`·`kosis`·`realty-deals`·`realty-jeonse-gap`·`realty-price-stats`·`realty-supply`·`fuel-price` 는 itda-hyve 시크릿 탭에 등록한 키만 씁니다(스크립트는 네트워크를 쓰지 않고 `--input` 가공만 — itda-work/skills#46). `funding` 은 키가 필요 없습니다(3.0.0 — 공개 공고 페이지를 itda-hyve 로 받습니다).
+itda-gov 의 API 계열 스킬은 **사전 API 키(또는 OC) 발급이 필요**합니다. 먼저 아래 발급처에서 키를 받습니다. 스킬은 키를 환경변수나 `.env` 같은 파일로 읽지 않습니다(itda-work/skills#45·#46). `dart`·`ecos`·`g2b`·`kosis`·`realty-deals`·`realty-price-stats`·`fuel-price` 는 itda-hyve 시크릿 탭에 등록한 키만 씁니다(스크립트는 네트워크를 쓰지 않고 `--input` 가공만 — itda-work/skills#46). `funding` 은 키가 필요 없습니다(3.0.0 — 공개 공고 페이지를 itda-hyve 로 받습니다).
 
 | 키 이름(시크릿 탭) | 발급처 | 용도 |
 |---------|-------|------|
 | `DART_API_KEY` | https://opendart.fss.or.kr | 기업 재무/직원(dart — itda-hyve 시크릿 탭) |
-| `KOSIS_API_KEY` | https://kosis.kr/openapi/ | 국가 통계(kosis·realty-supply — itda-hyve 시크릿 탭) |
+| `KOSIS_API_KEY` | https://kosis.kr/openapi/ | 국가 통계(kosis — itda-hyve 시크릿 탭) |
 | `ECOS_API_KEY` | https://ecos.bok.or.kr/api/ | 경제 지표(ecos — itda-hyve 시크릿 탭) |
 | `RONE_API_KEY` | https://www.reb.or.kr/r-one/ (Open API → 인증키 발급) | 부동산 가격지수(realty-price-stats — itda-hyve 시크릿 탭) |
-| `KO_DATA_API_KEY` | https://www.data.go.kr | 실거래가, 나라장터, 청약 분양정보(realty-supply — 15098547 별도 활용신청, itda-hyve 0.10.4 전에 등록한 키는 허용 호스트에 `api.odcloud.kr` 추가), **주식시세(15094808 별도 활용신청 필요)** |
+| `KO_DATA_API_KEY` | https://www.data.go.kr | 실거래가, 나라장터, **주식시세(15094808 별도 활용신청 필요)** |
 | `OPINET_API_KEY` (선택) | https://www.opinet.co.kr/user/custapi/custApiInfo.do 「일반 API 이용 신청」 | 유가 — **기본 경로는 키 불요**(fuel-price — 선택 API 경로만 itda-hyve 시크릿 탭) |
 
 | 키를 넣는 곳 | 쓰는 스킬 |
 |---|---|
-| itda-hyve GUI 시크릿 탭(Cowork 등 — `http_request` 의 `{{secret:NAME}}`) | `dart`(`DART_API_KEY`)·`ecos`(`ECOS_API_KEY`)·`g2b`·`realty-deals`·`realty-jeonse-gap`(`KO_DATA_API_KEY`)·`kosis`(`KOSIS_API_KEY`)·`realty-supply`(`KOSIS_API_KEY`·`KO_DATA_API_KEY`)·`realty-price-stats`(`RONE_API_KEY`·`KO_DATA_API_KEY`)·`fuel-price`(`OPINET_API_KEY`, 선택) — 이 경로만, 스크립트는 `--input` 가공만 |
+| itda-hyve GUI 시크릿 탭(Cowork 등 — `http_request` 의 `{{secret:NAME}}`) | `dart`(`DART_API_KEY`)·`ecos`(`ECOS_API_KEY`)·`g2b`·`realty-deals`(`KO_DATA_API_KEY`)·`kosis`(`KOSIS_API_KEY`)·`realty-price-stats`(`RONE_API_KEY`·`KO_DATA_API_KEY`)·`fuel-price`(`OPINET_API_KEY`, 선택) — 이 경로만, 스크립트는 `--input` 가공만 |
 
 > **주의**
 > - `KO_DATA_API_KEY`는 공공데이터포털(data.go.kr) 키 하나로 `g2b`·`realty-*`(itda-hyve 시크릿 탭)에서 함께 사용합니다. `funding` 은 3.0.0 부터 이 키를 쓰지 않습니다.
@@ -37,10 +39,11 @@ itda-gov 의 API 계열 스킬은 **사전 API 키(또는 OC) 발급이 필요**
 | [`ecos`](skills/ecos/SKILL.md) | ECOS 한국은행 | GDP, 금리, 환율, 물가 |
 | [`funding`](skills/funding/SKILL.md) | K-Startup·기업마당·NIPA·SMTECH (KOCCA 는 상세만) | 정부 지원사업 공고 전수조사·증분 재조사·적합성 판정 (키 불요, itda-hyve) |
 | [`g2b`](skills/g2b/SKILL.md) | 나라장터 (G2B) | 입찰공고 검색·상세 |
-| [`customs-notice`](skills/customs-notice/SKILL.md) | 관세청 공지사항 | 게시판 수집 → 마크다운 표 (구 itda-class-igm) |
-| [`fss-docs`](skills/fss-docs/SKILL.md) | 금융감독원 공통업무자료 | 게시판 수집 → 마크다운 표 (구 itda-class-igm) |
 | [`taxlaw`](skills/taxlaw/SKILL.md) | 국세법령정보시스템 | 세법 법령·해석례·판례·상담사례 검색·전문 (키 불요, 구 itda-tax) |
 | [`fuel-price`](skills/fuel-price/SKILL.md) | 오피넷 (한국석유공사) | 주유소 평균 유가 조회 — 전국·시도 16 × 일/주/월, 전기 대비·과거 시점. **키 불요** |
+| [`realty-deals`](skills/realty-deals/SKILL.md) | 국토교통부 실거래가 | 아파트·연립·오피스텔 매매·전월세 실거래 원본 수집 |
+| [`realty-price-stats`](skills/realty-price-stats/SKILL.md) | 한국부동산원 R-ONE | 가격지수·전월세전환율·실거래 파생 통계 |
+| [`court-auction`](skills/court-auction/SKILL.md) | 법원경매정보 | 경매 물건 검색·상세 |
 
 > **정본 문서 가이드 (SPEC-ITDAGOV-DOCS-001, 2026-04-28 정비 완료)**: 6개 스킬 모두 발급처 정본 명세를 `skills/{스킬}/references/`에 보존하고, 각 SKILL.md 하단 "상세 API 가이드" 섹션에서 정본 파일을 직접 링크합니다. 활용신청 안내, 정본 에러 코드 매핑(한글 hint + 자동 활용신청 URL 부착), HTTP 403 처리, 라이브 응답 필드 매핑이 통일되어 있습니다.
 

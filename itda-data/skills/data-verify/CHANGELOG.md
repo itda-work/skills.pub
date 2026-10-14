@@ -2,6 +2,12 @@
 
 이 파일 이전의 이력은 팩 `itda-data/CHANGELOG.md` 에 있다.
 
+## [0.4.2] — 2026-10-14
+
+### Changed
+
+- 소개 문장의 vertical 목록에서 `data-prep`·`data-ask` 를 지웠다 — 두 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화).
+
 ## [0.4.1] — 2026-09-30 (itda-work/skills#47)
 
 ### Fixed

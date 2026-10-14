@@ -10,7 +10,7 @@ allowed-tools: Read, Bash, Glob, Grep, mcp__workspace__bash
 argument-hint: "[xlsx/csv 경로 또는 검수 요청]"
 metadata:
   author: "Chinseok"
-  version: "0.4.1"
+  version: "0.4.2"
   category: "data-tidy"
   status: "experimental"
   recommended: false
@@ -26,8 +26,7 @@ metadata:
 직전 "이 숫자들 진짜 맞나?"가 불안한데 대조할 시간이 없어 그냥 믿고 내는 — 그 불안을 없애는
 "수치 양심" 스킬.
 
-itda-data 데이터 양심 vertical(정리 `data-prep` · 질문 `data-ask` · 수식감사 `data-audit` ·
-수치검수 `data-verify`)의 값 검수 담당. (#967)
+itda-data 데이터 양심 vertical(수식감사 `data-audit` · 수치검수 `data-verify`)의 값 검수 담당. (#967)
 
 `data-audit` 이 "수식이 옳게 짜였나"라면, `data-verify` 는 "값이 실제로 맞나"를 본다.
 

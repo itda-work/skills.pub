@@ -1,5 +1,13 @@
 # Changelog — itda-work/human-tone
 
+## [2.1.5] — 2026-10-14
+
+### Changed
+
+- 형제 지목에서 `itda-doc:draft-post`·`blog-seo`·`pdf-context-refinery` 를 뺐다 — 세 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14, 스킬 최소화).
+  처음부터 쓰는 초안은 "Claude 에게 바로 요청" 으로 바꿨고, [책임 경계] 문장은 형제를 지목하지 않고 초안 작성 요청을 돌려보내는 한 문장으로 줄였다(출처 검증 행은 「쓰지 않을 때」 표에 두되, 같은 날 3차로 `itda-research:ground-check` 도 지워 "Claude 에게 바로 요청" 으로 바꿨다).
+  가드 정본 문단에서 다운스트림 사전(`_anti-ai-korean.md`) 언급과 권장 체인·관련 스킬의 draft-post 줄을 지웠다(SKILL·GUIDE·HANDOFF·트리거 회귀 주석).
+
 ## [2.1.4] — 2026-10-06 (itda-work/skills#46 W17)
 
 ### Changed

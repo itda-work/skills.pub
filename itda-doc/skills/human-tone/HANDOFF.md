@@ -146,7 +146,7 @@ def test_human_style_low():
 
 ### 3) test_triggers.py
 
-SKILL.md frontmatter description의 트리거 회귀. itda-work에 트리거 회귀 표준 패턴이 있는지 먼저 다른 스킬 (예: draft-post) tests/ 확인 후 동일 패턴 차용.
+SKILL.md frontmatter description의 트리거 회귀. itda-work에 트리거 회귀 표준 패턴이 있는지 먼저 다른 스킬 tests/ 확인 후 동일 패턴 차용.
 
 ```python
 # Should-trigger (8개)
@@ -160,13 +160,13 @@ SHOULD_TRIGGER = [
     "보고서 톤 다듬어줘",
     "공지문 인간화 부탁해",
 ]
-# Should-NOT-trigger (8개) — draft-post와 충돌하면 안 됨
+# Should-NOT-trigger (8개) — 초안 작성 요청과 충돌하면 안 됨
 SHOULD_NOT_TRIGGER = [
-    "보고서 작성해줘",  # → draft-post
-    "주간 보고 초안 잡아줘",  # → draft-post
-    "블로그 글 써줘",  # → draft-post 또는 blog
+    "보고서 작성해줘",  # → 초안 작성(Claude 에게 바로)
+    "주간 보고 초안 잡아줘",  # → 초안 작성(Claude 에게 바로)
+    "블로그 글 써줘",  # → 초안 작성(Claude 에게 바로)
     "블루키워드 분석해줘",  # → 다른 스킬(SEO 키워드 분석)
-    "PDF 정제해줘",  # → pdf-context-refinery
+    "PDF 정제해줘",  # → PDF 읽기(Claude 기본)
     "이메일 보내줘",  # → email
     "환율 조회해줘",  # → exchange-rate
     "ETF 시세 알려줘",  # → etf-naver
@@ -393,7 +393,7 @@ itda-work는 cowork-plugins처럼 SKILL.md frontmatter `version`을 별도 관�
 | cowork-plugins (humanize-korean Fast 변형) | `<ref-cowork-plugins 체크아웃>/content/skills/humanize-korean/` | Fast 변형 패턴 재참조 |
 | cowork-plugins KNOWLEDGE.md | `<ref-cowork-plugins 체크아웃>/KNOWLEDGE.md` | cowork 컨벤션 일반론 |
 | im-not-ai GitHub 원본 | https://github.com/epoko77-ai/im-not-ai | 업스트림 변경 추적 |
-| itda-work 다른 스킬 (참고 컨벤션) | `skills/itda-work/skills/{draft-post, ...}/` | tests 패턴, frontmatter 스타일 |
+| itda-work 다른 스킬 (참고 컨벤션) | `skills/itda-*/skills/*/` | tests 패턴, frontmatter 스타일 |
 
 ---
 

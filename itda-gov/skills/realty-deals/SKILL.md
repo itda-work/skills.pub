@@ -4,7 +4,7 @@ description: >
   국토교통부 부동산 실거래 12개 유형을 단일 인터페이스로 수집하는 스킬입니다.
   "최근 6개월 강남구 아파트 실거래 전부 받아줘", "분당 연립다세대 매매 2025년 데이터 CSV로 줘", "강서구 오피스텔 전월세 조회해줘"처럼 말하면 됩니다.
   전체 페이지네이션·다개월 범위·CSV/JSON 출력을 지원합니다.
-  [책임 경계] 본 스킬은 국토교통부 실거래 raw 수집 전담 — 가격지수·평균/중위 파생 통계는 itda-gov:realty-price-stats, 미분양·인허가·청약은 itda-gov:realty-supply.
+  [책임 경계] 본 스킬은 국토교통부 실거래 raw 수집 전담 — 가격지수·평균/중위 파생 통계는 itda-gov:realty-price-stats.
 license: Apache-2.0
 compatibility: "Python 3.10+, Claude Code & Cowork. 네트워크는 itda-hyve 0.10.4 이상(로컬 MCP 서버 — batch plan_file·http_request)이 한다."
 user-invocable: true
@@ -12,7 +12,7 @@ allowed-tools: "mcp__remote-devices__itda-hyve__http_request, mcp__remote-device
 argument-hint: "지역명 + 기간 + 유형 (예: 강남구 2026년 1~6월 아파트 매매)"
 metadata:
   author: "스킬.잇다 <dev@itda.work>"
-  version: "0.13.1"
+  version: "0.13.2"
   category: "domain"
   status: "active"
   created_at: "2026-05-15"
@@ -255,8 +255,7 @@ python3 -m pytest itda-gov/skills/realty-deals/tests/ -v     # Windows: py -3 -m
 | 상황 | 대신 쓸 스킬 |
 |---|---|
 | 가격지수·전월세전환율·평균/중위 통계 | itda-gov:realty-price-stats |
-| 미분양·인허가·착공·청약 통계 | itda-gov:realty-supply |
-| 전세가율·갭 스크리닝 | itda-gov:realty-jeonse-gap |
+| 미분양·인허가·착공·청약 통계, 전세가율·갭 스크리닝 | Claude 에게 바로 요청 |
 | 법원 경매 물건 | itda-gov:court-auction |
 
 ## 마이그레이션 안내

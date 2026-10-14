@@ -1,5 +1,11 @@
 # Changelog — itda-email
 
+## [0.38.4] — 2026-10-14
+
+### Changed
+
+- 첨부 PDF 읽기를 `itda-doc:pdf-context-refinery` 의 쪽별 판정 대신 Claude 기본 PDF 읽기로 바꿨고, 「쓰지 않을 때」 표에서 `itda-doc:html-report` 행을 지웠다 — 두 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화). 미설치 안내 문장이 `itda-doc:hwpx` 를 직접 가리키게 했다.
+
 ## [0.38.3] — 2026-10-01 (itda-work/skills#46)
 
 ### Changed

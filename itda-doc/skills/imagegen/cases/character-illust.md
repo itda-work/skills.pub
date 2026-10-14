@@ -64,7 +64,7 @@ tiny wings, golden yellow body with brown stripes, wearing a small blue scarf").
     종/체형/색/목도리가 동일하게 유지됨. 다장 세트 생성의 기반 확보.
   - "fuzzy texture details, rim light" 반영 — 털 질감까지 렌더됨.
   - **비율 강제력의 한계 발견**: 가로/세로 방향은 정확하나 정사각 픽셀 크기는 기본값
-    (1254)으로 드리프트 가능. 정확 픽셀이 필요하면 후처리(imagekit resize).
+    (1254)으로 드리프트 가능. 정확 픽셀이 필요하면 후처리(리사이즈).
 
 ### r1 — 2026-06-13 (codex-cli 0.137.0)
 

@@ -37,7 +37,6 @@
 
 | 플러그인 | 스킬 |
 |---|---|
-| itda-gov | g2b · realty-deals · realty-jeonse-gap · realty-meta · realty-price-stats · realty-supply |
-| itda-research | market-scan (위 itda-gov 스킬을 거쳐 씀) |
+| itda-gov | g2b · realty-deals · realty-price-stats |
 
 > 데이터셋별 활용신청 링크는 각 스킬 GUIDE의 "사전 준비" 절을 따르세요 — 같은 키 하나로 동작하지만 신청은 데이터셋 단위입니다.

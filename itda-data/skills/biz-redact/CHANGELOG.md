@@ -1,5 +1,11 @@
 # Changelog — biz-redact
 
+## [0.3.5] — 2026-10-14
+
+### Changed
+
+- [책임 경계] 문장에서 `itda-data:synthetic-data` 지목을 지웠다 — 그 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화).
+
 ## [0.3.4] — 2026-09-30 (itda-work/skills#47)
 
 ### Fixed

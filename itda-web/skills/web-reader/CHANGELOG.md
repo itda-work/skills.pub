@@ -1,5 +1,11 @@
 # Changelog — itda-web-reader
 
+## [9.0.1] — 2026-10-14
+
+### Changed
+
+- `not_html`(PDF) 안내와 「쓰지 않을 때」 표의 PDF 행을 `itda-doc:pdf-context-refinery` 에서 Claude 기본 PDF 읽기로 바꿨다 — 그 스킬을 저장소에서 지웠다(사용자 결정 2026-10-14 — 스킬 최소화)(SKILL·GUIDE).
+
 ## [9.0.0] — 2026-10-11 (itda-work/itda-hyve#72)
 
 > ⚠️ **배포 차단** — `web_read` 가 든 itda-hyve 설치본이 공개된 **뒤에** 배포한다(공개 최신 0.13.0 에는 없다). 이 판은 판 번호가 아니라
