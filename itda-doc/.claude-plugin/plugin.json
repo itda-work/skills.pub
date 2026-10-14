@@ -1,7 +1,7 @@
 {
   "name": "itda-doc",
   "description": "문서를 만들고 고친다 — 한글 문서 읽기·채우기·생성, AI 흔적 제거, 이미지 생성, PPT 용량 축소.",
-  "version": "16.0.0",
+  "version": "16.1.0",
   "author": {
     "name": "스킬.잇다",
     "url": "https://github.com/itda-work"

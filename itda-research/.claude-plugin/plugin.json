@@ -1,7 +1,7 @@
 {
   "name": "itda-research",
   "description": "회의 기록을 검수하고 업무DB로 쌓는다 — 회의 기록 신뢰성 검수, 사내 비정형 문서 무더기의 업무DB 구축·검수·증분 적재.",
-  "version": "16.0.0",
+  "version": "16.1.0",
   "author": {
     "name": "스킬.잇다",
     "url": "https://github.com/itda-work"

@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "대한민국 직장인·공공업무·투자자를 위한 Claude Code 스킬 마켓플레이스",
-    "version": "16.0.0",
+    "version": "16.1.0",
     "language": "ko"
   },
   "plugins": [
@@ -28,7 +28,7 @@
     {
       "name": "itda-work",
       "source": "./itda-work",
-      "description": "매일 쓰는 업무 도구 — 메일·일정·아침 브리핑·환율·날씨."
+      "description": "매일 쓰는 업무 도구 — 메일·일정·아침 브리핑·환율·날씨, itda-hyve 문서 창의 md 문서."
     },
     {
       "name": "itda-research",

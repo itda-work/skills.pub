@@ -1,7 +1,7 @@
 {
   "name": "itda-data",
   "description": "표·엑셀 데이터를 검산하고 비식별한다 — 눈대중 금지·계산은 코드가. 엑셀 수식 감사·재계산, 수치 검수, 외부 AI 반입 전 마스킹 게이트.",
-  "version": "16.0.0",
+  "version": "16.1.0",
   "author": {
     "name": "스킬.잇다",
     "url": "https://github.com/itda-work"

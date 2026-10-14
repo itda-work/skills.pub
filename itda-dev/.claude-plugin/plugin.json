@@ -1,7 +1,7 @@
 {
   "name": "itda-dev",
   "description": "개발 환경을 돕는다 — Cloudflare Tunnel 노출, 개발도구 릴리즈 요약, Windows 랩(Parallels 클론·실기 SSH), Claude·Codex 사용량 조회.",
-  "version": "16.0.0",
+  "version": "16.1.0",
   "author": {
     "name": "스킬.잇다",
     "url": "https://github.com/itda-work"

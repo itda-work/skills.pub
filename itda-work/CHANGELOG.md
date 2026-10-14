@@ -2,6 +2,15 @@
 
 이 플러그인의 주요 변경 사항을 기록합니다. 형식은 [Keep a Changelog](https://keepachangelog.com/), 버전은 [SemVer](https://semver.org/)를 따릅니다.
 
+## [5.1.0] - 2026-10-14
+
+> 요구: **itda-hyve 0.17.2 이상**(md_syntax·md_check·md_preview, itda-work/itda-hyve#134·#135). 그 전 판에서는 markdown-doc 이 동봉한 문법 사본으로 쓰고 그 사실을 알린다.
+
+### Added
+
+- **`markdown-doc` 0.1.0** — itda-hyve 문서 창의 md 문서(보고서·제안서·기안문·회의록·매뉴얼·발표)를 쓰고 고친다(itda-work/skills#53). 문법은 담지 않고 지금 설치된 앱에서 받는다(`md_syntax`, 셸이면 `itda-hyve md --syntax`). 쓴 뒤 같은 렌더러로 검사해(`md_check`) 경고 0, 새 문서는 처음 한 번 `md_preview`. 문서 창의 "Claude 에게 고쳐 달라기" 요청 글을 받으면 대상 줄 범위만 고친다. 앱이 없을 때만 쓰는 문법 사본(`references/syntax-fallback.md`, 판·syntax_hash)과 문서 꼴 서식(`references/doc-forms.md`)은 저장소의 `scripts/update_markdown_doc_refs.py` 로 itda-hyve 에서 만든다. 스킬 최소화(5.0.0) 뒤에 더하는 까닭: 앱 판마다 다른 문법과 같은 렌더러 검사는 Claude 기본 기능으로 대신할 수 없다.
+- 팩 description 에 「itda-hyve 문서 창의 md 문서」(marketplace 포함).
+
 ## [5.0.0] - 2026-10-14
 
 ### BREAKING

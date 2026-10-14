@@ -1,7 +1,7 @@
 {
   "name": "itda-work",
-  "description": "매일 쓰는 업무 도구 — 메일·일정·아침 브리핑·환율·날씨.",
-  "version": "16.0.0",
+  "description": "매일 쓰는 업무 도구 — 메일·일정·아침 브리핑·환율·날씨, itda-hyve 문서 창의 md 문서.",
+  "version": "16.1.0",
   "author": {
     "name": "스킬.잇다",
     "url": "https://github.com/itda-work"
